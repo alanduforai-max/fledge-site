@@ -220,20 +220,38 @@
     B: { color: "var(--chart-b)", width: 1.5, dash: "6 4" },
     C: { color: "var(--chart-c)", width: 2, dash: "" },
   };
+  const worldSeries = (metric) => ["A", "B", "C"].map((w) => ({
+    id: w,
+    label: D.worlds[w].label,
+    color: SERIES_STYLE[w].color,
+    width: SERIES_STYLE[w].width,
+    dash: SERIES_STYLE[w].dash,
+    values: D.worlds[w][metric],
+  }));
   const CHARTS = {
     acc: {
-      metric: "acc", yDomain: [0.5, 1.0], yTicks: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+      series: () => worldSeries("acc"), yDomain: [0.5, 1.0], yTicks: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
       yLabel: "vote accuracy", fmt: (v) => v.toFixed(2),
-      asym: [{ w: "A", y: 1.0 }, { w: "B", y: 0.7 }, { w: "C", y: 0.6 }],
+      asym: [{ c: "var(--chart-a)", y: 1.0 }, { c: "var(--chart-b)", y: 0.7 }, { c: "var(--chart-c)", y: 0.6 }],
     },
     flip: {
-      metric: "flip", yDomain: [0, 0.5], yTicks: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+      series: () => worldSeries("flip"), yDomain: [0, 0.5], yTicks: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
       yLabel: "P(decision flips on rerun)", fmt: (v) => v.toFixed(2), topNote: "coin-flip rerun = 0.50",
     },
     pnl: {
-      metric: "pnl", yDomain: [-0.25, 0.5], yTicks: [-0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5],
+      series: () => worldSeries("pnl"), yDomain: [-0.25, 0.5], yTicks: [-0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5],
       yLabel: "expected P&L / decision", fmt: (v) => (v > 0 ? "+" : "") + v.toFixed(2), zeroLine: true,
-      asym: [{ w: "B", y: 0.1 }, { w: "C", y: -0.2 }], endNote: { A: "→ +1.00" },
+      asym: [{ c: "var(--chart-b)", y: 0.1 }, { c: "var(--chart-c)", y: -0.2 }], endNote: { A: "→ +1.00" },
+    },
+    dpnl: {
+      series: () => [
+        { id: "total", label: "D · total", color: "var(--chart-c)", width: 2, dash: "", values: D.worlds.D.pnl },
+        { id: "edge", label: "edge mass (p>½)", color: "var(--chart-a)", width: 1.5, dash: "", values: D.worlds.D.edge_pnl },
+        { id: "drag", label: "drag mass (p≤½)", color: "var(--chart-b)", width: 1.5, dash: "6 4", values: D.worlds.D.drag_pnl },
+      ],
+      yDomain: [-0.9, 0.9], yTicks: [-0.8, -0.4, 0, 0.4, 0.8],
+      yLabel: "expected P&L / decision", fmt: (v) => (v > 0 ? "+" : "") + v.toFixed(2), zeroLine: true,
+      asym: [{ c: "var(--chart-a)", y: 0.8 }, { c: "var(--chart-c)", y: -0.03 }, { c: "var(--chart-b)", y: -0.83 }],
     },
   };
   const NS = "http://www.w3.org/2000/svg";
@@ -246,7 +264,7 @@
   function renderChart(wrap, key) {
     const cfg = CHARTS[key];
     const ks = D.ks;
-    const worlds = ["A", "B", "C"];
+    const series = cfg.series();
     const W = 700, H = 360, m = { t: 26, r: 118, b: 40, l: 50 };
     const pw = W - m.l - m.r, ph = H - m.t - m.b;
     const x = (k) => m.l + ((k - ks[0]) / (ks[ks.length - 1] - ks[0])) * pw;
@@ -255,8 +273,7 @@
     // legend (identity is never color-alone: color + line style + direct labels)
     const legend = document.createElement("div");
     legend.className = "chart-legend";
-    worlds.forEach((w) => {
-      const s = SERIES_STYLE[w];
+    series.forEach((s) => {
       const item = document.createElement("span");
       item.className = "item";
       item.style.color = s.color;
@@ -265,7 +282,7 @@
       sw.style.borderTop = s.width + "px " + (s.dash ? "dashed" : "solid") + " " + s.color;
       item.appendChild(sw);
       const label = document.createElement("span");
-      label.textContent = D.worlds[w].label;
+      label.textContent = s.label;
       label.style.color = "var(--text-secondary)";
       item.appendChild(label);
       legend.appendChild(item);
@@ -295,23 +312,22 @@
     // asymptote reference marks (short solid ticks at the right edge)
     (cfg.asym || []).forEach((a) => {
       const ln = el("line", { x1: m.l + pw - 26, x2: m.l + pw, y1: y(a.y), y2: y(a.y), "stroke-width": 1, opacity: 0.55 }, svg);
-      ln.style.stroke = SERIES_STYLE[a.w].color;
+      ln.style.stroke = a.c;
     });
 
     // series
     const labels = [];
-    worlds.forEach((w) => {
-      const s = SERIES_STYLE[w];
-      const vals = D.worlds[w][cfg.metric];
+    series.forEach((s) => {
+      const vals = s.values;
       const pts = ks.map((k, i) => `${x(k).toFixed(1)},${y(vals[i]).toFixed(1)}`).join(" ");
-      const attrs = { points: pts, fill: "none", "stroke-width": s.width, "stroke-linejoin": "round", "stroke-linecap": "round" };
+      const attrs = { points: pts, fill: "none", "stroke-width": s.width, "stroke-linejoin": "round", "stroke-linecap": "round", opacity: s.faint ? 0.7 : 1 };
       if (s.dash) attrs["stroke-dasharray"] = s.dash;
       el("polyline", attrs, svg).style.stroke = s.color;
-      const endNote = (cfg.endNote && cfg.endNote[w]) ? " " + cfg.endNote[w] : "";
-      labels.push({ y: y(vals[vals.length - 1]), text: w + " " + cfg.fmt(vals[vals.length - 1]) + endNote, color: s.color, size: 11.5 });
+      const endNote = (cfg.endNote && cfg.endNote[s.id]) ? " " + cfg.endNote[s.id] : "";
+      labels.push({ y: y(vals[vals.length - 1]), text: s.id + " " + cfg.fmt(vals[vals.length - 1]) + endNote, color: s.color, size: 11.5 });
     });
     (cfg.asym || []).forEach((a) => {
-      labels.push({ y: y(a.y), text: "K→∞ " + cfg.fmt(a.y), color: SERIES_STYLE[a.w].color, size: 10, dim: true });
+      labels.push({ y: y(a.y), text: "K→∞ " + cfg.fmt(a.y), color: a.c, size: 10, dim: true });
     });
     // right-edge label collision resolution: sort by y, enforce 14px gaps
     labels.sort((a, b) => a.y - b.y);
@@ -326,9 +342,9 @@
 
     // hover layer: crosshair + tooltip snapped to nearest K
     const cross = el("line", { x1: 0, x2: 0, y1: m.t, y2: m.t + ph, class: "c-cross", "stroke-width": 1, opacity: 0 }, svg);
-    const dots = worlds.map((w) => {
+    const dots = series.map((s) => {
       const d = el("circle", { r: 3.2, opacity: 0 }, svg);
-      d.style.fill = SERIES_STYLE[w].color;
+      d.style.fill = s.color;
       return d;
     });
     const tip = document.createElement("div");
@@ -345,10 +361,10 @@
       cross.setAttribute("x1", x(k)); cross.setAttribute("x2", x(k));
       cross.setAttribute("opacity", 0.7);
       let html = `<div class="k">K = ${k}</div>`;
-      worlds.forEach((w, i) => {
-        const v = D.worlds[w][cfg.metric][idx];
+      series.forEach((s, i) => {
+        const v = s.values[idx];
         dots[i].setAttribute("cx", x(k)); dots[i].setAttribute("cy", y(v)); dots[i].setAttribute("opacity", 1);
-        html += `<div class="row"><span style="color:${SERIES_STYLE[w].color}">${w}</span><span class="v">${cfg.fmt(v)}</span></div>`;
+        html += `<div class="row"><span style="color:${s.color}">${s.id}</span><span class="v">${cfg.fmt(v)}</span></div>`;
       });
       tip.innerHTML = html;
       tip.style.display = "block";
@@ -371,13 +387,13 @@
   }
   function renderDataTable(holder, key) {
     const cfg = CHARTS[key];
-    const worlds = ["A", "B", "C"];
+    const series = cfg.series();
     let rows = "";
     D.ks.forEach((k, i) => {
-      rows += `<tr><td>K = ${k}</td>` + worlds.map((w) => `<td>${cfg.fmt(D.worlds[w][cfg.metric][i])}</td>`).join("") + "</tr>";
+      rows += `<tr><td>K = ${k}</td>` + series.map((s) => `<td>${cfg.fmt(s.values[i])}</td>`).join("") + "</tr>";
     });
     holder.innerHTML = `<details><summary>view the data</summary><div class="scroll"><table>
-<thead><tr><th>K</th>${worlds.map((w) => `<th>${D.worlds[w].label}</th>`).join("")}</tr></thead>
+<thead><tr><th>K</th>${series.map((s) => `<th>${s.label}</th>`).join("")}</tr></thead>
 <tbody>${rows}</tbody></table></div></details>`;
   }
 

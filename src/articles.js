@@ -11,7 +11,7 @@ const ARTICLES = [
     seed: 9,
     published: true,
     summary:
-      "Ask the same trading question K times and let the majority decide. A minimal model and three small experiments on what repetition can change — accuracy, or only repeatability.",
+      "Ask the same trading question K times and let the majority decide. A minimal model and four small experiments on what repetition can change — accuracy, or only repeatability.",
     meta: "sampling · majority vote",
     status: "Note 01 · Aug 2026",
     bodyHtml: `
@@ -65,6 +65,27 @@ const ARTICLES = [
 </figure>
 <p>The decay is slow — at K&nbsp;=&nbsp;41 world C still shows +0.21 — which is the dangerous part. A live sample of a few hundred decisions would read as healthy long after the vote has begun quietly rotating the book toward its confidently-wrong tail.</p>
 
+<h2>A fourth world, shaped like a live book</h2>
+<p>Worlds A–C were built to make the mechanism visible. World D is stylised from the opposite direction: its shape follows what a live LLM trading book tends to look like once outcomes are on the tape. Two regularities matter. The odds are roughly <em>symmetric</em> everywhere — what varies with move size is the win rate, not the payoff ratio. And competence is not where intuition puts it: a large slice of decisions resolves as small chop where the system sits slightly below chance, the genuine edge concentrates in mid-size moves, and the largest, symmetric moves — the ones that decide the book — sit near a coin flip. (Classes here are defined by how decisions <em>resolve</em>, which no system knows in advance; the mixture is a shape, not a playbook, and the numbers are rounded caricatures rather than any particular book's statistics.)</p>
+<div class="spec-table"><table>
+<thead><tr><th>Class</th><th>Weight</th><th>p</th><th>Payoff (±units)</th></tr></thead>
+<tbody>
+<tr><td>chop</td><td>30%</td><td>0.40</td><td>±0.25</td></tr>
+<tr><td>small edge</td><td>30%</td><td>0.58</td><td>±1</td></tr>
+<tr><td>mid-size edge</td><td>25%</td><td>0.62</td><td>±2</td></tr>
+<tr><td>event tail</td><td>15%</td><td>0.45</td><td>±5</td></tr>
+</tbody>
+</table></div>
+<figure class="fig">
+  <div class="fig-head"><span class="fig-title">World D: expected P&amp;L, decomposed</span><span class="fig-num">Fig. 4</span></div>
+  <div class="chart-wrap" data-chart="dpnl"></div>
+  <figcaption>Total expected P&amp;L per decision for world D, split into the mass the vote hardens toward being right (p&nbsp;&gt;&nbsp;½ — 55% of decisions) and the mass it locks in wrong (p&nbsp;≤&nbsp;½ — the other 45%). The total more than doubles from K&nbsp;=&nbsp;1 to K&nbsp;=&nbsp;9 (+0.08&nbsp;→&nbsp;+0.17), crawls to a peak of +0.23 near K&nbsp;≈&nbsp;37, and decays toward a <strong>negative</strong> limit of −0.03. Accuracy meanwhile drifts from 51.7% to barely 56% — at every K this book's win rate looks like a coin flip with a rounding error, while its economics swing from thin to healthy to ruinous.</figcaption>
+  <div class="data-table" data-table="dpnl"></div>
+</figure>
+<p>Three readings. First, <strong>voting works here — briefly and for a specific reason</strong>. Nearly all of the gain arrives by single-digit K, and it comes entirely from the two edge classes hardening toward certainty; another thirty-odd samples per decision buy +0.06 more, and past the peak the drag mass slowly wins. A small interior K captures most of what repetition will ever give a book shaped like this.</p>
+<p>Second, <strong>the tail never settles</strong>. The five-unit class sits at p&nbsp;=&nbsp;0.45: the vote cannot rescue it (it hardens it wrong, slowly), and it cannot stabilise it either — run-to-run dispersion of book P&amp;L falls only ~15% from K&nbsp;=&nbsp;1 to K&nbsp;=&nbsp;9, and only ~30% by K&nbsp;=&nbsp;41, because the decisions that dominate the variance are precisely the ones repetition does not touch. K is a tool for the middle of the book, not its tail.</p>
+<p>Third, <strong>win rate is the wrong instrument panel</strong>. From K&nbsp;=&nbsp;1 to the far limit, D's accuracy moves four points; its expected P&amp;L triples, peaks, and then goes negative. Two dashboards watching the same book would tell opposite stories, and the one showing accuracy would recommend raising K exactly as doing so starts to cost money.</p>
+
 <h2>What this note does not claim</h2>
 <p>The worlds are two-point caricatures, chosen so everything is exact; real competence is a smear, and a real book is a portfolio selection, not a sequence of isolated binary calls — selection stability under sampling is a harder question we treat separately. The independence assumption is generous: repeated samples of one model share its systematic errors, and both the correlated-jury theory&nbsp;[6] and recent measurement&nbsp;[7] say consensus among correlated voters certifies agreement, not truth. And none of this applies where an external verifier exists — with one, repeated sampling is a genuine accuracy engine&nbsp;[4]; markets simply do not grade before the trade.</p>
 
@@ -82,14 +103,17 @@ const ARTICLES = [
     return sum(math.comb(k, j) * p**j * (1-p)**(k-j)
                for j in range(k//2 + 1, k + 1))
 
-WORLDS = {                      # (weight, p, move size)
-  "A": [(1.00, 0.55, 1.0)],
-  "B": [(0.70, 0.62, 1.0), (0.30, 0.45, 2.0)],
-  "C": [(0.60, 0.85, 1.0), (0.40, 0.45, 2.0)],
+WORLDS = {            # (weight, p, win payoff, loss payoff)
+  "A": [(1.00, 0.55, 1, 1)],
+  "B": [(0.70, 0.62, 1, 1), (0.30, 0.45, 2, 2)],
+  "C": [(0.60, 0.85, 1, 1), (0.40, 0.45, 2, 2)],
+  "D": [(0.30, 0.40, 0.25, 0.25), (0.30, 0.58, 1, 1),
+        (0.25, 0.62, 2, 2),       (0.15, 0.45, 5, 5)],
 }
-acc  = sum(w * maj_acc(p, K) for w, p, m in world)
+acc  = sum(w * maj_acc(p, K) for w, p, win, loss in world)
 flip = sum(w * 2*a*(1-a) for a in (maj_acc(p, K) ...))
-pnl  = sum(w * (2*maj_acc(p, K) - 1) * m for w, p, m in world)</pre></details>
+pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
+           for w, p, win, loss in world)</pre></details>
 
 <h2>References</h2>
 <ol class="refs">
