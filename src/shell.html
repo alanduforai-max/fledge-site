@@ -4,11 +4,18 @@
     <a href="#home" style="display:inline-flex;text-decoration:none">
       <span class="wordmark"><b>Fledge</b><span class="bar-sep"></span><i>Trading Lab</i></span>
     </a>
-    <nav class="site-nav" aria-label="site">
-      <a href="#research" data-route="research">Research</a>
-      <a href="#open-problems" data-route="open-problems">Open problems</a>
-      <a href="#about" data-route="about">About</a>
-    </nav>
+    <div class="nav-group">
+      <nav class="site-nav" aria-label="site">
+        <a href="#research" data-route="research">Research</a>
+        <a href="#open-problems" data-route="open-problems">Open problems</a>
+        <a href="#about" data-route="about">About</a>
+      </nav>
+      <span class="nav-sep" aria-hidden="true"></span>
+      <span class="theme-toggle" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="light" aria-pressed="false">light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="true">dark</button>
+      </span>
+    </div>
   </div>
 </header>
 
@@ -20,10 +27,6 @@
     <div class="right">
       <a href="mailto:hello@fledgequant.example">hello@[domain]</a>
       <span>Research only. Nothing here is investment advice.</span>
-      <span class="theme-toggle" role="group" aria-label="Colour theme">
-        <button type="button" data-theme-set="light" aria-pressed="false">light</button>
-        <button type="button" data-theme-set="dark" aria-pressed="true">dark</button>
-      </span>
     </div>
   </div>
 </footer>

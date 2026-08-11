@@ -206,6 +206,8 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
 .site-nav a:hover{color:var(--text-display)}
 .site-nav a.active{color:var(--text-display);border-bottom-color:var(--line-strong)}
 @media (max-width:720px){.site-nav{gap:var(--space-5)}}
+.nav-group{display:flex;align-items:center;gap:var(--space-6)}
+.nav-sep{width:1px;height:14px;background:var(--line-hairline)}
 .theme-toggle{display:inline-flex;align-items:center;gap:var(--space-2)}
 .theme-toggle button{background:none;border:0;padding:0;cursor:pointer;font-family:var(--font-text);font-size:var(--size-label);font-weight:var(--weight-medium);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--text-faint);transition:color var(--dur-fast) var(--ease-standard)}
 .theme-toggle button:hover{color:var(--text-secondary)}
@@ -347,11 +349,18 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
     <a href="#home" style="display:inline-flex;text-decoration:none">
       <span class="wordmark"><b>Fledge</b><span class="bar-sep"></span><i>Trading Lab</i></span>
     </a>
-    <nav class="site-nav" aria-label="site">
-      <a href="#research" data-route="research">Research</a>
-      <a href="#open-problems" data-route="open-problems">Open problems</a>
-      <a href="#about" data-route="about">About</a>
-    </nav>
+    <div class="nav-group">
+      <nav class="site-nav" aria-label="site">
+        <a href="#research" data-route="research">Research</a>
+        <a href="#open-problems" data-route="open-problems">Open problems</a>
+        <a href="#about" data-route="about">About</a>
+      </nav>
+      <span class="nav-sep" aria-hidden="true"></span>
+      <span class="theme-toggle" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="light" aria-pressed="false">light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="true">dark</button>
+      </span>
+    </div>
   </div>
 </header>
 
@@ -363,10 +372,6 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
     <div class="right">
       <a href="mailto:hello@fledgequant.example">hello@[domain]</a>
       <span>Research only. Nothing here is investment advice.</span>
-      <span class="theme-toggle" role="group" aria-label="Colour theme">
-        <button type="button" data-theme-set="light" aria-pressed="false">light</button>
-        <button type="button" data-theme-set="dark" aria-pressed="true">dark</button>
-      </span>
     </div>
   </div>
 </footer>
