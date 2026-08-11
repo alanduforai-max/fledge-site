@@ -123,6 +123,60 @@
       ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.moveTo(w * 0.66, h * 0.08); ctx.lineTo(w * 0.66, h * 0.92); ctx.stroke();
     },
+    // law of large numbers: running means shaking themselves quiet into a 1/√n funnel
+    convergence(ctx, w, h, seed) {
+      const r = rng(seed);
+      const x0 = w * 0.07, x1 = w * 0.94;
+      const mid = h * 0.52, amp = h * 0.46;
+      const steps = 150;
+      const xAt = (i) => x0 + ((x1 - x0) * i) / steps;
+
+      // datum line — the value everything settles on
+      ctx.globalAlpha = 0.28;
+      ctx.beginPath(); ctx.moveTo(x0, mid); ctx.lineTo(w * 0.97, mid); ctx.stroke();
+
+      // 1/√n envelope, drawn as construction curves
+      ctx.globalAlpha = 0.2;
+      for (const sgn of [-1, 1]) {
+        ctx.beginPath();
+        for (let i = 2; i <= steps; i++) {
+          const y = mid + (sgn * amp) / Math.sqrt(i);
+          i === 2 ? ctx.moveTo(xAt(i), y) : ctx.lineTo(xAt(i), y);
+        }
+        ctx.stroke();
+      }
+
+      // faint running-mean paths
+      const path = () => {
+        const pts = [];
+        let sum = 0;
+        for (let i = 1; i <= steps; i++) {
+          sum += (r() - 0.5) * 2;
+          pts.push(mid + (sum / i) * amp * 0.62);
+        }
+        return pts;
+      };
+      const trace = (pts) => {
+        ctx.beginPath();
+        for (let i = 2; i <= steps; i++) {
+          const y = pts[i - 1];
+          i === 2 ? ctx.moveTo(xAt(i), y) : ctx.lineTo(xAt(i), y);
+        }
+        ctx.stroke();
+      };
+      ctx.globalAlpha = 0.2;
+      const kept = [];
+      for (let p = 0; p < 22; p++) { const pts = path(); kept.push(pts); trace(pts); }
+
+      // one path inked: the sample you actually ran K times
+      ctx.globalAlpha = 0.85;
+      ctx.lineWidth = 1.4;
+      const hi = kept[Math.floor(kept.length * 0.41)];
+      trace(hi);
+      ctx.beginPath();
+      ctx.arc(xAt(steps), hi[steps - 1], 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    },
     replay(ctx, w, h, seed) {
       const steps = 6;
       const x0 = w * 0.1, y0 = h * 0.86, x1 = w * 0.92, y1 = h * 0.16;

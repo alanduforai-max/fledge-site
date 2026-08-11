@@ -7,8 +7,8 @@ const ARTICLES = [
   {
     id: "k-repeats",
     title: "What K buys you",
-    plate: "dispersion",
-    seed: 21,
+    plate: "convergence",
+    seed: 9,
     published: true,
     summary:
       "Ask the same trading question K times and let the majority decide. A minimal model and three small experiments on what repetition can change — accuracy, or only repeatability.",
