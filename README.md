@@ -8,7 +8,7 @@ the claude.ai/design project "Fledge Quant Lab Site"
 **Public temporary URL:** https://alanduforai-max.github.io/fledge-site/
 (Artifact mirror, owner-only: https://claude.ai/code/artifact/c2f310c9-bb5e-43fc-965d-07accf677ef5)
 
-Theme: dark by default, light/dark toggle in the footer (persisted).
+Theme: dark by default, light/dark toggle in the header (persisted).
 
 ## Layout
 
