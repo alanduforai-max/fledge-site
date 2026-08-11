@@ -1,0 +1,160 @@
+/* Fledge Trading Lab — tokens. Imported from the claude.ai/design project
+   (fledge-quant-lab design system). Light is the default reading theme; dark is
+   the explicit toggle. The light ink ramp stays constant: the drafting plates
+   keep light paper in both themes. */
+:root{
+  /* ink ramp — cool slate */
+  --ink-900:#0A1120;--ink-800:#101C37;--ink-700:#22304C;--ink-600:#3D4D6B;
+  --ink-500:#5A6A85;--ink-400:#7B8AA0;--ink-300:#9DA9B7;--ink-200:#BCC4CE;
+  --ink-100:#D6DCE1;--ink-050:#E4E8EB;--paper:#F7F9FA;--paper-pure:#FFFFFF;
+
+  /* accent ramp — blue */
+  --blue-700:#101C37;--blue-600:#22335C;--blue-500:#3D4D6B;
+  --blue-400:#5B7096;--blue-300:#8DA0C2;--blue-100:#C3CEE0;--blue-050:#E7ECF4;
+
+  /* dark ground */
+  --night-900:#0A1120;--night-850:#0E1729;--night-800:#131E33;
+  --night-700:#1C2942;--night-600:#263452;--night-500:#33425F;
+
+  /* ── semantic (light default) ─────────────────────────────── */
+  --bg-page:var(--paper);
+  --bg-sunk:var(--ink-050);
+  --surface-card:var(--paper-pure);
+  --surface-raised:var(--paper-pure);
+  --surface-inset:var(--ink-050);
+  --surface-accent:var(--blue-050);
+
+  --text-display:var(--ink-900);
+  --text-body:var(--ink-800);
+  --text-secondary:var(--ink-600);
+  --text-muted:var(--ink-500);
+  --text-faint:var(--ink-400);
+  --text-accent:var(--blue-500);
+
+  --line-hairline:var(--ink-200);
+  --line-rule:var(--ink-300);
+  --line-strong:var(--ink-800);
+  --line-accent:var(--blue-500);
+
+  --accent:var(--blue-500);
+  --accent-hover:var(--blue-600);
+  --accent-press:var(--blue-700);
+  --accent-quiet:var(--blue-100);
+
+  --focus-ring:var(--blue-500);
+  --selection-bg:var(--blue-100);
+
+  --btn-hover-bg:var(--ink-700);
+
+  --shadow-lift:0 1px 2px rgba(22,21,15,.05);
+  --shadow-float:0 8px 28px -10px rgba(22,21,15,.16),0 1px 3px rgba(22,21,15,.05);
+
+  /* charts — ordinal slate ramp, A dim → C emphatic (validated per surface) */
+  --chart-a:#8DA0C2;
+  --chart-b:#5B7096;
+  --chart-c:#22335C;
+  --chart-grid:var(--ink-050);
+  --chart-grid-strong:var(--ink-200);
+  --chart-tick:var(--ink-400);
+  --chart-axis:var(--ink-500);
+
+  /* type — the site overrides the DS families with IBM Plex */
+  --font-display:"IBM Plex Sans","Helvetica Neue",Helvetica,sans-serif;
+  --font-text:"IBM Plex Sans","Helvetica Neue",Helvetica,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+  --size-display-1:clamp(2.75rem,1.6rem + 4.2vw,5.25rem);
+  --size-display-2:clamp(2.25rem,1.5rem + 2.6vw,3.5rem);
+  --size-display-3:clamp(1.75rem,1.35rem + 1.4vw,2.375rem);
+  --size-display-4:1.375rem;
+  --size-lead:clamp(1.0625rem,1rem + 0.35vw,1.25rem);
+  --size-body:1rem;
+  --size-body-sm:0.9375rem;
+  --size-caption:0.8125rem;
+  --size-label:0.75rem;
+  --size-mono:0.8125rem;
+  --size-mono-sm:0.6875rem;
+
+  --leading-display:1.06;
+  --leading-title:1.14;
+  --leading-snug:1.35;
+  --leading-body:1.62;
+
+  --track-display:-0.035em;
+  --track-title:-0.024em;
+  --track-label:0.13em;
+  --track-mono:0.01em;
+
+  --weight-display:300;
+  --weight-display-light:300;
+  --weight-medium:500;
+
+  --measure-prose:64ch;
+  --measure-lead:46ch;
+  --measure-display:22ch;
+
+  /* space */
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;
+  --space-20:80px;--space-24:96px;
+
+  --gutter-lg:48px;
+  --page-max:1200px;
+  --content-max:760px;
+  --section-y:clamp(80px,10vw,192px);
+  --section-y-tight:clamp(56px,6vw,96px);
+
+  --radius-1:2px;
+  --border-hair:1px;
+  --border-strong:1.5px;
+
+  /* motion */
+  --ease-standard:cubic-bezier(.22,.61,.36,1);
+  --ease-out-quiet:cubic-bezier(.16,1,.3,1);
+  --dur-fast:140ms;
+  --dur-base:220ms;
+}
+:root[data-theme="dark"]{
+  --bg-page:var(--night-900);
+  --bg-sunk:var(--night-850);
+  --surface-card:var(--night-850);
+  --surface-raised:var(--night-800);
+  --surface-inset:var(--night-800);
+  --surface-accent:#152340;
+
+  --text-display:#EDF1F4;
+  --text-body:#DCE2E8;
+  --text-secondary:#A3AEBC;
+  --text-muted:#7B8AA0;
+  --text-faint:#5C6B82;
+  --text-accent:#8DA0C2;
+
+  --line-hairline:var(--night-700);
+  --line-rule:var(--night-600);
+  --line-strong:#B4BECB;
+  --line-accent:var(--blue-300);
+
+  --accent:var(--blue-300);
+  --accent-hover:#B0BFD8;
+  --accent-press:var(--blue-400);
+  --accent-quiet:#1E2C48;
+
+  --focus-ring:var(--blue-300);
+  --selection-bg:#22335C;
+
+  --btn-hover-bg:var(--ink-100);
+
+  --shadow-lift:0 1px 2px rgba(0,0,0,.5);
+  --shadow-float:0 8px 28px -10px rgba(0,0,0,.7),0 1px 3px rgba(0,0,0,.4);
+
+  --chart-a:#5B7096;
+  --chart-b:#8DA0C2;
+  --chart-c:#D3DEF0;
+  --chart-grid:var(--night-700);
+  --chart-grid-strong:var(--night-500);
+  --chart-tick:#5C6B82;
+  --chart-axis:#7B8AA0;
+}
+@media (prefers-reduced-motion:reduce){
+  :root{--dur-fast:0ms;--dur-base:0ms}
+}
