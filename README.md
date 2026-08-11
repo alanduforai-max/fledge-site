@@ -5,7 +5,10 @@ the claude.ai/design project "Fledge Quant Lab Site"
 (`72b4f59b-e271-462e-9d04-7385860fc135`); the imported design files live in
 `design/` for reference.
 
-**Live (temporary) URL:** https://claude.ai/code/artifact/c2f310c9-bb5e-43fc-965d-07accf677ef5
+**Public temporary URL:** https://alanduforai-max.github.io/fledge-site/
+(Artifact mirror, owner-only: https://claude.ai/code/artifact/c2f310c9-bb5e-43fc-965d-07accf677ef5)
+
+Theme: dark by default, light/dark toggle in the footer (persisted).
 
 ## Layout
 
