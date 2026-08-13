@@ -405,9 +405,9 @@
 
   /* ---------- pages ---------- */
   const PILLARS = [
-    { plate: "dispersion", seed: 3, title: "The sampling lottery", summary: "Same inputs, stable directional judgment, near-zero overlap in selection across samples — why LLM decision systems are unstable in a way benchmarks miss.", tag: "sampling · selection stability" },
-    { plate: "horizon", seed: 8, title: "Contamination-resistant evaluation", summary: "Rolling, forward-looking benchmarks that future model training data cannot absorb — evaluating decisions before outcomes exist.", tag: "evaluation · contamination" },
-    { plate: "replay", seed: 14, title: "Point-in-time discipline", summary: "A no-lookahead evaluation law for decision systems; replaying history without leaking the future.", tag: "point-in-time · no-lookahead" },
+    { plate: "replay", seed: 14, title: "Benchmark the trading domain", summary: "Handing a model a market and reading the PnL is not evaluation. We score what a desk must trust: risk awareness, summary fidelity, real sources, reasoning that traces to the data given, rankings that survive three runs. Open first; graded datasets follow.", tag: "01 · evaluation as a rating layer" },
+    { plate: "dispersion", seed: 3, title: "Post-train specialist agents", summary: "The benchmark shows where general models fail; post-training builds narrow agents that pass — a momentum-factor agent, a news-sentiment agent — each admitted to the matrix only by the evaluation that exposed the gap.", tag: "02 · post-training · agent matrix" },
+    { plate: "convergence", seed: 8, title: "Validate live", summary: "An agent matrix that scores well is still a claim. We run it on the lab's own small capital as the evidence engine for AI-native trading — no outside money, no signals for sale, no performance claims.", tag: "03 · live capital · evidence engine" },
   ];
   const PROBLEMS = [
     "How much of selection instability is reducible by post-training, and how much is a property of sampling itself?",
@@ -434,9 +434,9 @@
 <div class="container">
   <section class="section" id="pillars">
     <div class="section-head">
-      <div class="eyebrow">Research pillars</div>
-      <h2 class="display-2">Three open problems</h2>
-      <p class="lead">Each began as an engineering failure before it became a research question.</p>
+      <div class="eyebrow">The lab's arc</div>
+      <h2 class="display-2">Benchmark. Build. Prove.</h2>
+      <p class="lead">Three steps, in order. Each one earns the next.</p>
     </div>
     <div class="card-grid">
       ${PILLARS.map((p, i) => `
@@ -522,9 +522,9 @@
     <div class="about-grid">
       <div style="display:flex;flex-direction:column;gap:var(--space-6)">
         <p class="lead" style="color:var(--text-body);line-height:var(--leading-body);max-width:none">Built by a two-person team with backgrounds in systematic trading and large-scale AI engineering.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Fledge Trading Lab studies how LLM agents make consequential decisions under uncertainty. Live financial markets are the testbed because they supply small samples, noisy rewards, and outcomes that arrive late — not because the lab trades.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Fledge Trading Lab studies how LLM agents make consequential decisions under uncertainty. Live financial markets are the testbed because they supply small samples, noisy rewards, and outcomes that arrive late. When the lab does trade, it trades only its own small capital, as evidence.</p>
         <hr class="rule">
-        <p style="font-size:var(--size-body-sm);color:var(--text-muted)">We are a research lab, not a financial services company. We manage no money, sell no signals, and make no performance claims.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-muted)">We are a research lab, not a financial services company. We manage no outside money, sell no signals, and make no performance claims.</p>
         <p style="font-size:var(--size-body-sm);color:var(--text-muted)">Collaborations and questions: ${EMAIL_HTML}</p>
       </div>
       <div class="about-card">
