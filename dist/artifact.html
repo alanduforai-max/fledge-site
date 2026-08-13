@@ -711,6 +711,120 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       ctx.arc(cx + L / 2, cy, 2.2, 0, Math.PI * 2);
       ctx.fill();
     },
+    // benchmark as classical construction: a calibrated baseline, compass arcs
+    // from two centers, faint near-vertical candidates — and the one true
+    // perpendicular, inked, erected through their intersection
+    calibration(ctx, w, h, seed) {
+      const r = rng(seed);
+      const y0 = h * 0.72;
+      const xa = w * 0.27, xb = w * 0.73;
+      const mx = (xa + xb) / 2;
+      const R = (xb - xa) * 0.74;
+      ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.moveTo(w * 0.06, y0); ctx.lineTo(w * 0.94, y0); ctx.stroke();
+      const ticks = 11;
+      for (let i = 0; i < ticks; i++) {
+        const x = w * 0.1 + (w * 0.8 * i) / (ticks - 1);
+        const t = i % 5 === 0 ? h * 0.032 : h * 0.016;
+        ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + t); ctx.stroke();
+      }
+      for (const cx of [xa, xb]) {
+        ctx.beginPath(); ctx.arc(cx, y0, R, -Math.PI * 0.78, -Math.PI * 0.22); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, y0, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+      for (let i = 0; i < 3; i++) {
+        const a = -Math.PI / 2 + (r() - 0.5) * 0.4;
+        ctx.beginPath(); ctx.moveTo(mx, y0);
+        ctx.lineTo(mx + Math.cos(a) * h * 0.54, y0 + Math.sin(a) * h * 0.54);
+        ctx.stroke();
+      }
+      const q = Math.min(w, h) * 0.035;
+      ctx.beginPath(); ctx.moveTo(mx + q, y0); ctx.lineTo(mx + q, y0 - q); ctx.lineTo(mx, y0 - q); ctx.stroke();
+      const yc = y0 - Math.sqrt(Math.max(0, R * R - (mx - xa) * (mx - xa)));
+      ctx.globalAlpha = 0.45;
+      ctx.beginPath(); ctx.arc(mx, yc, 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4;
+      const topY = y0 - h * 0.56;
+      ctx.beginPath(); ctx.moveTo(mx, y0); ctx.lineTo(mx, topY); ctx.stroke();
+      ctx.beginPath(); ctx.arc(mx, topY, 2.2, 0, Math.PI * 2); ctx.fill();
+    },
+    // post-training as a stepped ascent: a smooth spiral guide with radial
+    // spokes, climbed one quantized stair at a time — arc, riser, arc, riser —
+    // ending inked at the outermost turn
+    ascent(ctx, w, h, seed) {
+      const cx = w * 0.5, cy = h * 0.54;
+      const turns = 2;
+      const thMax = turns * Math.PI * 2;
+      const phase = -Math.PI / 2 - thMax;
+      const rMax = Math.min(w, h) * 0.45;
+      const rAt = (th) => rMax * (0.1 + 0.9 * (th / thMax));
+      ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.moveTo(cx - rMax * 1.12, cy); ctx.lineTo(cx + rMax * 1.12, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy - rMax * 1.12); ctx.lineTo(cx, cy + rMax * 1.12); ctx.stroke();
+      ctx.beginPath();
+      for (let i = 0; i <= 280; i++) {
+        const th = (thMax * i) / 280;
+        const x = cx + Math.cos(th + phase) * rAt(th);
+        const y = cy + Math.sin(th + phase) * rAt(th);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4;
+      const step = Math.PI / 3;
+      const n = Math.round(thMax / step);
+      const i0 = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(i0 * step + phase) * rAt(i0 * step), cy + Math.sin(i0 * step + phase) * rAt(i0 * step));
+      for (let i = i0; i < n; i++) {
+        const th0 = i * step, th1 = Math.min((i + 1) * step, thMax);
+        ctx.arc(cx, cy, rAt(th0), th0 + phase, th1 + phase);
+        ctx.lineTo(cx + Math.cos(th1 + phase) * rAt(th1), cy + Math.sin(th1 + phase) * rAt(th1));
+      }
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(thMax + phase) * rMax, cy + Math.sin(thMax + phase) * rMax, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    },
+    // live validation as structure found in noise: a random walk, five of its
+    // moments concyclic, faint tangent ticks at four — and the tangent at the
+    // fifth, inked, leaving the circle
+    tangency(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.globalAlpha = 0.2;
+      const n = 96;
+      let y = h * 0.44, vel = 0;
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const x = w * 0.04 + (w * 0.92 * i) / n;
+        vel = vel * 0.86 + (r() - 0.5) * h * 0.038;
+        y += vel;
+        if (y < h * 0.07) { y = h * 0.07; vel = -vel * 0.4; }
+        if (y > h * 0.93) { y = h * 0.93; vel = -vel * 0.4; }
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      const ccx = w * 0.52, ccy = h * 0.52, cr = Math.min(w, h) * 0.3;
+      ctx.beginPath(); ctx.arc(ccx, ccy, cr, 0, Math.PI * 2); ctx.stroke();
+      const angs = [3.55, 4.3, 5.25, 0.25, 1.15];
+      const tick = Math.min(w, h) * 0.09;
+      for (let i = 0; i < 4; i++) {
+        const a = angs[i];
+        const px = ccx + Math.cos(a) * cr, py = ccy + Math.sin(a) * cr;
+        const tx = Math.cos(a + Math.PI / 2), ty = Math.sin(a + Math.PI / 2);
+        ctx.beginPath(); ctx.moveTo(px - tx * tick, py - ty * tick); ctx.lineTo(px + tx * tick, py + ty * tick); ctx.stroke();
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 0.2;
+      }
+      const aH = angs[4];
+      const hx = ccx + Math.cos(aH) * cr, hy = ccy + Math.sin(aH) * cr;
+      const tx = Math.cos(aH + Math.PI / 2), ty = Math.sin(aH + Math.PI / 2);
+      const L = Math.min(w, h) * 0.42;
+      ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(hx - tx * L, hy - ty * L); ctx.lineTo(hx + tx * L, hy + ty * L); ctx.stroke();
+      ctx.beginPath(); ctx.arc(hx, hy, 2.2, 0, Math.PI * 2); ctx.fill();
+    },
     replay(ctx, w, h, seed) {
       const steps = 6;
       const x0 = w * 0.1, y0 = h * 0.86, x1 = w * 0.92, y1 = h * 0.16;
@@ -953,9 +1067,9 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
 
   /* ---------- pages ---------- */
   const PILLARS = [
-    { plate: "replay", seed: 14, title: "Benchmark the trading domain", summary: "Handing a model a market and reading the PnL is not evaluation. We score what a desk must trust: risk awareness, summary fidelity, real sources, reasoning that traces to the data given, rankings that survive three runs. Open first; graded datasets follow.", tag: "01 · evaluation as a rating layer" },
-    { plate: "dispersion", seed: 3, title: "Post-train specialist agents", summary: "The benchmark shows where general models fail; post-training builds narrow agents that pass — a momentum-factor agent, a news-sentiment agent — each admitted to the matrix only by the evaluation that exposed the gap.", tag: "02 · post-training · agent matrix" },
-    { plate: "convergence", seed: 8, title: "Validate live", summary: "An agent matrix that scores well is still a claim. We run it on the lab's own small capital as the evidence engine for AI-native trading — no outside money, no signals for sale, no performance claims.", tag: "03 · live capital · evidence engine" },
+    { plate: "calibration", seed: 5, title: "Benchmark the trading domain", summary: "Handing a model a market and reading the PnL is not evaluation. We score what a desk must trust: risk awareness, summary fidelity, real sources, reasoning that traces to the data given, rankings that survive three runs. Open first; graded datasets follow.", tag: "01 · evaluation as a rating layer" },
+    { plate: "ascent", seed: 2, title: "Post-train specialist agents", summary: "The benchmark shows where general models fail; post-training builds narrow agents that pass — a momentum-factor agent, a news-sentiment agent — each admitted to the matrix only by the evaluation that exposed the gap.", tag: "02 · post-training · agent matrix" },
+    { plate: "tangency", seed: 8, title: "Validate live", summary: "An agent matrix that scores well is still a claim. We run it on the lab's own small capital as the evidence engine for AI-native trading — no outside money, no signals for sale, no performance claims.", tag: "03 · live capital · evidence engine" },
   ];
   const PROBLEMS = [
     "How much of selection instability is reducible by post-training, and how much is a property of sampling itself?",
