@@ -553,7 +553,7 @@
       <h1 class="display-1">We grade the machine before the market does.</h1>
       <div class="sub">
         <p class="lead">Engineered for decisions under stochastic reward.</p>
-        <p class="mono-tags"><span>benchmark</span><span>|</span><span>post-training</span><span>|</span><span>live validation</span></p>
+        <p class="mono-tags"><span>benchmark</span><span>|</span><span>post-training</span><span>|</span><span>agents</span><span>|</span><span>live validation</span></p>
       </div>
       <div><a class="btn" href="#research">Read our research <span class="arrow">→</span></a></div>
     </div>
