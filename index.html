@@ -799,38 +799,69 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
     // fifth, inked, leaving the circle
     tangency(ctx, w, h, seed) {
       const r = rng(seed);
-      ctx.globalAlpha = 0.2;
-      const n = 96;
-      let y = h * 0.44, vel = 0;
+      const ccx = w * 0.5, ccy = h * 0.5, cr = Math.min(w, h) * 0.3;
+      const deg = Math.PI / 180;
+      // five concyclic moments, ordered left to right; the walk threads them
+      const angs = [170, 215, 255, 310, 15].map((d) => d * deg);
+      const pts = angs.map((a) => [ccx + Math.cos(a) * cr, ccy + Math.sin(a) * cr]);
+      const anchors = [[w * 0.04, ccy + cr * 0.5], ...pts, [w * 0.96, ccy + cr * 0.62]];
+      ctx.globalAlpha = 0.3; ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let i = 0; i <= n; i++) {
-        const x = w * 0.04 + (w * 0.92 * i) / n;
-        vel = vel * 0.86 + (r() - 0.5) * h * 0.038;
-        y += vel;
-        if (y < h * 0.07) { y = h * 0.07; vel = -vel * 0.4; }
-        if (y > h * 0.93) { y = h * 0.93; vel = -vel * 0.4; }
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      ctx.moveTo(anchors[0][0], anchors[0][1]);
+      for (let s = 0; s < anchors.length - 1; s++) {
+        const [x0, y0] = anchors[s], [x1, y1] = anchors[s + 1];
+        const dxSeg = x1 - x0;
+        const m = Math.max(6, Math.min(30, Math.round(dxSeg / (w * 0.012))));
+        const amp = Math.min(h * 0.065, dxSeg * 0.35);
+        for (let i = 1; i <= m; i++) {
+          const t = i / m;
+          const env = Math.sin(Math.PI * t);
+          const y = y0 + (y1 - y0) * t
+            + (r() - 0.5) * amp * env
+            + Math.sin(t * Math.PI * 4 + s * 2) * amp * 0.2 * env;
+          ctx.lineTo(x0 + dxSeg * t, y);
+        }
       }
       ctx.stroke();
-      const ccx = w * 0.52, ccy = h * 0.52, cr = Math.min(w, h) * 0.3;
+      ctx.lineWidth = 0.75; ctx.globalAlpha = 0.2;
+      // the circle those five moments share, with its construction:
+      // a chord and its perpendicular bisector locating the centre
       ctx.beginPath(); ctx.arc(ccx, ccy, cr, 0, Math.PI * 2); ctx.stroke();
-      const angs = [3.55, 4.3, 5.25, 0.25, 1.15];
-      const tick = Math.min(w, h) * 0.09;
-      for (let i = 0; i < 4; i++) {
-        const a = angs[i];
-        const px = ccx + Math.cos(a) * cr, py = ccy + Math.sin(a) * cr;
-        const tx = Math.cos(a + Math.PI / 2), ty = Math.sin(a + Math.PI / 2);
-        ctx.beginPath(); ctx.moveTo(px - tx * tick, py - ty * tick); ctx.lineTo(px + tx * tick, py + ty * tick); ctx.stroke();
-        ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.stroke();
-        ctx.globalAlpha = 0.2;
-      }
-      const aH = angs[4];
-      const hx = ccx + Math.cos(aH) * cr, hy = ccy + Math.sin(aH) * cr;
-      const tx = Math.cos(aH + Math.PI / 2), ty = Math.sin(aH + Math.PI / 2);
-      const L = Math.min(w, h) * 0.42;
+      const [bx, by] = pts[1], [dx2, dy2] = pts[3];
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(dx2, dy2); ctx.stroke();
+      const mxc = (bx + dx2) / 2, myc = (by + dy2) / 2;
+      let ux = ccx - mxc, uy = ccy - myc;
+      const ul = Math.hypot(ux, uy) || 1; ux /= ul; uy /= ul;
+      ctx.beginPath();
+      ctx.moveTo(mxc - ux * cr * 0.4, myc - uy * cr * 0.4);
+      ctx.lineTo(ccx + ux * cr * 1.18, ccy + uy * cr * 1.18);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(ccx, ccy, 1.5, 0, Math.PI * 2); ctx.fill();
+      // markers on the five shared moments
+      ctx.globalAlpha = 0.5;
+      for (const [px, py] of pts) { ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.stroke(); }
+      // tangent at the third moment: radius drawn faint, right angle ticked,
+      // the tangent itself inked full-width
+      const aH = angs[2];
+      const hx = pts[2][0], hy = pts[2][1];
+      const tx = -Math.sin(aH), ty = Math.cos(aH);
+      const rx = ccx - hx, ry = ccy - hy;
+      const rl = Math.hypot(rx, ry) || 1;
+      const rxu = rx / rl, ryu = ry / rl;
+      ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(ccx, ccy); ctx.stroke();
+      const q = Math.min(w, h) * 0.035;
+      ctx.beginPath();
+      ctx.moveTo(hx + tx * q, hy + ty * q);
+      ctx.lineTo(hx + tx * q + rxu * q, hy + ty * q + ryu * q);
+      ctx.lineTo(hx + rxu * q, hy + ryu * q);
+      ctx.stroke();
       ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.moveTo(hx - tx * L, hy - ty * L); ctx.lineTo(hx + tx * L, hy + ty * L); ctx.stroke();
+      const t1 = (w * 0.08 - hx) / tx, t2 = (w * 0.92 - hx) / tx;
+      ctx.beginPath();
+      ctx.moveTo(hx + tx * t1, hy + ty * t1);
+      ctx.lineTo(hx + tx * t2, hy + ty * t2);
+      ctx.stroke();
       ctx.beginPath(); ctx.arc(hx, hy, 2.2, 0, Math.PI * 2); ctx.fill();
     },
     replay(ctx, w, h, seed) {
@@ -1092,10 +1123,10 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
   <div class="field" data-field='{"paths":68,"seed":11}' aria-hidden="true"></div>
   <div class="container">
     <div class="inner">
-      <h1 class="display-1">The proving ground for machine reasoning.</h1>
+      <h1 class="display-1">We grade the machine before the market does.</h1>
       <div class="sub">
         <p class="lead">Engineered for decisions under stochastic reward.</p>
-        <p class="mono-tags"><span>context</span><span>|</span><span>post-training</span><span>|</span><span>memory</span><span>|</span><span>agency</span></p>
+        <p class="mono-tags"><span>benchmark</span><span>|</span><span>post-training</span><span>|</span><span>live validation</span></p>
       </div>
       <div><a class="btn" href="#research">Read our research <span class="arrow">→</span></a></div>
     </div>
@@ -1120,8 +1151,8 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
   </section>
   <section class="section-tight">
     <figure class="pullquote">
-      <blockquote>A system that declines has answered.</blockquote>
-      <figcaption>Methodology note, in preparation</figcaption>
+      <blockquote>PnL is a verdict, not an explanation.</blockquote>
+      <figcaption>Benchmark methodology, in preparation</figcaption>
     </figure>
   </section>
 </div>`;
@@ -1191,8 +1222,10 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
     </div>
     <div class="about-grid">
       <div style="display:flex;flex-direction:column;gap:var(--space-6)">
-        <p class="lead" style="color:var(--text-body);line-height:var(--leading-body);max-width:none">Built by a two-person team with backgrounds in systematic trading and large-scale AI engineering.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Fledge Trading Lab studies how LLM agents make consequential decisions under uncertainty. Live financial markets are the testbed because they supply small samples, noisy rewards, and outcomes that arrive late. When the lab does trade, it trades only its own small capital, as evidence.</p>
+        <p class="lead" style="color:var(--text-body);line-height:var(--leading-body);max-width:none">Trading was the first profession to trust machines with money. It will be the first to trust them with judgment — and no one has built the instrument that says when that trust is earned.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Code got its proving ground: hundreds of benchmarks, and models that improved because failure was measurable. Trading got PnL — a verdict that arrives late, explains nothing, and forgives every wrong reason. We are building the missing rating layer: evaluations that ask whether a summary was faithful, whether a source is real, whether a ranking survives being run three times, whether a chain of reasoning actually touched the data it cites. Open, so the field can stand on it.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">What the benchmark exposes, post-training repairs. On its graded trajectories we build specialist agents — one for momentum, one for sentiment — each narrow, each admitted only by the evaluation that revealed the gap. Not one model that trades: a matrix of agents, each provably good at one thing.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">And when the matrix earns it, we prove it the only way that counts: live, on our own capital, as evidence. Benchmark. Build. Prove. Each step earns the next; none is skipped.</p>
         <hr class="rule">
         <p style="font-size:var(--size-body-sm);color:var(--text-muted)">We are a research lab, not a financial services company. We manage no outside money, sell no signals, and make no performance claims.</p>
         <p style="font-size:var(--size-body-sm);color:var(--text-muted)">Collaborations and questions: ${EMAIL_HTML}</p>
@@ -1200,16 +1233,16 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       <div class="about-card">
         <div data-field='{"paths":26,"seed":19}' style="height:150px" aria-hidden="true"></div>
         <div class="about-stats">
-          <div class="monostat"><span class="label">Founded</span><span class="value">2026</span></div>
-          <div class="monostat"><span class="label">People</span><span class="value">2</span></div>
-          <div class="monostat"><span class="label">Open roles</span><span class="value">—</span><span class="note">none yet</span></div>
+          <div class="monostat"><span class="label">01</span><span class="value">Benchmark</span><span class="note">the rating layer</span></div>
+          <div class="monostat"><span class="label">02</span><span class="value">Build</span><span class="note">specialist agents</span></div>
+          <div class="monostat"><span class="label">03</span><span class="value">Prove</span><span class="note">live, own capital</span></div>
         </div>
       </div>
     </div>
   </section>
   <section class="section-tight">
     <figure class="pullquote">
-      <blockquote>We study when they should be trusted to make one.</blockquote>
+      <blockquote>The market is the final exam. We write the ones before it.</blockquote>
       <figcaption>Fledge Trading Lab</figcaption>
     </figure>
   </section>
