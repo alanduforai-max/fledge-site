@@ -804,24 +804,38 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       // five concyclic moments, ordered left to right; the walk threads them
       const angs = [170, 215, 255, 310, 15].map((d) => d * deg);
       const pts = angs.map((a) => [ccx + Math.cos(a) * cr, ccy + Math.sin(a) * cr]);
-      const anchors = [[w * 0.04, ccy + cr * 0.5], ...pts, [w * 0.96, ccy + cr * 0.62]];
-      ctx.globalAlpha = 0.3; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(anchors[0][0], anchors[0][1]);
+      const anchors = [[w * 0.04, ccy + cr * 0.5], ...pts, [w * 0.96, ccy + cr * 0.1]];
+      // a plain broken price line: few sharp legs, threaded exactly through
+      // the five concyclic moments; legs near the summit dip inward
+      const zig = [anchors[0]];
+      let sgn = -1;
       for (let s = 0; s < anchors.length - 1; s++) {
         const [x0, y0] = anchors[s], [x1, y1] = anchors[s + 1];
         const dxSeg = x1 - x0;
-        const m = Math.max(6, Math.min(30, Math.round(dxSeg / (w * 0.012))));
-        const amp = Math.min(h * 0.065, dxSeg * 0.35);
-        for (let i = 1; i <= m; i++) {
-          const t = i / m;
-          const env = Math.sin(Math.PI * t);
-          const y = y0 + (y1 - y0) * t
-            + (r() - 0.5) * amp * env
-            + Math.sin(t * Math.PI * 4 + s * 2) * amp * 0.2 * env;
-          ctx.lineTo(x0 + dxSeg * t, y);
+        const kInt = dxSeg > w * 0.12 ? 2 : dxSeg > w * 0.03 ? 1 : 0;
+        for (let i = 1; i <= kInt; i++) {
+          const t = i / (kInt + 1);
+          const local = s === 2 || s === 3 ? 1 : sgn;
+          const amp = Math.min(h * 0.06, Math.max(h * 0.03, dxSeg * 0.22)) * (0.8 + r() * 0.4);
+          const yz = Math.max(h * 0.06, Math.min(h * 0.94, y0 + (y1 - y0) * t + local * amp));
+          zig.push([x0 + dxSeg * t, yz]);
+          sgn = -sgn;
         }
+        zig.push([x1, y1]);
+        sgn = -sgn;
       }
+      ctx.globalAlpha = 0.3; ctx.lineWidth = 1;
+      ctx.beginPath();
+      zig.forEach(([zx, zy], i) => (i === 0 ? ctx.moveTo(zx, zy) : ctx.lineTo(zx, zy)));
+      ctx.stroke();
+      const [px1, py1] = zig[zig.length - 2], [px2, py2] = zig[zig.length - 1];
+      let adx = px2 - px1, ady = py2 - py1;
+      const al = Math.hypot(adx, ady) || 1; adx /= al; ady /= al;
+      const AL = Math.min(w, h) * 0.05, AW = 0.45;
+      ctx.beginPath();
+      ctx.moveTo(px2 - (adx - ady * AW) * AL, py2 - (ady + adx * AW) * AL);
+      ctx.lineTo(px2, py2);
+      ctx.lineTo(px2 - (adx + ady * AW) * AL, py2 - (ady - adx * AW) * AL);
       ctx.stroke();
       ctx.lineWidth = 0.75; ctx.globalAlpha = 0.2;
       // the circle those five moments share, with its construction:
@@ -1218,7 +1232,7 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
   <section class="section-tight">
     <div class="section-head">
       <div class="eyebrow">About</div>
-      <h1 class="display-2">An independent lab, <em style="font-style:italic;font-weight:300">not a firm</em></h1>
+      <h1 class="display-2">Engineered for decisions under <em style="font-style:italic;font-weight:300">stochastic reward</em></h1>
     </div>
     <div class="about-grid">
       <div style="display:flex;flex-direction:column;gap:var(--space-6)">
