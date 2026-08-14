@@ -529,7 +529,7 @@
   function plateFrame(cls, plate, seed) {
     return `<div class="${cls}" data-plate="${plate}" data-seed="${seed}" aria-hidden="true"></div>`;
   }
-  const EMAIL_HTML = `<a href="mailto:hello@fledgequant.example">hello@[domain]</a>`;
+  const EMAIL_HTML = `<a href="mailto:contact@fledge.ai">contact@fledge.ai</a>`;
 
   /* ---------- pages ---------- */
   const PILLARS = [
