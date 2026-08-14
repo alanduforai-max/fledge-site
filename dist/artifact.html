@@ -377,6 +377,75 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
 
 const ARTICLES = [
   {
+    id: "finance-benchmarks",
+    title: "Why current finance benchmarks won't work",
+    plate: "horizon",
+    seed: 8,
+    published: true,
+    summary:
+      "A survey of the finance benchmarks that exist — exam-style QA suites and throw-the-agent-in-the-market backtests — and why neither can grade a trading agent. The measured case for a component-level, point-in-time, forward-rolling rating layer.",
+    meta: "evaluation · survey",
+    status: "Note 02 · Aug 2026",
+    bodyHtml: `
+<h2>The question a desk actually asks</h2>
+<p>Before an agent is allowed near an order, someone has to answer one question: <em>when this system speaks, what exactly can I trust?</em> Finance has accumulated an impressive shelf of benchmarks, and none of them answer it. They fall into two families with two different failure modes: one measures the wrong thing carefully, the other measures the right thing wrongly.</p>
+
+<h2>Family one: exams</h2>
+<p>The first family tests financial literacy. FinQA poses numerical-reasoning questions over filings&nbsp;[1]; FinanceBench asks the open-book questions an equity analyst should be able to answer&nbsp;[2]; PIXIU and FinBen aggregate dozens of such tasks — sentiment, extraction, QA, summarisation — into league tables&nbsp;[3,4]. These are serious datasets, and they measure what they claim to measure: reading, extraction, numeracy.</p>
+<p>What they measure is a paper qualification. An exam has no position, no sizing, no cost of being late, no asymmetry between a wrong answer and a wrong trade, and no reward for declining to answer at all. A model can top every table in this family and remain unsafe near an order, because nothing in the family ever asked it to decide.</p>
+
+<h2>Family two: the market as the grader</h2>
+<p>The second family does ask it to decide. FinMem&nbsp;[5], FinAgent&nbsp;[6] and InvestorBench&nbsp;[7] drop an agent into a historical market, let it trade, and read the PnL. The instinct is right — trading is decisions, so score decisions. The scoring is where it collapses, in three places.</p>
+<p><strong>The model has read the future.</strong> Any backtest window long enough to be statistically interesting overlaps the pretraining corpus of every frontier model. Memorised tickers, dates, prices and market narratives then substitute for investment reasoning, and the benchmark grades recall. This is no longer a suspicion: KTD-Fin, the first trading benchmark to control memory exposure inside the protocol (identifier and calendar masking, certified by a ten-attacker de-anonymisation probe), finds that masking substantially changes agents' stated rationales — away from memory, toward reasoning over the anonymised factors actually given&nbsp;[8]. The unmasked scores were measuring something, but not trading.</p>
+<p><strong>The returns are mostly borrowed.</strong> Worse, once leakage is controlled, the same study attributes the agents' cumulative returns largely to passive market and style exposure, with limited evidence of persistent stock-selection alpha&nbsp;[8]. A benchmark that reads raw PnL credits the agent with alpha for holding beta; it grades the regime it happened to run in, not the system. Quantitative finance learned this lesson on human strategies long ago — unadjusted backtest performance flatters until it is deflated for selection and exposure&nbsp;[9] — and the agent benchmarks inherited none of the machinery.</p>
+<p><strong>The number explains nothing.</strong> PnL is a verdict, not an explanation. It arrives late, is noisy at any horizon a benchmark can afford, forgives every wrong reason and punishes right ones. When the composite is bad, it does not say which component failed — the summary, the source, the ranking, the sizing. When it is good, it does not say why it should keep being good.</p>
+<div class="spec-table"><table>
+<thead><tr><th>Benchmark</th><th>Scores</th><th>Cannot see</th></tr></thead>
+<tbody>
+<tr><td>FinQA · 2021</td><td>numerical QA over filings</td><td>any decision at all</td></tr>
+<tr><td>FinanceBench · 2023</td><td>open-book analyst QA</td><td>any decision at all</td></tr>
+<tr><td>PIXIU / FinBen · 2023–24</td><td>composite task league tables</td><td>decisions, risk, abstention</td></tr>
+<tr><td>FinMem / FinAgent · 2023–24</td><td>backtest PnL of one agent</td><td>leakage; what drove the PnL</td></tr>
+<tr><td>InvestorBench · 2024</td><td>backtest PnL, multi-asset</td><td>leakage; what drove the PnL</td></tr>
+<tr><td>Alpha Arena · 2025</td><td>live PnL, one season</td><td>components; sample is tiny</td></tr>
+<tr><td>KTD-Fin · 2026</td><td>masked backtest + attribution</td><td>— the study that measured the leak</td></tr>
+</tbody>
+</table></div>
+<p>The direction of travel is visible at the edges of the table. Alpha Arena moved evaluation live, where leakage is impossible by construction — the right instinct, though one season of one composite number is a spectacle, not a rating&nbsp;[10]. KTD-Fin built the attribution machinery&nbsp;[8]; closed-loop diagnostic designs are appearing&nbsp;[13]. The field is turning. None of it yet adds up to an instrument a desk could act on.</p>
+
+<h2>What forecasting already learned</h2>
+<p>The adjacent discipline solved half of this. ForecastBench asks rolling questions about events that have not yet happened, so contamination is impossible by construction, and it maintains standing human baselines — the score means the same thing for the next model generation as for this one&nbsp;[11]. Bridgewater's AIA Forecaster work treats evaluation as first-class engineering: proper scoring rules, explicit statistical calibration against the behavioural biases of LLMs, and baselines that can embarrass the system — it reports reaching human-superforecaster parity on ForecastBench <em>and</em> reports underperforming liquid market consensus, adding value only in ensemble&nbsp;[12]. That honesty is the point: the evaluation was built to find where the system loses.</p>
+<p>Trading needs that discipline, and then more of it, because a trade decomposes further than a forecast: what was read, what was believed, what was selected, what was sized, what was declined. Each stage can fail independently, and a desk needs to know which one did.</p>
+
+<h2>The benchmark we are building</h2>
+<p>So the specification writes itself, mostly as negations of the failures above.</p>
+<ol>
+<li><strong>Component grades before composite grades.</strong> Summary fidelity: is the model's reading of a filing or a headline faithful to the document? Source integrity: does the cited source exist, and is it the origin? Grounded reasoning: does the chain of logic touch the data actually given, or does it fabricate a number where one was missing? A desk trusts components; a composite hides them.</li>
+<li><strong>Stability as a first-class score.</strong> Give the system a fixed dataset, ask it to rank five trade ideas, then run it again. If the order does not survive a rerun, the ranking was a draw from a distribution, not a judgment — and the desk deserves to know the distribution, not the draw.</li>
+<li><strong>A point-in-time law, not a setting.</strong> The system may read only what was knowable at the decision's timestamp; every cut reconstructed, never assumed. Restated figures and later-known outcomes are leaks.</li>
+<li><strong>Forward and rolling by construction.</strong> Tasks are published before their outcomes exist and scored when the window closes, as ForecastBench does — the only masking that no training corpus can undo&nbsp;[11].</li>
+<li><strong>Risk-aware, factor-adjusted composites.</strong> Where trading outcomes are scored at all, they are attributed first — beta and style stripped out, costs charged, and abstention scored as a decision rather than as missing data. Raw PnL appears nowhere.</li>
+</ol>
+<p>The core suite ships open, so the field can stand on it and beat on it; graded datasets follow. This is step one of the lab's arc — benchmark, build, prove — and it is deliberately the unglamorous step. The market grades last, and its grades are expensive. A benchmark has to grade first.</p>
+
+<h2>References</h2>
+<ol class="refs">
+<li>Z.&nbsp;Chen et&nbsp;al. <a href="https://arxiv.org/abs/2109.00122" target="_blank" rel="noreferrer">FinQA: A Dataset of Numerical Reasoning over Financial Data</a>. EMNLP 2021. arXiv:2109.00122.</li>
+<li>P.&nbsp;Islam et&nbsp;al. <a href="https://arxiv.org/abs/2311.11944" target="_blank" rel="noreferrer">FinanceBench: A New Benchmark for Financial Question Answering</a>. 2023. arXiv:2311.11944.</li>
+<li>Q.&nbsp;Xie et&nbsp;al. <a href="https://arxiv.org/abs/2306.05443" target="_blank" rel="noreferrer">PIXIU: A Large Language Model, Instruction Data and Evaluation Benchmark for Finance</a>. NeurIPS 2023. arXiv:2306.05443.</li>
+<li>Q.&nbsp;Xie et&nbsp;al. <a href="https://arxiv.org/abs/2402.12659" target="_blank" rel="noreferrer">FinBen: A Holistic Financial Benchmark for Large Language Models</a>. NeurIPS 2024. arXiv:2402.12659.</li>
+<li>Y.&nbsp;Yu et&nbsp;al. <a href="https://arxiv.org/abs/2311.13743" target="_blank" rel="noreferrer">FinMem: A Performance-Enhanced LLM Trading Agent with Layered Memory and Character Design</a>. 2023. arXiv:2311.13743.</li>
+<li>W.&nbsp;Zhang et&nbsp;al. <a href="https://arxiv.org/abs/2402.18485" target="_blank" rel="noreferrer">A Multimodal Foundation Agent for Financial Trading: Tool-Augmented, Diversified, and Generalist</a>. KDD 2024. arXiv:2402.18485.</li>
+<li>H.&nbsp;Li et&nbsp;al. <a href="https://arxiv.org/abs/2412.18174" target="_blank" rel="noreferrer">InvestorBench: A Benchmark for Financial Decision-Making Tasks with LLM-based Agent</a>. 2024. arXiv:2412.18174.</li>
+<li>T.&nbsp;Zhu et&nbsp;al. <a href="https://arxiv.org/abs/2605.28359" target="_blank" rel="noreferrer">From Knowing to Doing: A Memory-Controlled Benchmark for LLM Trading Agents on Stock Markets</a>. 2026. arXiv:2605.28359.</li>
+<li>D.&nbsp;H.&nbsp;Bailey, M.&nbsp;López&nbsp;de&nbsp;Prado. The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality. <em>Journal of Portfolio Management</em> 40(5), 2014.</li>
+<li><a href="https://nof1.ai" target="_blank" rel="noreferrer">Alpha Arena</a>. Nof1, live LLM trading competition, 2025.</li>
+<li>E.&nbsp;Karger et&nbsp;al. <a href="https://arxiv.org/abs/2409.19839" target="_blank" rel="noreferrer">ForecastBench: A Dynamic Benchmark of AI Forecasting Capabilities</a>. ICLR 2025. arXiv:2409.19839.</li>
+<li>Bridgewater AIA Labs. <a href="https://arxiv.org/abs/2511.07678" target="_blank" rel="noreferrer">AIA Forecaster: Technical Report</a>. 2025. arXiv:2511.07678.</li>
+<li><a href="https://arxiv.org/abs/2606.29771" target="_blank" rel="noreferrer">CLQT: A Closed-Loop, Cost-Aware, Strategy-Consistent Benchmark for Diagnostic Evaluation of LLM Portfolio-Management Agents</a>. 2026. arXiv:2606.29771.</li>
+</ol>`,
+  },
+  {
     id: "k-repeats",
     title: "What K buys you",
     plate: "convergence",
@@ -498,51 +567,6 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
 <li>Y.&nbsp;Denisov-Blanch et&nbsp;al. <a href="https://arxiv.org/abs/2603.06612" target="_blank" rel="noreferrer">Consensus is Not Verification: Why Crowd Wisdom Strategies Fail for LLM Truthfulness</a>. 2026. arXiv:2603.06612.</li>
 <li>P.&nbsp;Schoenegger, I.&nbsp;Tuminauskaite, P.&nbsp;S.&nbsp;Park, P.&nbsp;E.&nbsp;Tetlock. <a href="https://arxiv.org/abs/2402.19379" target="_blank" rel="noreferrer">Wisdom of the Silicon Crowd: LLM Ensemble Prediction Capabilities Rival Human Crowd Accuracy</a>. <em>Science Advances</em> 10, eadp1528, 2024.</li>
 </ol>`,
-  },
-  {
-    id: "sampling",
-    title: "The sampling lottery",
-    plate: "dispersion",
-    seed: 3,
-    published: false,
-    summary:
-      "Same inputs, stable directional judgment, near-zero overlap in selection across samples — why LLM decision systems are unstable in a way benchmarks miss.",
-    meta: "sampling · selection stability",
-    status: "In preparation",
-    body: [
-      "Ask a language model the same question twice and the argument barely moves. Ask it to choose, and the choice does. We measure the gap: directional agreement stays high across repeated samples while the overlap between the selected sets falls close to zero.",
-      "That gap is invisible to benchmarks that score one sample per prompt. A system built on a single draw inherits variance nobody measured, and the variance shows up as decisions, not as text.",
-    ],
-  },
-  {
-    id: "contamination",
-    title: "Contamination-resistant evaluation",
-    plate: "horizon",
-    seed: 8,
-    published: false,
-    summary:
-      "Rolling, forward-looking benchmarks that future model training data cannot absorb — evaluating decisions before outcomes exist.",
-    meta: "evaluation · contamination",
-    status: "In preparation",
-    body: [
-      "A benchmark whose answers exist on the internet stops measuring reasoning the moment a model is trained on it. Forward evaluation removes the possibility: tasks are published before their outcomes exist, and scored only after the window closes.",
-      "The cost is patience. The benefit is that a score means the same thing in the next model generation as it did in this one.",
-    ],
-  },
-  {
-    id: "point-in-time",
-    title: "Point-in-time discipline",
-    plate: "replay",
-    seed: 14,
-    published: false,
-    summary:
-      "A no-lookahead evaluation law for decision systems; replaying history without leaking the future.",
-    meta: "point-in-time · no-lookahead",
-    status: "In preparation",
-    body: [
-      "Replaying history is easy to do wrong. Any state that was revised after the fact — a restated figure, a corrected label, a later-known outcome — leaks the future into a decision that could not have seen it.",
-      "We treat point-in-time correctness as a law rather than a setting: a system may read only what was knowable at the cut, and every cut is reconstructed rather than assumed.",
-    ],
   },
 ];
 </script>
