@@ -1089,9 +1089,9 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
 
   /* ---------- pages ---------- */
   const PILLARS = [
-    { plate: "calibration", seed: 5, title: "Benchmark the trading domain", summary: "Handing a model a market and reading the PnL is not evaluation. We score what a desk must trust: risk awareness, summary fidelity, real sources, reasoning that traces to the data given, rankings that survive three runs. Open first; graded datasets follow.", tag: "01 · evaluation as a rating layer" },
-    { plate: "ascent", seed: 2, title: "Post-train specialist agents", summary: "The benchmark shows where general models fail; post-training builds narrow agents that pass — a momentum-factor agent, a news-sentiment agent — each admitted to the matrix only by the evaluation that exposed the gap.", tag: "02 · post-training · agent matrix" },
-    { plate: "tangency", seed: 8, title: "Validate live", summary: "An agent matrix that scores well is still a claim. We run it on the lab's own small capital as the evidence engine for AI-native trading — no outside money, no signals for sale, no performance claims.", tag: "03 · live capital · evidence engine" },
+    { plate: "calibration", seed: 5, title: "Benchmark the trading domain", summary: "Handing a model a market and reading the PnL is not evaluation. We score what a desk must trust: risk, sources, summaries, reasoning that traces to the data, rankings that survive a rerun. Open first; graded datasets follow.", tag: "01 · evaluation as a rating layer" },
+    { plate: "ascent", seed: 2, title: "Post-train specialist agents", summary: "The benchmark shows where general models fail; post-training builds narrow agents that pass.", tag: "02 · post-training · agent matrix" },
+    { plate: "tangency", seed: 8, title: "Validate live", summary: "An agent matrix that scores well is still a claim. We run it on the lab's own small capital as the evidence engine for AI-native trading.", tag: "03 · live capital · evidence engine" },
   ];
   const PROBLEMS = [
     "How much of selection instability is reducible by post-training, and how much is a property of sampling itself?",
