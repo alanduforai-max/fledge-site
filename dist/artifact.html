@@ -345,6 +345,7 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
       <nav class="site-nav" aria-label="site">
         <a href="#research" data-route="research">Research</a>
         <a href="#open-problems" data-route="open-problems">Open problems</a>
+        <a href="#plan" data-route="plan">Plan</a>
         <a href="#about" data-route="about">About</a>
       </nav>
       <span class="nav-sep" aria-hidden="true"></span>
@@ -1248,6 +1249,60 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
 </div>`;
   }
 
+  function planPage() {
+    const STEPS = [
+      { num: "01", title: "Verification engine", body: "A working prototype that grades one real answer about one real ticker: claims split out, facts checked against point-in-time market and filings data, every verdict with receipts." },
+      { num: "02", title: "The benchmark", body: "A public, graded set of AI answers to investment questions — which claims held, which did not, and by how much. Methodology in the open, so the grades can be argued with." },
+      { num: "03", title: "Outcome calibration", body: "Forecasts cannot be verified at answer time, only logged. When the forward window closes we score them against what the market did — on the lab's own decisions first." },
+    ];
+    return `
+<div class="container">
+  <section class="section-tight">
+    <div class="section-head">
+      <div class="eyebrow">Plan</div>
+      <h1 class="display-2">Can you trust what the machine just told you?</h1>
+      <p class="lead" style="max-width:none">Ask an AI whether to buy a stock and the answer arrives fluent, confident, and unverified. We are building the instrument that checks it.</p>
+    </div>
+    <div class="about-grid" style="margin-top:var(--space-10)">
+      <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Most people now ask machines about money, and most of them should not act on what comes back. The failure mode is specific to this domain: a hallucinated revenue figure looks exactly like a real one until you check the filing. In a decision with money on the line, fluency without receipts is not an answer.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">So the lab's first instrument works at the level of a single answer. Split it into atomic claims. Type each claim — fact, inference, or forecast. Check every fact against point-in-time market and filings data and return a verdict with the source attached. Grade each inference on whether the reasoning touched the data it cites. Log every forecast, and score it when the future arrives.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">The output is a report card on the answer itself. Model leaderboards tell you which machine to hire; a generic trust score tells you whether text matches its sources. An answer grade tells you whether to act on the thing you were just told. No one issues that grade today. This is the first pillar of the lab's arc — the rating layer — pointed at the question people actually ask.</p>
+      </div>
+      <div class="about-card">
+        <div data-field='{"paths":26,"seed":7}' style="height:150px" aria-hidden="true"></div>
+        <div class="about-stats" style="flex-wrap:nowrap">
+          <div class="monostat"><span class="label">use</span><span class="value">66%</span><span class="note">asked an AI about money</span></div>
+          <div class="monostat"><span class="label">trust</span><span class="value">31%</span><span class="note">trust what it says</span></div>
+          <div class="monostat"><span class="label">act</span><span class="value">53%</span><span class="note">acted on it anyway</span></div>
+        </div>
+        <p style="font-size:var(--size-caption);color:var(--text-muted);margin-top:var(--space-4)">Betterment retail investor survey, 2026.</p>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="roadmap">
+    <div class="section-head">
+      <div class="eyebrow">The year ahead</div>
+      <h2 class="display-2">Three milestones, in order</h2>
+      <p class="lead">Same rule as the lab's arc: each one earns the next.</p>
+    </div>
+    <div style="margin-top:var(--space-10);border-top:1px solid var(--line-hairline)">
+      ${STEPS.map((s) => `
+      <div class="problem-row">
+        <span class="num">${s.num}</span>
+        <p><strong style="color:var(--text-body)">${s.title}.</strong> ${s.body}</p>
+      </div>`).join("")}
+    </div>
+  </section>
+  <section class="section-tight">
+    <figure class="pullquote">
+      <blockquote>Confidence is not evidence.</blockquote>
+      <figcaption>The rating layer, step one</figcaption>
+    </figure>
+  </section>
+</div>`;
+  }
+
   function articlePage(a) {
     const body = a.bodyHtml
       ? a.bodyHtml
@@ -1276,6 +1331,7 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
     }
     if (h === "research" || h === "open-problems") return { page: "research", anchor: h === "open-problems" ? "open-problems" : null };
     if (h === "about") return { page: "about" };
+    if (h === "plan") return { page: "plan" };
     return { page: "home" };
   }
   function setNav(page) {
@@ -1326,6 +1382,7 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       r.page === "home" ? homePage()
       : r.page === "research" ? researchPage()
       : r.page === "about" ? aboutPage()
+      : r.page === "plan" ? planPage()
       : articlePage(r.article);
     document.title = r.page === "article" ? r.article.title + " — Fledge Trading Lab" : "Fledge Trading Lab";
     mountDynamic();
