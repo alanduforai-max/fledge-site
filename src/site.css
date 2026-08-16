@@ -152,6 +152,7 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
 .spec-table table{width:100%;max-width:var(--measure-prose);font-size:var(--size-body-sm);color:var(--text-secondary)}
 .spec-table th{text-align:left;font-family:var(--font-mono);font-size:var(--size-mono-sm);letter-spacing:.06em;text-transform:uppercase;font-weight:500;color:var(--text-muted);padding:8px 12px 8px 0;border-bottom:1px solid var(--line-rule)}
 .spec-table td{padding:8px 12px 8px 0;border-bottom:1px solid var(--line-hairline);font-variant-numeric:tabular-nums}
+.cmd{margin:var(--space-6) 0 0;padding:var(--space-5);background:var(--bg-sunk);border:1px solid var(--line-hairline);overflow-x:auto;line-height:1.6;color:var(--text-body);white-space:pre;user-select:all}
 .code-note{margin:var(--space-6) 0 0;max-width:var(--measure-prose)}
 .code-note summary{cursor:pointer;font-family:var(--font-mono);font-size:var(--size-mono-sm);letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
 .code-note pre{margin:var(--space-3) 0 0;padding:var(--space-5);background:var(--bg-sunk);border:1px solid var(--line-hairline);overflow-x:auto;line-height:1.55;color:var(--text-secondary)}
