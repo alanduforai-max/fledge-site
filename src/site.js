@@ -676,156 +676,6 @@
 </div>`;
   }
 
-  function planPage() {
-    const STEPS = [
-      { num: "01", title: "Verification engine", body: "A working prototype that grades one real answer about one real ticker: claims split out, facts checked against point-in-time market and filings data, every verdict with receipts. Status: running — first case graded. A nine-agent system's BUY call came out C (75%): one agent stated the trend direction backwards, the exit plan was anchored on a mis-cited consensus target, and the ‘smart money’ evidence rested on a five-month-old filing." },
-      { num: "02", title: "The benchmark", body: "A public, graded set of AI answers to investment questions — which claims held, which did not, and by how much. Methodology in the open, so the grades can be argued with." },
-      { num: "03", title: "Outcome calibration", body: "Forecasts cannot be verified at answer time, only logged. When the forward window closes we score them against what the market did — on the lab's own decisions first." },
-    ];
-    return `
-<div class="container">
-  <section class="section-tight">
-    <div class="section-head">
-      <div class="eyebrow">Plan</div>
-      <h1 class="display-2">Can you trust what the machine just told you?</h1>
-      <p class="lead" style="max-width:none">Ask an AI whether to buy a stock and the answer arrives fluent, confident, and unverified. We are building the instrument that checks it.</p>
-    </div>
-    <div class="about-grid" style="margin-top:var(--space-10)">
-      <div style="display:flex;flex-direction:column;gap:var(--space-6)">
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Most people now ask machines about money, and most of them should not act on what comes back. The failure mode is specific to this domain: a hallucinated revenue figure looks exactly like a real one until you check the filing. In a decision with money on the line, fluency without receipts is not an answer.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">So the lab's first instrument works at the level of a single answer. Split it into atomic claims. Type each claim — fact, inference, or forecast. Check every fact against point-in-time market and filings data and return a verdict with the source attached. Grade each inference on whether the reasoning touched the data it cites. Log every forecast, and score it when the future arrives.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">The output is a report card on the answer itself. Model leaderboards tell you which machine to hire; a generic trust score tells you whether text matches its sources. An answer grade tells you whether to act on the thing you were just told. No one issues that grade today. This is the first pillar of the lab's arc — the rating layer — pointed at the question people actually ask.</p>
-      </div>
-      <div class="about-card">
-        <div data-field='{"paths":26,"seed":7}' style="height:150px" aria-hidden="true"></div>
-        <div class="about-stats" style="flex-wrap:nowrap">
-          <div class="monostat"><span class="label">use</span><span class="value">66%</span><span class="note">asked an AI about money</span></div>
-          <div class="monostat"><span class="label">trust</span><span class="value">31%</span><span class="note">trust what it says</span></div>
-          <div class="monostat"><span class="label">act</span><span class="value">53%</span><span class="note">acted on it anyway</span></div>
-        </div>
-        <p style="font-size:var(--size-caption);color:var(--text-muted);margin-top:var(--space-4)">Betterment retail investor survey, 2026.</p>
-      </div>
-    </div>
-  </section>
-  <section class="section" id="roadmap">
-    <div class="section-head">
-      <div class="eyebrow">The year ahead</div>
-      <h2 class="display-2">Three milestones, in order</h2>
-      <p class="lead">Same rule as the lab's arc: each one earns the next.</p>
-    </div>
-    <div style="margin-top:var(--space-10);border-top:1px solid var(--line-hairline)">
-      ${STEPS.map((s) => `
-      <div class="problem-row">
-        <span class="num">${s.num}</span>
-        <p><strong style="color:var(--text-body)">${s.title}.</strong> ${s.body}</p>
-      </div>`).join("")}
-    </div>
-  </section>
-  <section class="section" id="how-it-works">
-    <div class="section-head">
-      <div class="eyebrow">How it works</div>
-      <h2 class="display-2">Models propose. Code disposes.</h2>
-      <p class="lead">Extraction is a sampling surface, so it takes a union of models. A verdict is a computation, so it takes none.</p>
-    </div>
-    <figure style="margin:var(--space-10) 0 0;border:1px solid var(--line-hairline);background:var(--bg-sunk);padding:var(--space-6);overflow-x:auto">
-      <svg viewBox="0 0 1000 540" role="img" aria-label="Verification pipeline: an AI answer is split into typed claims by a union of extractor models; deterministic code checks the claims against dated market evidence with independently recomputed indicators; verdicts are scored into a graded report card; forecasts bypass grading into a log scored when their window closes." style="display:block;max-width:100%;height:auto;min-width:720px;color:var(--text-secondary);font-family:var(--font-mono)">
-        <defs>
-          <marker id="pl-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
-          </marker>
-        </defs>
-        <rect x="180" y="42" width="460" height="210" rx="2" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="5 5"></rect>
-        <text x="196" y="66" font-size="11" fill="currentColor" opacity=".75" letter-spacing="1.5">MODEL LAYER — PROPOSES · SAMPLING SURFACE</text>
-        <rect x="180" y="300" width="640" height="220" rx="2" fill="none" stroke="var(--accent)" stroke-opacity=".9"></rect>
-        <text x="196" y="324" font-size="11" fill="var(--accent)" letter-spacing="1.5">CODE LAYER — DISPOSES · DETERMINISTIC, NO LLM</text>
-
-        <rect x="24" y="226" width="132" height="76" rx="2" fill="none" stroke="currentColor"></rect>
-        <text x="90" y="254" font-size="13" text-anchor="middle" fill="var(--text-body)">one AI answer</text>
-        <text x="90" y="272" font-size="11" text-anchor="middle" fill="currentColor">any model, any tool</text>
-        <text x="90" y="288" font-size="11" text-anchor="middle" fill="currentColor">"should I buy X?"</text>
-
-        <rect x="210" y="86" width="158" height="40" rx="2" fill="none" stroke="currentColor"></rect>
-        <text x="289" y="110" font-size="12" text-anchor="middle" fill="var(--text-body)">extractor model A</text>
-        <rect x="210" y="146" width="158" height="40" rx="2" fill="none" stroke="currentColor" stroke-dasharray="4 4"></rect>
-        <text x="289" y="170" font-size="12" text-anchor="middle" fill="var(--text-body)">extractor model B</text>
-        <line x1="90" y1="226" x2="90" y2="106" stroke="currentColor" fill="none"></line>
-        <line x1="90" y1="106" x2="204" y2="106" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-        <line x1="90" y1="166" x2="204" y2="166" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-        <text x="118" y="96" font-size="10" fill="currentColor" opacity=".8">full text</text>
-
-        <rect x="430" y="96" width="180" height="94" rx="2" fill="none" stroke="currentColor"></rect>
-        <text x="520" y="120" font-size="13" text-anchor="middle" fill="var(--text-body)">atomic claims</text>
-        <text x="520" y="138" font-size="10" text-anchor="middle" fill="currentColor">typed: fact · inference</text>
-        <text x="520" y="153" font-size="10" text-anchor="middle" fill="currentColor">forecast · news · context</text>
-        <text x="520" y="171" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">load-bearing weighted ×2</text>
-        <line x1="368" y1="106" x2="424" y2="124" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-        <line x1="368" y1="166" x2="424" y2="156" stroke="currentColor" stroke-dasharray="4 4" marker-end="url(#pl-arr)"></line>
-        <text x="372" y="92" font-size="10" fill="currentColor" opacity=".8">union, deduped</text>
-
-        <rect x="690" y="80" width="170" height="46" rx="2" fill="none" stroke="currentColor" stroke-dasharray="4 4"></rect>
-        <text x="775" y="100" font-size="12" text-anchor="middle" fill="var(--text-body)">forecast log</text>
-        <text x="775" y="116" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">never graded at answer time</text>
-        <line x1="610" y1="112" x2="684" y2="102" stroke="currentColor" stroke-dasharray="4 4" marker-end="url(#pl-arr)"></line>
-        <text x="622" y="93" font-size="10" fill="currentColor" opacity=".8">forecasts</text>
-        <rect x="690" y="158" width="170" height="42" rx="2" fill="none" stroke="currentColor" stroke-dasharray="4 4" opacity=".55"></rect>
-        <text x="775" y="176" font-size="12" text-anchor="middle" fill="currentColor" opacity=".75">news evidence layer</text>
-        <text x="775" y="191" font-size="10" text-anchor="middle" fill="currentColor" opacity=".55">next</text>
-        <line x1="610" y1="160" x2="684" y2="176" stroke="currentColor" stroke-dasharray="4 4" opacity=".55" marker-end="url(#pl-arr)"></line>
-
-        <rect x="24" y="392" width="132" height="56" rx="2" fill="none" stroke="currentColor"></rect>
-        <text x="90" y="416" font-size="13" text-anchor="middle" fill="var(--text-body)">market data</text>
-        <text x="90" y="434" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">quotes · filings · 13F</text>
-        <line x1="156" y1="420" x2="204" y2="420" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-
-        <rect x="210" y="368" width="170" height="100" rx="2" fill="none" stroke="currentColor"></rect>
-        <text x="295" y="392" font-size="13" text-anchor="middle" fill="var(--text-body)">dated evidence</text>
-        <text x="295" y="410" font-size="10" text-anchor="middle" fill="currentColor">raw OHLCV · fundamentals</text>
-        <text x="295" y="425" font-size="10" text-anchor="middle" fill="currentColor">ownership · insider filings</text>
-        <text x="295" y="443" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">provenance and fetch date kept</text>
-
-        <rect x="430" y="352" width="196" height="128" rx="2" fill="none" stroke="var(--accent)" stroke-width="1.6"></rect>
-        <text x="528" y="378" font-size="13" text-anchor="middle" fill="var(--text-body)">verifier</text>
-        <text x="528" y="398" font-size="10" text-anchor="middle" fill="currentColor">recomputes every indicator</text>
-        <text x="528" y="413" font-size="10" text-anchor="middle" fill="currentColor">from raw data — never trusts</text>
-        <text x="528" y="428" font-size="10" text-anchor="middle" fill="currentColor">a quoted number</text>
-        <text x="528" y="446" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">tolerance + staleness gates</text>
-        <text x="528" y="461" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">internal-consistency checks</text>
-        <line x1="520" y1="190" x2="524" y2="346" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-        <text x="532" y="280" font-size="10" fill="currentColor" opacity=".8">checkable claims</text>
-        <line x1="380" y1="420" x2="424" y2="420" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-        <text x="384" y="409" font-size="10" fill="currentColor" opacity=".8">ground truth</text>
-
-        <rect x="660" y="368" width="140" height="96" rx="2" fill="none" stroke="currentColor"></rect>
-        <text x="730" y="392" font-size="13" text-anchor="middle" fill="var(--text-body)">verdicts</text>
-        <text x="730" y="410" font-size="10" text-anchor="middle" fill="currentColor">nine-verdict vocabulary</text>
-        <text x="730" y="428" font-size="10" text-anchor="middle" fill="currentColor">a load-bearing contradiction</text>
-        <text x="730" y="443" font-size="10" text-anchor="middle" fill="currentColor">caps the grade at C</text>
-        <line x1="626" y1="420" x2="654" y2="420" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-
-        <rect x="850" y="270" width="130" height="140" rx="2" fill="none" stroke="var(--accent)" stroke-width="1.6"></rect>
-        <text x="915" y="296" font-size="13" text-anchor="middle" fill="var(--text-body)">report card</text>
-        <text x="915" y="316" font-size="10" text-anchor="middle" fill="currentColor">a grade per agent,</text>
-        <text x="915" y="331" font-size="10" text-anchor="middle" fill="currentColor">a grade per answer,</text>
-        <text x="915" y="346" font-size="10" text-anchor="middle" fill="currentColor">every verdict with</text>
-        <text x="915" y="361" font-size="10" text-anchor="middle" fill="currentColor">its receipt</text>
-        <line x1="800" y1="416" x2="844" y2="392" stroke="currentColor" marker-end="url(#pl-arr)"></line>
-        <line x1="860" y1="103" x2="915" y2="103" stroke="currentColor" stroke-dasharray="4 4"></line>
-        <line x1="915" y1="103" x2="915" y2="264" stroke="currentColor" stroke-dasharray="4 4" marker-end="url(#pl-arr)"></line>
-        <text x="905" y="218" font-size="10" text-anchor="end" fill="currentColor" opacity=".8">scored when the window closes</text>
-        <text x="905" y="233" font-size="10" text-anchor="end" fill="currentColor" opacity=".8">→ outcome calibration</text>
-      </svg>
-      <figcaption style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-5);max-width:var(--measure-prose)">Every claim crosses the lane boundary exactly once: a model decides what to check; only code decides whether it holds. Verdicts cannot vary with the grading model — a grade is a computation, not an opinion. Forecasts are logged, never judged at answer time, and scored against what the market later does.</figcaption>
-    </figure>
-  </section>
-  <section class="section-tight">
-    <figure class="pullquote">
-      <blockquote>Confidence is not evidence.</blockquote>
-      <figcaption>The rating layer, step one</figcaption>
-    </figure>
-  </section>
-</div>`;
-  }
-
   function connectPage() {
     const TOOLS = [
       { name: "verify_list_reports", body: "Every credibility report the lab has issued: the system under review, its final call, its grade." },
@@ -915,7 +765,6 @@
     }
     if (h === "research" || h === "open-problems") return { page: "research", anchor: h === "open-problems" ? "open-problems" : null };
     if (h === "about") return { page: "about" };
-    if (h === "plan") return { page: "plan" };
     if (h === "connect" || h === "tools") return { page: "connect", anchor: h === "tools" ? "tools" : null };
     return { page: "home" };
   }
@@ -967,7 +816,6 @@
       r.page === "home" ? homePage()
       : r.page === "research" ? researchPage()
       : r.page === "about" ? aboutPage()
-      : r.page === "plan" ? planPage()
       : r.page === "connect" ? connectPage()
       : articlePage(r.article);
     document.title = r.page === "article" ? r.article.title + " — Fledge Trading Lab" : "Fledge Trading Lab";
