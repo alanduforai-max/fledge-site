@@ -683,7 +683,9 @@
       { name: "edgar_filings", body: "Recent SEC filings for a ticker, filtered by form type, each with a direct link to the document." },
       { name: "edgar_insider_activity", body: "Form 4 filings parsed from the raw XML: who sold, who bought, how many shares, at what price." },
       { name: "edgar_search", body: "Full-text search across every SEC filing since 2001: who said a phrase, when, in which document." },
-      { name: "grounds_for", body: "The one-call evidence pack: material filings plus insider activity, every item with provenance." },
+      { name: "institution_13f", body: "An institution's 13F holdings, latest two quarters: does the fund hold it, did they add or trim — dated to the reporting period, not the headline." },
+      { name: "congress_trades", body: "Stock trades reported by members of Congress under the STOCK Act, parsed from the official disclosures, each linked to its filing." },
+      { name: "grounds_for", body: "The one-call evidence pack: material filings, insider activity, and congressional trades, every item with provenance." },
     ];
     return `
 <div class="container">
@@ -708,7 +710,7 @@
         <div data-field='{"paths":26,"seed":11}' style="height:150px" aria-hidden="true"></div>
         <div class="about-stats">
           <div class="monostat"><span class="label">pillars</span><span class="value">02</span><span class="note">Verify · Evidence</span></div>
-          <div class="monostat"><span class="label">tools</span><span class="value">06</span><span class="note">keyless · sourced</span></div>
+          <div class="monostat"><span class="label">tools</span><span class="value">08</span><span class="note">keyless · sourced</span></div>
           <div class="monostat"><span class="label">status</span><span class="value">beta</span><span class="note">open · no SLA</span></div>
         </div>
       </div>
@@ -717,7 +719,7 @@
   <section class="section" id="tools">
     <div class="section-head">
       <div class="eyebrow">The tools</div>
-      <h2 class="display-2">Six tools, one contract</h2>
+      <h2 class="display-2">Eight tools, one contract</h2>
       <p class="lead">Provenance: everything returns who, when, what — and a link to the primary source.</p>
     </div>
     <div style="margin-top:var(--space-10);border-top:1px solid var(--line-hairline)">
