@@ -346,7 +346,7 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
       <nav class="site-nav" aria-label="site">
         <a href="#research" data-route="research">Research</a>
         <a href="#open-problems" data-route="open-problems">Open problems</a>
-        <a href="#connect" data-route="connect">Connect</a>
+        <a href="#connect" data-route="connect">MCP</a>
         <a href="#about" data-route="about">About</a>
       </nav>
       <span class="nav-sep" aria-hidden="true"></span>
@@ -1259,6 +1259,11 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       { name: "edgar_search", body: "Full-text search across every SEC filing since 2001: who said a phrase, when, in which document." },
       { name: "institution_13f", body: "An institution's 13F holdings, latest two quarters: does the fund hold it, did they add or trim — dated to the reporting period, not the headline." },
       { name: "congress_trades", body: "Stock trades reported by members of Congress under the STOCK Act, parsed from the official disclosures, each linked to its filing." },
+      { name: "av_quote", body: "Delayed quote for any US ticker — price, change, volume — from a licensed market-data feed." },
+      { name: "av_daily", body: "Daily adjusted OHLCV history, most recent first, for momentum and level context." },
+      { name: "av_earnings", body: "Reported vs estimated EPS by quarter: the beat/miss record at a glance." },
+      { name: "av_earnings_calendar", body: "Upcoming earnings dates and estimates, market-wide or for one ticker." },
+      { name: "av_transcript", body: "Earnings-call transcripts, segment by segment: what management actually said, quotable." },
       { name: "grounds_for", body: "The one-call evidence pack: material filings, insider activity, and congressional trades, every item with provenance." },
     ];
     return `
@@ -1273,19 +1278,21 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       <div style="display:flex;flex-direction:column;gap:var(--space-6)">
         <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Every model can now answer questions about money. None of them ship with receipts. Fledge Grounds is the receipts: a Model Context Protocol server your AI calls when it needs a fact it can cite — the filing behind a claim, the insider transaction behind a rumor, the grade we gave another machine's answer.</p>
         <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Two pillars share one endpoint. <strong style="color:var(--text-body)">Verify</strong> serves the lab's credibility reports: AI investment answers split into atomic claims and re-checked against point-in-time data. <strong style="color:var(--text-body)">Evidence</strong> serves the underlying record: SEC filings, parsed insider transactions, full-text search across two decades of disclosure. Each response carries its source. None carries a recommendation.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">One line connects Claude Code; any MCP client can point at the same endpoint.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)"><strong style="color:var(--text-body)">Step 1.</strong> <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/signup" target="_blank" rel="noopener">Create your free account</a> — sign in with Google, get your personal token.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)"><strong style="color:var(--text-body)">Step 2.</strong> One line connects Claude Code; any MCP client can point at the same endpoint.</p>
         <pre class="cmd">claude mcp add --transport http fledge-grounds \\
-  https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/mcp</pre>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then ask in your own words: <em>“Pull the Verify report on the TradingAgents AAPL call — only the claims that failed.”</em> <em>“grounds_for NVDA — separate the facts that support a long from the facts that cut against it.”</em> <em>“Search 8-K filings since June for ‘cybersecurity incident’.”</em></p>
+  https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/mcp \\
+  --header "Authorization: Bearer &lt;your-token&gt;"</pre>
+        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then ask in your own words: <em>“grounds_for NVDA — separate the facts that support a long from the facts that cut against it.”</em> <em>“What did Pelosi trade this year?”</em> <em>“Did Berkshire trim AAPL last quarter?”</em></p>
         <hr class="rule">
-        <p style="font-size:var(--size-body-sm);color:var(--text-muted)">Beta. Open and unauthenticated while we run it in; fair use, no SLA. The endpoint may move when API keys land — this page always carries the current one.</p>
+        <p style="font-size:var(--size-body-sm);color:var(--text-muted)">Free while in beta; no SLA. A personal token is required and usage is logged — what we collect and how we use it is stated plainly at sign-up and in the <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       </div>
       <div class="about-card">
         <div data-field='{"paths":26,"seed":11}' style="height:150px" aria-hidden="true"></div>
         <div class="about-stats">
           <div class="monostat"><span class="label">pillars</span><span class="value">02</span><span class="note">Verify · Evidence</span></div>
-          <div class="monostat"><span class="label">tools</span><span class="value">08</span><span class="note">keyless · sourced</span></div>
-          <div class="monostat"><span class="label">status</span><span class="value">beta</span><span class="note">open · no SLA</span></div>
+          <div class="monostat"><span class="label">tools</span><span class="value">13</span><span class="note">sourced · cited</span></div>
+          <div class="monostat"><span class="label">status</span><span class="value">beta</span><span class="note">free account · no SLA</span></div>
         </div>
       </div>
     </div>
@@ -1293,7 +1300,7 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
   <section class="section" id="tools">
     <div class="section-head">
       <div class="eyebrow">The tools</div>
-      <h2 class="display-2">Eight tools, one contract</h2>
+      <h2 class="display-2">Thirteen tools, one contract</h2>
       <p class="lead">Provenance: everything returns who, when, what — and a link to the primary source.</p>
     </div>
     <div style="margin-top:var(--space-10);border-top:1px solid var(--line-hairline)">
