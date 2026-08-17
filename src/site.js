@@ -657,14 +657,6 @@
         <p style="font-size:var(--size-body-sm);color:var(--text-muted)">We are a research lab, not a financial services company. We manage no outside money, sell no signals, and make no performance claims.</p>
         <p style="font-size:var(--size-body-sm);color:var(--text-muted)">Collaborations and questions: ${EMAIL_HTML}</p>
       </div>
-      <div class="about-card">
-        <div data-field='{"paths":26,"seed":19}' style="height:150px" aria-hidden="true"></div>
-        <div class="about-stats">
-          <div class="monostat"><span class="label">01</span><span class="value">Benchmark</span><span class="note">the rating layer</span></div>
-          <div class="monostat"><span class="label">02</span><span class="value">Build</span><span class="note">specialist agents</span></div>
-          <div class="monostat"><span class="label">03</span><span class="value">Prove</span><span class="note">live, own capital</span></div>
-        </div>
-      </div>
     </div>
   </section>
   <section class="section-tight">
@@ -677,70 +669,94 @@
   }
 
   function connectPage() {
-    const TOOLS = [
-      { name: "verify_list_reports", body: "Every credibility report the lab has issued: the system under review, its final call, its grade." },
-      { name: "verify_get_report", body: "One report in full — per-section scores and every claim with its verdict, from SUPPORTED to CONTRADICTED. Ask for only the failures." },
-      { name: "edgar_filings", body: "Recent SEC filings for a ticker, filtered by form type, each with a direct link to the document." },
-      { name: "edgar_insider_activity", body: "Form 4 filings parsed from the raw XML: who sold, who bought, how many shares, at what price." },
-      { name: "edgar_search", body: "Full-text search across every SEC filing since 2001: who said a phrase, when, in which document." },
-      { name: "institution_13f", body: "An institution's 13F holdings, latest two quarters: does the fund hold it, did they add or trim — dated to the reporting period, not the headline." },
-      { name: "congress_trades", body: "Stock trades reported by members of Congress under the STOCK Act, parsed from the official disclosures, each linked to its filing." },
-      { name: "av_quote", body: "Delayed quote for any US ticker — price, change, volume — from a licensed market-data feed." },
-      { name: "av_daily", body: "Daily adjusted OHLCV history, most recent first, for momentum and level context." },
-      { name: "av_earnings", body: "Reported vs estimated EPS by quarter: the beat/miss record at a glance." },
-      { name: "av_earnings_calendar", body: "Upcoming earnings dates and estimates, market-wide or for one ticker." },
-      { name: "av_transcript", body: "Earnings-call transcripts, segment by segment: what management actually said, quotable." },
-      { name: "grounds_for", body: "The one-call evidence pack: material filings, insider activity, and congressional trades, every item with provenance." },
+    const SIGNUP = "https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/signup";
+    const GROUPS = [
+      { title: "Verify — credibility reports", tools: [
+        ["verify_list_reports", "Every credibility report the lab has issued: the system under review, its final call, its grade."],
+        ["verify_get_report", "One report in full — per-section scores and every claim with its verdict. Ask for only the failures."],
+      ]},
+      { title: "SEC EDGAR — live", tools: [
+        ["edgar_filings", "Recent filings for a ticker, filtered by form type, each with a direct document link."],
+        ["edgar_insider_activity", "Form 4 insider transactions: who sold, who bought, how many shares, at what price."],
+        ["edgar_search", "Full-text search across every SEC filing since 2001."],
+        ["institution_13f", "An institution's 13F holdings, latest two quarters: held, added, or trimmed — dated to the reporting period."],
+      ]},
+      { title: "Congress — STOCK Act", tools: [
+        ["congress_trades", "Trades reported by members of Congress, parsed from the official disclosures, each linked to its filing."],
+      ]},
+      { title: "Market data — licensed", tools: [
+        ["av_quote", "End-of-day quote: price, change, volume."],
+        ["av_daily", "Daily adjusted OHLCV history for momentum and level context."],
+        ["av_earnings", "Reported vs estimated EPS by quarter: the beat/miss record."],
+        ["av_earnings_calendar", "Upcoming earnings dates and estimates."],
+        ["av_transcript", "Earnings-call transcripts, segment by segment, quotable."],
+      ]},
+      { title: "One call", tools: [
+        ["grounds_for", "The evidence pack: material filings, insider activity, and congressional trades, every item with provenance."],
+      ]},
     ];
     return `
 <div class="container">
   <section class="section-tight">
     <div class="section-head">
-      <div class="eyebrow">Connect</div>
+      <div class="eyebrow">MCP</div>
       <h1 class="display-2" style="max-width:none">Bring your own AI. We bring the evidence.</h1>
-      <p class="lead" style="max-width:none">Fledge Grounds is the lab's MCP server — verification report cards and sourced market facts, served into whatever model you already use.</p>
+      <p class="lead" style="max-width:none">Thirteen tools for your model — verification report cards and sourced US-market facts. Free account, personal token, one line to connect.</p>
     </div>
-    <div class="about-grid" style="margin-top:var(--space-10)">
-      <div style="display:flex;flex-direction:column;gap:var(--space-6)">
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Every model can now answer questions about money. None of them ship with receipts. Fledge Grounds is the receipts: a Model Context Protocol server your AI calls when it needs a fact it can cite — the filing behind a claim, the insider transaction behind a rumor, the grade we gave another machine's answer.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Two pillars share one endpoint. <strong style="color:var(--text-body)">Verify</strong> serves the lab's credibility reports: AI investment answers split into atomic claims and re-checked against point-in-time data. <strong style="color:var(--text-body)">Evidence</strong> serves the underlying record: SEC filings, parsed insider transactions, full-text search across two decades of disclosure. Each response carries its source. None carries a recommendation.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)"><strong style="color:var(--text-body)">Step 1.</strong> <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/signup" target="_blank" rel="noopener">Create your free account</a> — sign in with Google, get your personal token.</p>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)"><strong style="color:var(--text-body)">Step 2.</strong> One line connects Claude Code; any MCP client can point at the same endpoint.</p>
-        <pre class="cmd">claude mcp add --transport http fledge-grounds \\
-  https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/mcp \\
-  --header "Authorization: Bearer &lt;your-token&gt;"</pre>
-        <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then ask in your own words: <em>“grounds_for NVDA — separate the facts that support a long from the facts that cut against it.”</em> <em>“What did Pelosi trade this year?”</em> <em>“Did Berkshire trim AAPL last quarter?”</em></p>
-        <hr class="rule">
-        <p style="font-size:var(--size-body-sm);color:var(--text-muted)">Free while in beta; no SLA. A personal token is required and usage is logged — what we collect and how we use it is stated plainly at sign-up and in the <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+    <div class="plan-grid">
+      <div class="plan">
+        <span class="tier">Free · beta</span>
+        <span class="price">$0</span>
+        <ul>
+          <li>All 13 tools — SEC filings, insiders, 13F, congressional trades, quotes &amp; earnings</li>
+          <li>Personal API token, works with any MCP client</li>
+          <li>Fair use · no SLA while in beta</li>
+        </ul>
+        <div class="cta"><a class="btn-cta" href="${SIGNUP}" target="_blank" rel="noopener">Sign in with Google →</a></div>
+        <p style="margin:0;font-size:var(--size-caption);color:var(--text-muted)">Takes 30 seconds. We only receive your email.</p>
       </div>
-      <div class="about-card">
-        <div data-field='{"paths":26,"seed":11}' style="height:150px" aria-hidden="true"></div>
-        <div class="about-stats">
-          <div class="monostat"><span class="label">pillars</span><span class="value">02</span><span class="note">Verify · Evidence</span></div>
-          <div class="monostat"><span class="label">tools</span><span class="value">13</span><span class="note">sourced · cited</span></div>
-          <div class="monostat"><span class="label">status</span><span class="value">beta</span><span class="note">free account · no SLA</span></div>
-        </div>
+      <div class="plan">
+        <span class="tier">Pro · coming soon</span>
+        <span class="price">—</span>
+        <ul>
+          <li>Higher rate limits</li>
+          <li>Deeper corpora: transcripts at scale, curated evidence feeds</li>
+          <li>Thesis profiles: evidence organized around your holdings</li>
+        </ul>
+        <div class="cta"><a class="btn-ghost" href="mailto:ld3110@columbia.edu?subject=Fledge%20Grounds%20Pro%20waitlist">Join the waitlist</a></div>
+        <p style="margin:0;font-size:var(--size-caption);color:var(--text-muted)">Free stays free.</p>
       </div>
     </div>
   </section>
+  <section class="section" id="docs">
+    <div class="section-head">
+      <div class="eyebrow">Connect</div>
+      <h2 class="display-2">Two steps</h2>
+    </div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-8)"><strong style="color:var(--text-body)">1.</strong> <a href="${SIGNUP}" target="_blank" rel="noopener">Sign in with Google</a> and copy your token.&nbsp;&nbsp;<strong style="color:var(--text-body)">2.</strong> Add the server — Claude Code shown; any MCP client points at the same endpoint.</p>
+    <pre class="cmd">claude mcp add --transport http fledge-grounds \\
+  https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/mcp \\
+  --header "Authorization: Bearer &lt;your-token&gt;"</pre>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then ask in your own words: <em>\u201cgrounds_for NVDA \u2014 separate the facts that support a long from the facts against it.\u201d</em> <em>\u201cWhat did Pelosi trade this year?\u201d</em> <em>\u201cDid Berkshire trim AAPL last quarter?\u201d</em></p>
+  </section>
   <section class="section" id="tools">
     <div class="section-head">
-      <div class="eyebrow">The tools</div>
-      <h2 class="display-2">Thirteen tools, one contract</h2>
-      <p class="lead">Provenance: everything returns who, when, what — and a link to the primary source.</p>
+      <div class="eyebrow">Reference</div>
+      <h2 class="display-2">The tools</h2>
+      <p class="lead">One contract: everything returns who, when, what — and a link to the primary source. Never a recommendation.</p>
     </div>
-    <div style="margin-top:var(--space-10);border-top:1px solid var(--line-hairline)">
-      ${TOOLS.map((t, i) => `
-      <div class="problem-row">
-        <span class="num">${String(i + 1).padStart(2, "0")}</span>
-        <p><code style="color:var(--text-body)">${t.name}</code> — ${t.body}</p>
-      </div>`).join("")}
-    </div>
+    ${GROUPS.map((g) => `
+    <div class="tool-group">
+      <h3>${g.title}</h3>
+      ${g.tools.map(([name, body]) => `
+      <div class="tool-row"><code>${name}</code><p>${body}</p></div>`).join("")}
+    </div>`).join("")}
+    <p style="font-size:var(--size-body-sm);color:var(--text-muted);margin-top:var(--space-10)">A personal token is required and usage is logged — what we collect and how we use it is stated plainly at sign-up and in the <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </section>
   <section class="section-tight">
     <figure class="pullquote">
       <blockquote>Facts with provenance. Never advice.</blockquote>
-      <figcaption>Fledge Grounds · beta</figcaption>
+      <figcaption>Fledge Grounds \u00b7 beta</figcaption>
     </figure>
   </section>
 </div>`;
