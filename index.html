@@ -389,7 +389,7 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
   <div class="container inner">
     <span class="wordmark sm"><b>Fledge</b><span class="bar-sep"></span><i>Trading Lab</i></span>
     <div class="right">
-      <a href="mailto:contact@fledge.ai">contact@fledge.ai</a>
+      <a href="mailto:hello@fledgetradelab.com">hello@fledgetradelab.com</a>
       <span>Research only. Nothing here is investment advice.</span>
     </div>
   </div>
@@ -1128,7 +1128,7 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
   function plateFrame(cls, plate, seed) {
     return `<div class="${cls}" data-plate="${plate}" data-seed="${seed}" aria-hidden="true"></div>`;
   }
-  const EMAIL_HTML = `<a href="mailto:contact@fledge.ai">contact@fledge.ai</a>`;
+  const EMAIL_HTML = `<a href="mailto:hello@fledgetradelab.com">hello@fledgetradelab.com</a>`;
 
   /* ---------- pages ---------- */
   const PILLARS = [
@@ -1269,21 +1269,76 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
 
   function connectPage() {
     const SIGNUP = "https://mcp.fledgetradelab.com/signup";
+    return `
+<div class="container">
+  <section class="section-tight">
+    <div class="section-head">
+      <div class="eyebrow">MCP</div>
+      <h1 class="display-2" style="max-width:none">Bring your own AI. We bring the evidence.</h1>
+      <p class="lead" style="max-width:none">Thirteen tools for your model \u2014 sourced US-market facts and verification report cards. Free account, one line to connect.</p>
+    </div>
+    <div class="plan-grid">
+      <div class="plan">
+        <span class="tier">Free \u00b7 beta</span>
+        <span class="price">$0</span>
+        <ul>
+          <li>All 13 tools: SEC filings, insiders, 13F, congressional trades, quotes &amp; earnings</li>
+          <li>Personal token \u00b7 works with any MCP client</li>
+          <li>Built-in workflows, updated server-side</li>
+        </ul>
+        <div class="cta"><a class="btn-cta" href="${SIGNUP}" target="_blank" rel="noopener">Create free account \u2192</a></div>
+        <p style="margin:0;font-size:var(--size-caption);color:var(--text-muted)">Google or email \u00b7 takes 30 seconds.</p>
+      </div>
+      <div class="plan">
+        <span class="tier">Pro \u00b7 coming soon</span>
+        <span class="price">\u2014</span>
+        <ul>
+          <li>Higher rate limits</li>
+          <li>Deeper corpora: transcripts at scale, curated evidence feeds</li>
+          <li>Thesis profiles: evidence organized around your holdings</li>
+        </ul>
+        <div class="cta"><a class="btn-ghost" href="mailto:hello@fledgetradelab.com?subject=Fledge%20Pro%20waitlist">Join the waitlist</a></div>
+        <p style="margin:0;font-size:var(--size-caption);color:var(--text-muted)">Free stays free.</p>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="quickstart">
+    <div class="section-head">
+      <div class="eyebrow">Connect</div>
+      <h2 class="display-2">Two steps</h2>
+    </div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-8)"><strong style="color:var(--text-body)">1.</strong> <a href="${SIGNUP}" target="_blank" rel="noopener">Create your account</a> and copy your token.&nbsp;&nbsp;<strong style="color:var(--text-body)">2.</strong> Add the server:</p>
+    <pre class="cmd">claude mcp add --transport http fledge-grounds \\
+  https://mcp.fledgetradelab.com/mcp \\
+  --header "Authorization: Bearer &lt;your-token&gt;"</pre>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then type <code>/</code> \u2014 the built-in workflows <code>analyze</code>, <code>verify_answer</code>, <code>whats_new</code> show up automatically. Or just ask: <em>\u201cWhat did Pelosi trade this year?\u201d</em></p>
+    <p style="margin-top:var(--space-8)"><a class="btn-ghost" href="#docs">Read the docs \u2192</a>&nbsp;&nbsp;<span style="font-size:var(--size-caption);color:var(--text-muted)">setup for every client, the plugin, tool reference, managing &amp; updates</span></p>
+  </section>
+  <section class="section-tight">
+    <figure class="pullquote">
+      <blockquote>Facts with provenance. Never advice.</blockquote>
+      <figcaption>Fledge Grounds \u00b7 beta</figcaption>
+    </figure>
+  </section>
+</div>`;
+  }
+
+  function docsPage() {
     const GROUPS = [
-      { title: "Verify — credibility reports", tools: [
+      { title: "Verify \u2014 credibility reports", tools: [
         ["verify_list_reports", "Every credibility report the lab has issued: the system under review, its final call, its grade."],
-        ["verify_get_report", "One report in full — per-section scores and every claim with its verdict. Ask for only the failures."],
+        ["verify_get_report", "One report in full \u2014 per-section scores and every claim with its verdict. Ask for only the failures."],
       ]},
-      { title: "SEC EDGAR — live", tools: [
+      { title: "SEC EDGAR \u2014 live", tools: [
         ["edgar_filings", "Recent filings for a ticker, filtered by form type, each with a direct document link."],
         ["edgar_insider_activity", "Form 4 insider transactions: who sold, who bought, how many shares, at what price."],
         ["edgar_search", "Full-text search across every SEC filing since 2001."],
-        ["institution_13f", "An institution's 13F holdings, latest two quarters: held, added, or trimmed — dated to the reporting period."],
+        ["institution_13f", "An institution's 13F holdings, latest two quarters: held, added, or trimmed \u2014 dated to the reporting period."],
       ]},
-      { title: "Congress — STOCK Act", tools: [
+      { title: "Congress \u2014 STOCK Act", tools: [
         ["congress_trades", "Trades reported by members of Congress, parsed from the official disclosures, each linked to its filing."],
       ]},
-      { title: "Market data — licensed", tools: [
+      { title: "Market data \u2014 licensed", tools: [
         ["av_quote", "End-of-day quote: price, change, volume."],
         ["av_daily", "Daily adjusted OHLCV history for momentum and level context."],
         ["av_earnings", "Reported vs estimated EPS by quarter: the beat/miss record."],
@@ -1298,65 +1353,81 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
 <div class="container">
   <section class="section-tight">
     <div class="section-head">
-      <div class="eyebrow">MCP</div>
-      <h1 class="display-2" style="max-width:none">Bring your own AI. We bring the evidence.</h1>
-      <p class="lead" style="max-width:none">Thirteen tools for your model — verification report cards and sourced US-market facts. Free account, personal token, one line to connect.</p>
-    </div>
-    <div class="plan-grid">
-      <div class="plan">
-        <span class="tier">Free · beta</span>
-        <span class="price">$0</span>
-        <ul>
-          <li>All 13 tools — SEC filings, insiders, 13F, congressional trades, quotes &amp; earnings</li>
-          <li>Personal API token, works with any MCP client</li>
-          <li>Fair use · no SLA while in beta</li>
-        </ul>
-        <div class="cta"><a class="btn-cta" href="${SIGNUP}" target="_blank" rel="noopener">Create free account →</a></div>
-        <p style="margin:0;font-size:var(--size-caption);color:var(--text-muted)">Google or email · takes 30 seconds.</p>
-      </div>
-      <div class="plan">
-        <span class="tier">Pro · coming soon</span>
-        <span class="price">—</span>
-        <ul>
-          <li>Higher rate limits</li>
-          <li>Deeper corpora: transcripts at scale, curated evidence feeds</li>
-          <li>Thesis profiles: evidence organized around your holdings</li>
-        </ul>
-        <div class="cta"><a class="btn-ghost" href="mailto:ld3110@columbia.edu?subject=Fledge%20Grounds%20Pro%20waitlist">Join the waitlist</a></div>
-        <p style="margin:0;font-size:var(--size-caption);color:var(--text-muted)">Free stays free.</p>
-      </div>
+      <div class="eyebrow">Docs</div>
+      <h1 class="display-2" style="max-width:none">Fledge Grounds documentation</h1>
+      <p class="lead" style="max-width:none">Setup for every client, built-in workflows, the full tool reference, and how updates reach you.</p>
     </div>
   </section>
-  <section class="section" id="docs">
-    <div class="section-head">
-      <div class="eyebrow">Connect</div>
-      <h2 class="display-2">Two steps</h2>
-    </div>
-    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-8)"><strong style="color:var(--text-body)">1.</strong> <a href="${SIGNUP}" target="_blank" rel="noopener">Create your account</a> (Google or email) and copy your token.&nbsp;&nbsp;<strong style="color:var(--text-body)">2.</strong> Add the server — Claude Code shown; any MCP client points at the same endpoint.</p>
+
+  <section class="section-tight" id="token">
+    <div class="section-head"><div class="eyebrow">01</div><h2 class="display-2">Get a token</h2></div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-6)"><a href="https://mcp.fledgetradelab.com/signup" target="_blank" rel="noopener">Sign up free</a> with Google or email (email sign-up requires a 6-digit verification code). Your personal token looks like <code>fg_\u2026</code> \u2014 treat it like a password. Sign in again anytime to see it. Every call made with your token is attributed to you and logged; what we collect is stated at sign-up and in the <a href="https://mcp.fledgetradelab.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+  </section>
+
+  <section class="section-tight" id="clients">
+    <div class="section-head"><div class="eyebrow">02</div><h2 class="display-2">Connect your client</h2></div>
+    <div class="tool-group"><h3>Claude Code (CLI / VS Code)</h3></div>
     <pre class="cmd">claude mcp add --transport http fledge-grounds \\
   https://mcp.fledgetradelab.com/mcp \\
   --header "Authorization: Bearer &lt;your-token&gt;"</pre>
-    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then ask in your own words: <em>\u201cgrounds_for NVDA \u2014 separate the facts that support a long from the facts against it.\u201d</em> <em>\u201cWhat did Pelosi trade this year?\u201d</em> <em>\u201cDid Berkshire trim AAPL last quarter?\u201d</em></p>
+    <div class="tool-group"><h3>Or as a project file \u00b7 .mcp.json (also Cursor: .cursor/mcp.json)</h3></div>
+    <pre class="cmd">{
+  "mcpServers": {
+    "fledge-grounds": {
+      "type": "http",
+      "url": "https://mcp.fledgetradelab.com/mcp",
+      "headers": { "Authorization": "Bearer &lt;your-token&gt;" }
+    }
+  }
+}</pre>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Any MCP client that speaks Streamable HTTP with custom headers works the same way. claude.ai web connectors do not support header auth yet \u2014 use Claude Code for now.</p>
   </section>
-  <section class="section" id="tools">
-    <div class="section-head">
-      <div class="eyebrow">Reference</div>
-      <h2 class="display-2">The tools</h2>
-      <p class="lead">One contract: everything returns who, when, what — and a link to the primary source. Never a recommendation.</p>
+
+  <section class="section-tight" id="plugin">
+    <div class="section-head"><div class="eyebrow">03</div><h2 class="display-2">Claude Code plugin (recommended)</h2></div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-6)">The plugin bundles the MCP connection plus an analysis skill that makes your model pull evidence before answering stock questions. Put your token in your shell first:</p>
+    <pre class="cmd">export FLEDGE_GROUNDS_TOKEN=fg_xxxxxxxx   # e.g. in ~/.zshrc</pre>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then, inside Claude Code:</p>
+    <pre class="cmd">/plugin marketplace add alanduforai-max/fledge-plugin
+/plugin install fledge@fledge</pre>
+  </section>
+
+  <section class="section-tight" id="usage">
+    <div class="section-head"><div class="eyebrow">04</div><h2 class="display-2">Using it</h2></div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-6)">Three workflows ship with the server and appear as slash commands \u2014 type <code>/</code> and look for:</p>
+    <div class="tool-group">
+      <div class="tool-row"><code>\u2026analyze</code><p>Evidence-grounded analysis of a ticker: facts for, facts against, every claim cited; the model's own read clearly labeled.</p></div>
+      <div class="tool-row"><code>\u2026verify_answer</code><p>Fact-checks the previous answer claim-by-claim against primary sources; outputs a verdict table.</p></div>
+      <div class="tool-row"><code>\u2026whats_new</code><p>Quick briefing: the most material recent filings, insider moves, and congressional trades, with links.</p></div>
     </div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Or just ask in your own words: <em>\u201cEvaluate MU \u2014 facts for and against.\u201d \u00b7 \u201cWhat did Pelosi trade this year?\u201d \u00b7 \u201cDid Berkshire trim AAPL last quarter?\u201d</em></p>
+  </section>
+
+  <section class="section-tight" id="managing">
+    <div class="section-head"><div class="eyebrow">05</div><h2 class="display-2">Managing &amp; updates</h2></div>
+    <div class="tool-group">
+      <div class="tool-row"><code>enable / disable</code><p>Claude Code: <code>/mcp</code> shows the connection; <code>/plugin</code> toggles the plugin on or off per project or globally.</p></div>
+      <div class="tool-row"><code>remove</code><p><code>claude mcp remove fledge-grounds</code>, or uninstall from <code>/plugin</code>.</p></div>
+      <div class="tool-row"><code>updates</code><p>Tools, workflows, and data live server-side \u2014 you get updates automatically on your next request, nothing to reinstall. The plugin shell rarely changes; when it does: <code>/plugin marketplace update fledge</code>.</p></div>
+      <div class="tool-row"><code>token</code><p>Sign in again at the <a href="https://mcp.fledgetradelab.com/signup" target="_blank" rel="noopener">signup page</a> to view your token; email <a href="mailto:hello@fledgetradelab.com">hello@fledgetradelab.com</a> to revoke it.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="tools">
+    <div class="section-head"><div class="eyebrow">06</div><h2 class="display-2">Tool reference</h2>
+      <p class="lead">One contract: everything returns who, when, what \u2014 and a link to the primary source. Never a recommendation.</p></div>
     ${GROUPS.map((g) => `
     <div class="tool-group">
       <h3>${g.title}</h3>
       ${g.tools.map(([name, body]) => `
       <div class="tool-row"><code>${name}</code><p>${body}</p></div>`).join("")}
     </div>`).join("")}
-    <p style="font-size:var(--size-body-sm);color:var(--text-muted);margin-top:var(--space-10)">A personal token is required and usage is logged — what we collect and how we use it is stated plainly at sign-up and in the <a href="https://mcp.fledgetradelab.com/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://mcp.fledgetradelab.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </section>
-  <section class="section-tight">
-    <figure class="pullquote">
-      <blockquote>Facts with provenance. Never advice.</blockquote>
-      <figcaption>Fledge Grounds \u00b7 beta</figcaption>
-    </figure>
+
+  <section class="section-tight" id="fairuse">
+    <div class="section-head"><div class="eyebrow">07</div><h2 class="display-2">Coverage, fair use, legal</h2></div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-6)">Coverage: ~10,400 SEC-registered US tickers; House STOCK Act disclosures (refreshed corpus); licensed end-of-day market data. Not covered yet: options chains, non-US listings, crypto. Beta: fair use, no SLA. Research data only \u2014 nothing here is investment advice. <a href="https://mcp.fledgetradelab.com/terms" target="_blank" rel="noopener">Terms</a> \u00b7 <a href="https://mcp.fledgetradelab.com/privacy" target="_blank" rel="noopener">Privacy</a></p>
+    <p style="margin-top:var(--space-8)"><a class="btn-ghost" href="#connect">\u2190 Back to MCP</a></p>
   </section>
 </div>`;
   }
@@ -1389,13 +1460,14 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
     }
     if (h === "research" || h === "open-problems") return { page: "research", anchor: h === "open-problems" ? "open-problems" : null };
     if (h === "about") return { page: "about" };
-    if (h === "connect" || h === "tools") return { page: "connect", anchor: h === "tools" ? "tools" : null };
+    if (h === "connect") return { page: "connect" };
+    if (h === "docs") return { page: "docs" };
     return { page: "home" };
   }
   function setNav(page) {
     document.querySelectorAll(".site-nav a").forEach((a) => {
       const r = a.getAttribute("data-route");
-      const active = (r === "research" && (page === "research" || page === "article")) || r === page;
+      const active = (r === "research" && (page === "research" || page === "article")) || (r === "connect" && page === "docs") || r === page;
       a.classList.toggle("active", active);
     });
   }
@@ -1441,6 +1513,7 @@ pnl  = sum(w * (maj_acc(p, K)*win - (1-maj_acc(p, K))*loss)
       : r.page === "research" ? researchPage()
       : r.page === "about" ? aboutPage()
       : r.page === "connect" ? connectPage()
+      : r.page === "docs" ? docsPage()
       : articlePage(r.article);
     document.title = r.page === "article" ? r.article.title + " — Fledge Trading Lab" : "Fledge Trading Lab";
     mountDynamic();
