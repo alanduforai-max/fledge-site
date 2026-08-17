@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "fledge-site",
+  "account_id": "a113a1d209051e05e8af6ccd11b1d412",
+  "compatibility_date": "2026-08-01",
+  "assets": { "directory": "dist-site" },
+  "routes": [
+    { "pattern": "fledgetradelab.com", "custom_domain": true, "zone_name": "fledgetradelab.com" },
+    { "pattern": "www.fledgetradelab.com", "custom_domain": true, "zone_name": "fledgetradelab.com" }
+  ]
+}

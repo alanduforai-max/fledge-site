@@ -669,7 +669,7 @@
   }
 
   function connectPage() {
-    const SIGNUP = "https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/signup";
+    const SIGNUP = "https://mcp.fledgetradelab.com/signup";
     const GROUPS = [
       { title: "Verify — credibility reports", tools: [
         ["verify_list_reports", "Every credibility report the lab has issued: the system under review, its final call, its grade."],
@@ -735,7 +735,7 @@
     </div>
     <p style="font-size:var(--size-body-sm);color:var(--text-secondary);margin-top:var(--space-8)"><strong style="color:var(--text-body)">1.</strong> <a href="${SIGNUP}" target="_blank" rel="noopener">Create your account</a> (Google or email) and copy your token.&nbsp;&nbsp;<strong style="color:var(--text-body)">2.</strong> Add the server — Claude Code shown; any MCP client points at the same endpoint.</p>
     <pre class="cmd">claude mcp add --transport http fledge-grounds \\
-  https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/mcp \\
+  https://mcp.fledgetradelab.com/mcp \\
   --header "Authorization: Bearer &lt;your-token&gt;"</pre>
     <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Then ask in your own words: <em>\u201cgrounds_for NVDA \u2014 separate the facts that support a long from the facts against it.\u201d</em> <em>\u201cWhat did Pelosi trade this year?\u201d</em> <em>\u201cDid Berkshire trim AAPL last quarter?\u201d</em></p>
   </section>
@@ -751,7 +751,7 @@
       ${g.tools.map(([name, body]) => `
       <div class="tool-row"><code>${name}</code><p>${body}</p></div>`).join("")}
     </div>`).join("")}
-    <p style="font-size:var(--size-body-sm);color:var(--text-muted);margin-top:var(--space-10)">A personal token is required and usage is logged — what we collect and how we use it is stated plainly at sign-up and in the <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://fledge-grounds-mcp.fledge-grounds-mcp.workers.dev/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+    <p style="font-size:var(--size-body-sm);color:var(--text-muted);margin-top:var(--space-10)">A personal token is required and usage is logged — what we collect and how we use it is stated plainly at sign-up and in the <a href="https://mcp.fledgetradelab.com/terms" target="_blank" rel="noopener">Terms</a> and <a href="https://mcp.fledgetradelab.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </section>
   <section class="section-tight">
     <figure class="pullquote">
