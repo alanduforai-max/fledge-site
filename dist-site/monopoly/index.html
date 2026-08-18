@@ -1,0 +1,1310 @@
+<title>事件街 · Event Street — Agent 试炼场</title>
+<style>
+  :root {
+    --felt: #17301F;          /* 赌桌呢面深绿 */
+    --felt-line: #24422F;
+    --cream: #F2EBD8;         /* 地格米色 */
+    --cream-dim: #E4DAC0;
+    --ink: #201D16;
+    --gold: #C9A227;
+    --gold-bright: #E3BC45;
+    --paper: #1E3627;         /* 面板底 */
+    --paper-edge: #2C4A36;
+    --text: #EDE6D2;
+    --text-dim: #A8B49B;
+    --win: #6FBF8F;
+    --loss: #D96A5B;
+    --cat-tech: #34558B;
+    --cat-biz: #8C4A5E;
+    --cat-macro: #6B7A3A;
+    --cat-geo: #A8642F;
+    --cat-crypto: #58468C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--felt);
+    background-image: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.045), transparent 60%);
+    color: var(--text);
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+    min-height: 100vh;
+  }
+  .num { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+  h1, h2, h3, .serif { font-family: "Songti SC", "Noto Serif SC", "STSong", serif; }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+  header.masthead { text-align: center; padding: 8px 0 18px; }
+  header.masthead h1 {
+    margin: 0; font-size: 40px; letter-spacing: 0.12em; color: var(--gold-bright);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+  }
+  header.masthead .sub { color: var(--text-dim); font-size: 14px; letter-spacing: 0.25em; margin-top: 6px; }
+
+  /* ============ 捏 Agent 界面 ============ */
+  .setup {
+    max-width: 860px; margin: 0 auto;
+    background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 14px;
+    padding: 26px 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+  .setup h2 { margin: 0 0 4px; color: var(--gold-bright); font-size: 22px; letter-spacing: 0.08em; }
+  .setup .hint-line { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; line-height: 1.6; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--gold); letter-spacing: 0.08em; margin-bottom: 6px; }
+  .field input[type=text], .field input[type=password], .field textarea, .field select {
+    width: 100%; background: #142A1C; color: var(--text);
+    border: 1px solid var(--paper-edge); border-radius: 8px; padding: 10px 12px; font-size: 14px;
+    font-family: inherit;
+  }
+  .field textarea { min-height: 108px; line-height: 1.65; resize: vertical; }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold); }
+  .row2 { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row2 > .field { flex: 1; min-width: 200px; }
+  .avatar-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .avatar-row button {
+    font-size: 22px; width: 44px; height: 44px; border-radius: 10px; cursor: pointer;
+    background: #142A1C; border: 1px solid var(--paper-edge);
+  }
+  .avatar-row button.sel { border: 2px solid var(--gold-bright); background: #1E3A28; }
+  .preset-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .preset-row button {
+    flex: 1; min-width: 150px; cursor: pointer; text-align: left;
+    background: #142A1C; color: var(--text); border: 1px solid var(--paper-edge); border-radius: 10px;
+    padding: 10px 12px; font-size: 13px; line-height: 1.5; font-family: inherit;
+  }
+  .preset-row button b { color: var(--gold-bright); display: block; margin-bottom: 2px; font-size: 14px; }
+  .preset-row button:hover { border-color: var(--gold); }
+  .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
+  .slider-item label { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-dim); margin-bottom: 3px; }
+  .slider-item label .val { color: var(--gold-bright); }
+  .slider-item input[type=range] { width: 100%; accent-color: var(--gold); }
+  .brain-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .brain-tabs button {
+    cursor: pointer; padding: 8px 16px; border-radius: 999px; font-size: 13.5px; font-family: inherit;
+    background: #142A1C; color: var(--text-dim); border: 1px solid var(--paper-edge);
+  }
+  .brain-tabs button.sel { background: var(--gold); color: #241F0E; border-color: var(--gold); font-weight: 700; }
+  .api-fields { display: none; }
+  .api-fields.show { display: block; }
+  .note { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+  .go-btn {
+    display: block; width: 100%; margin-top: 20px; cursor: pointer;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color: #241F0E; font-size: 18px; font-weight: 800; letter-spacing: 0.2em;
+    border: none; border-radius: 10px; padding: 14px; font-family: "Songti SC", "Noto Serif SC", serif;
+    box-shadow: 0 6px 18px rgba(201,162,39,0.25);
+  }
+  .go-btn:hover { filter: brightness(1.06); }
+
+  /* ============ 游戏界面 ============ */
+  .game { display: none; grid-template-columns: minmax(0, 700px) minmax(320px, 1fr); gap: 20px; align-items: start; }
+  .game.show { display: grid; }
+  @media (max-width: 1020px) { .game.show { grid-template-columns: 1fr; } }
+
+  .board {
+    aspect-ratio: 1; width: 100%;
+    display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(7, 1fr);
+    gap: 4px; padding: 10px;
+    background: var(--felt-line); border-radius: 14px; border: 3px solid var(--gold);
+    box-shadow: 0 14px 44px rgba(0,0,0,0.45), inset 0 0 60px rgba(0,0,0,0.3);
+  }
+  .tile {
+    background: var(--cream); color: var(--ink); border-radius: 6px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; font-size: 11px; text-align: center; padding: 3px 2px; gap: 1px;
+    overflow: hidden; min-width: 0;
+  }
+  .tile .band { position: absolute; top: 0; left: 0; right: 0; height: 6px; }
+  .tile .t-emoji { font-size: clamp(14px, 2.6vw, 22px); line-height: 1.1; margin-top: 4px; }
+  .tile .t-name { font-size: clamp(8px, 1.2vw, 10.5px); color: #5A5344; line-height: 1.15; }
+  .tile.corner { background: var(--cream-dim); border: 1.5px solid var(--gold); }
+  .tile.active { outline: 3px solid var(--gold-bright); outline-offset: -2px; box-shadow: 0 0 18px rgba(227,188,69,0.55); }
+  .tile.used-out { filter: saturate(0.4) brightness(0.85); }
+  .tile .pawn {
+    position: absolute; bottom: 2px; right: 3px; font-size: clamp(13px, 2vw, 19px);
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
+    transition: transform 0.15s;
+  }
+  .board-center {
+    grid-area: 2 / 2 / 7 / 7;
+    background: radial-gradient(ellipse at center, #1D3A28, #152B1D 75%);
+    border-radius: 10px; border: 1px solid var(--paper-edge);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 14px; text-align: center;
+  }
+  .board-center .bc-title { font-size: clamp(16px, 2.4vw, 24px); color: var(--gold-bright); letter-spacing: 0.18em; }
+  .board-center .bankroll { font-size: clamp(26px, 4.4vw, 44px); font-weight: 800; color: var(--text); }
+  .board-center .bankroll .unit { font-size: 0.45em; color: var(--text-dim); margin-left: 4px; }
+  .board-center .bankroll.flash-up { color: var(--win); }
+  .board-center .bankroll.flash-down { color: var(--loss); }
+  .board-center .sub-stats { display: flex; gap: 16px; font-size: 12.5px; color: var(--text-dim); }
+  .board-center .dice { font-size: clamp(24px, 3.6vw, 36px); min-height: 1.2em; }
+  .board-center .spark-mini { opacity: 0.9; }
+  .ctrl-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+  .ctrl-row button {
+    cursor: pointer; background: #142A1C; color: var(--text); border: 1px solid var(--paper-edge);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; font-family: inherit;
+  }
+  .ctrl-row button:hover { border-color: var(--gold); }
+  .ctrl-row button.primary { background: var(--gold); color: #241F0E; font-weight: 700; border-color: var(--gold); }
+  .ctrl-row select { background: #142A1C; color: var(--text); border: 1px solid var(--paper-edge); border-radius: 8px; padding: 7px 8px; font-size: 13px; }
+
+  /* 右侧面板 */
+  .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .panel {
+    background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 12px; padding: 14px 16px;
+  }
+  .panel h3 { margin: 0 0 10px; font-size: 15px; color: var(--gold-bright); letter-spacing: 0.12em; }
+  .feed { height: 430px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+  .msg { max-width: 92%; border-radius: 10px; padding: 9px 12px; font-size: 13.5px; line-height: 1.6; }
+  .msg .who { font-size: 11.5px; letter-spacing: 0.1em; margin-bottom: 3px; opacity: 0.8; }
+  .msg.npc { align-self: flex-start; background: var(--cream); color: var(--ink); border-bottom-left-radius: 3px; }
+  .msg.npc .who { color: #7A6B3E; }
+  .msg.agent { align-self: flex-end; background: #2E3E1F; border: 1px solid #4A5C33; border-bottom-right-radius: 3px; }
+  .msg.agent .who { color: var(--gold-bright); }
+  .msg.sys { align-self: center; background: transparent; color: var(--text-dim); font-size: 12px; padding: 2px 6px; text-align: center; }
+  .msg.reveal-win { align-self: center; background: #22402E; border: 1px solid var(--win); width: 92%; }
+  .msg.reveal-loss { align-self: center; background: #3E2723; border: 1px solid var(--loss); width: 92%; }
+  .msg.reveal-skip { align-self: center; background: #26332A; border: 1px dashed var(--text-dim); width: 92%; }
+  .intel { margin-top: 6px; border-top: 1px dashed #B4A87E; padding-top: 6px; }
+  .intel ul { margin: 4px 0 0; padding-left: 16px; }
+  .intel li { margin-bottom: 2px; }
+  .quote-line { margin-top: 7px; font-weight: 700; }
+  .quote-line .px { font-family: ui-monospace, Menlo, monospace; background: #241F0E; color: var(--gold-bright); border-radius: 5px; padding: 1px 7px; }
+  .unverified { font-size: 10.5px; color: #B08968; }
+  .pl-pos { color: var(--win); font-weight: 800; }
+  .pl-neg { color: var(--loss); font-weight: 800; }
+
+  .agent-panel summary { cursor: pointer; color: var(--gold); font-size: 13.5px; letter-spacing: 0.06em; }
+  .agent-panel .field { margin-top: 10px; margin-bottom: 8px; }
+  .agent-panel textarea { min-height: 80px; font-size: 13px; }
+  .apply-note { font-size: 11.5px; color: var(--win); display: none; }
+
+  .logbox { max-height: 210px; overflow-y: auto; font-size: 12.5px; }
+  .logrow { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed #2C4A36; }
+  .logrow .l-left { color: var(--text-dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logrow .l-right { flex-shrink: 0; }
+
+  /* 结算 modal */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(8, 16, 11, 0.82);
+    align-items: center; justify-content: center; z-index: 50; padding: 18px;
+  }
+  .overlay.show { display: flex; }
+  .final {
+    background: var(--paper); border: 2px solid var(--gold); border-radius: 16px;
+    max-width: 640px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 28px 30px;
+    box-shadow: 0 20px 70px rgba(0,0,0,0.6);
+  }
+  .final h2 { margin: 0 0 2px; color: var(--gold-bright); font-size: 26px; letter-spacing: 0.15em; text-align: center; }
+  .final .rating { text-align: center; font-size: 18px; margin: 6px 0 14px; color: var(--text); }
+  .final .big-final { text-align: center; font-size: 44px; font-weight: 800; margin: 6px 0; }
+  .final .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+  .final .stat { background: #142A1C; border: 1px solid var(--paper-edge); border-radius: 10px; padding: 10px; text-align: center; }
+  .final .stat .k { font-size: 11.5px; color: var(--text-dim); letter-spacing: 0.08em; }
+  .final .stat .v { font-size: 19px; font-weight: 700; margin-top: 3px; }
+  .final table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0; }
+  .final th, .final td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #2C4A36; }
+  .final th { color: var(--gold); font-weight: 600; letter-spacing: 0.05em; }
+  .final td.r, .final th.r { text-align: right; }
+  .final .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .final .btn-row button { flex: 1; min-width: 140px; cursor: pointer; border-radius: 9px; padding: 11px; font-size: 14px; font-family: inherit; border: 1px solid var(--paper-edge); background: #142A1C; color: var(--text); }
+  .final .btn-row button.primary { background: var(--gold); color: #241F0E; font-weight: 700; border-color: var(--gold); }
+
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: #3E2723; border: 1px solid var(--loss); color: var(--text);
+    border-radius: 9px; padding: 10px 18px; font-size: 13.5px; z-index: 99;
+    display: none; max-width: 90vw;
+  }
+  .toast.show { display: block; }
+  footer.credits { text-align: center; color: var(--text-dim); font-size: 11.5px; margin-top: 26px; line-height: 1.7; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>事 件 街</h1>
+    <div class="sub">EVENT STREET · AGENT 试炼场</div>
+  </header>
+
+  <!-- ============ 捏 Agent ============ -->
+  <section class="setup" id="setupView">
+    <h2>捏一个交易 Agent</h2>
+    <p class="hint-line">棋盘上每个格子是一个 NPC 庄家，逐日按真实历史事件开盘（标的已 mask）。你的 agent 将独自走完棋盘，读盘、定方向、定 size。同一 seed 牌序与骰子完全一致——改一版 prompt 再跑一局，就是一次受控对比实验。</p>
+
+    <div class="row2">
+      <div class="field" style="flex:2">
+        <label>AGENT 名字</label>
+        <input type="text" id="agentName" value="小虎" maxlength="12">
+      </div>
+      <div class="field" style="flex:3">
+        <label>棋子</label>
+        <div class="avatar-row" id="avatarRow"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>大脑</label>
+      <div class="brain-tabs">
+        <button id="tabSim" class="sel" type="button">模拟脑（内置启发式）</button>
+        <button id="tabApi" type="button">Claude 脑（真·LLM）</button>
+      </div>
+      <div class="api-fields" id="apiFields">
+        <div class="row2">
+          <div class="field" style="flex:2">
+            <label>ANTHROPIC API KEY（只存在本页内存，不落盘）</label>
+            <input type="password" id="apiKey" placeholder="sk-ant-...">
+          </div>
+          <div class="field" style="flex:1">
+            <label>模型</label>
+            <select id="apiModel">
+              <option value="claude-opus-5">claude-opus-5</option>
+              <option value="claude-sonnet-5">claude-sonnet-5</option>
+              <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+            </select>
+          </div>
+        </div>
+        <p class="note">⚠️ 发布在 claude.ai 的 Artifact 页面受 CSP 限制无法外联 API——Claude 脑请把本文件下载到本地用浏览器打开。调用失败会自动回退模拟脑。</p>
+      </div>
+      <p class="note" id="simNote">模拟脑把下面的 prompt 解析成性格参数（解析结果会实时同步到滑杆），决策 = 自估概率 vs NPC 报价的 edge 模型。「研究功力」越高，自估越贴近事后真相——这是给测试场造 alpha 梯度用的已知作弊参数。</p>
+    </div>
+
+    <div class="field">
+      <label>快速人格模板</label>
+      <div class="preset-row">
+        <button type="button" data-preset="value"><b>稳健价值派</b>只在 edge 很大时出手，半 Kelly 以下，宁可跳过。</button>
+        <button type="button" data-preset="hunter"><b>事件猎手</b>财报与地缘事件重仓，追求期望值，纪律性 sizing。</button>
+        <button type="button" data-preset="yolo"><b>YOLO 赌狗</b>逢盘必赌，梭哈体质，与市场对着干。</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>AGENT PROMPT（随时可改，Claude 脑原文即 system prompt）</label>
+      <textarea id="agentPrompt">你是一个纪律严明的事件驱动交易员。只有当你的估计与庄家报价的差距超过 5 个百分点才下注，用四分之一 Kelly 控制仓位，单注不超过资金的 20%。财报事件你更有信心，宏观事件保持谦逊。看不懂的盘直接跳过，跳过不丢人。</textarea>
+    </div>
+
+    <div class="field">
+      <label>模拟脑性格参数</label>
+      <div class="slider-grid">
+        <div class="slider-item">
+          <label><span>下注激进度（Kelly 系数）</span><span class="val" id="vKelly">0.25</span></label>
+          <input type="range" id="sKelly" min="5" max="100" value="25">
+        </div>
+        <div class="slider-item">
+          <label><span>入场 edge 门槛</span><span class="val" id="vEdge">5pt</span></label>
+          <input type="range" id="sEdge" min="0" max="15" value="5">
+        </div>
+        <div class="slider-item">
+          <label><span>研究功力（贴近真相度）</span><span class="val" id="vConf">0.55</span></label>
+          <input type="range" id="sConf" min="0" max="100" value="55">
+        </div>
+        <div class="slider-item">
+          <label><span>逆向指数（对着市场干）</span><span class="val" id="vContra">0.0</span></label>
+          <input type="range" id="sContra" min="-100" max="100" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>SEED（同 seed = 同牌序同骰子，可复现）</label>
+        <input type="text" id="seedInput" value="fledge-2026">
+      </div>
+      <div class="field" style="max-width:130px">
+        <label>&nbsp;</label>
+        <button type="button" id="randSeed" style="width:100%;padding:10px;background:#142A1C;color:var(--text);border:1px solid var(--paper-edge);border-radius:8px;cursor:pointer;">随机 seed</button>
+      </div>
+    </div>
+
+    <button class="go-btn" id="startBtn" type="button">放 AGENT 进场 · 启动资金 1000</button>
+  </section>
+
+  <!-- ============ 棋盘 ============ -->
+  <section class="game" id="gameView">
+    <div>
+      <div class="board" id="board"></div>
+    </div>
+    <div class="side">
+      <div class="panel">
+        <h3>交易大厅</h3>
+        <div class="feed" id="feed"></div>
+      </div>
+      <div class="panel">
+        <div class="ctrl-row" style="justify-content:flex-start">
+          <button id="pauseBtn" class="primary" type="button">⏸ 暂停</button>
+          <button id="stepBtn" type="button">单步 ▸</button>
+          <select id="speedSel">
+            <option value="1.6">慢速</option>
+            <option value="1" selected>常速</option>
+            <option value="0.45">快速</option>
+            <option value="0.15">极速</option>
+          </select>
+          <button id="quitBtn" type="button">提前结算</button>
+        </div>
+      </div>
+      <div class="panel agent-panel">
+        <details>
+          <summary>🛠 中途改 Agent（下一格生效）</summary>
+          <div class="field">
+            <label>PROMPT</label>
+            <textarea id="livePrompt"></textarea>
+          </div>
+          <div class="slider-grid">
+            <div class="slider-item">
+              <label><span>Kelly</span><span class="val" id="lvKelly"></span></label>
+              <input type="range" id="lsKelly" min="5" max="100">
+            </div>
+            <div class="slider-item">
+              <label><span>edge 门槛</span><span class="val" id="lvEdge"></span></label>
+              <input type="range" id="lsEdge" min="0" max="15">
+            </div>
+            <div class="slider-item">
+              <label><span>研究功力</span><span class="val" id="lvConf"></span></label>
+              <input type="range" id="lsConf" min="0" max="100">
+            </div>
+            <div class="slider-item">
+              <label><span>逆向指数</span><span class="val" id="lvContra"></span></label>
+              <input type="range" id="lsContra" min="-100" max="100">
+            </div>
+          </div>
+          <span class="apply-note" id="applyNote">✓ 已更新，下一格生效</span>
+        </details>
+      </div>
+      <div class="panel">
+        <h3>账本</h3>
+        <div class="logbox" id="logbox"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="credits">
+    盘面事件取自 2025 年真实市场（财报 / 宏观 / 地缘 / 币圈），赛前情报按 point-in-time 口径撰写、标的已 mask；结果数据尽量以 Alpha Vantage 核实，带 ⚠︎ 者为近似值。<br>
+    NPC 报价为游戏化赔率，不构成任何投资建议。Fledge Trading Lab · 原型 demo
+  </footer>
+</div>
+
+<!-- ============ 结算 ============ -->
+<div class="overlay" id="finalOverlay">
+  <div class="final">
+    <h2>收 盘 结 算</h2>
+    <div class="rating" id="finalRating"></div>
+    <div class="big-final num" id="finalBankroll"></div>
+    <div style="text-align:center" id="finalSpark"></div>
+    <div class="stat-grid" id="finalStats"></div>
+    <table id="finalCatTable"></table>
+    <table id="finalBets"></table>
+    <div class="btn-row">
+      <button class="primary" id="againSame" type="button">同一副牌重跑（改 prompt 做对比）</button>
+      <button id="againNew" type="button">换一副牌</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   事件街 Event Street — agent 试炼场
+   所有事件为 2025 年真实历史事件，intel 为赛前 point-in-time 信息。
+   ================================================================ */
+
+/* ---------- 确定性随机 ---------- */
+function hashSeed(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- NPC 分类 ---------- */
+const CATS = {
+  tech:   { name: '科技财报局', npc: 'K线仙人', emoji: '🧙‍♂️', color: 'var(--cat-tech)',
+            taunt: ['又到开盲盒的日子了，小友。', '这家公司我看了三个季度，你猜怎么着？', '盘已开好，就等你家 agent 出手。'] },
+  biz:    { name: '百业财报摊', npc: '财报奶奶', emoji: '👵', color: 'var(--cat-biz)',
+            taunt: ['奶奶我做庄五十年，没见过不敢下注的。', '来来来，今天这单有点意思。', '孩子，赔率都给你摆好了。'] },
+  macro:  { name: '宏观数据台', npc: '数据姬', emoji: '📊', color: 'var(--cat-macro)',
+            taunt: ['数据公布前 60 秒，最后报价。', '经济学家的一致预期，从来只是参考。', '本台只认数字，不认故事。'] },
+  geo:    { name: '地缘油罐', npc: '油罐子', emoji: '🛢️', color: 'var(--cat-geo)',
+            taunt: ['中东的风声，比油价先动。', '打不打不知道，赔率先挂出来。', '桶里的每一滴都在等消息。'] },
+  crypto: { name: '币圈庙口', npc: '哈希僧', emoji: '⛓️', color: 'var(--cat-crypto)',
+            taunt: ['施主，链上无常。', '贫僧只设盘，不渡人。', '这一单，赌的是人心。'] },
+};
+
+/* ---------- 事件牌组（真实历史，intel = 赛前信息，标的 mask） ----------
+   yesPrice: NPC 报 YES 的价格（隐含概率）
+   outcome:  'YES' | 'NO'
+   hintMag:  「事后看有多可读」0~0.25，喂给模拟脑的研究功力通道
+   verified: 结果数字是否经 Alpha Vantage 核实
+------------------------------------------------------------------ */
+const DECK = [
+  /* ===== 科技财报局 ===== */
+  {
+    id: 'orcl', cat: 'tech', date: '2025 年 9 月上旬',
+    mask: '某老牌企业数据库软件巨头',
+    intel: [
+      '创立近 50 年，数据库市占率长期第一，近两年狂砸 AI 数据中心',
+      '财报前股价年内已涨约 45%，市场开始把它当 AI 基建股定价',
+      '上季度管理层放话：云基础设施收入增速将「非常惊人」',
+      '本季华尔街预期 EPS ≈ $1.48，焦点全在剩余履约义务（RPO）指引',
+    ],
+    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +15%？',
+    yesPrice: 0.08, outcome: 'YES', hintMag: 0.05,
+    reveal: 'Oracle（ORCL）。RPO 一夜暴增至 $455B，管理层给出四年云收入指引，次日 241.51 → 328.33，+35.9%——1992 年以来最大单日涨幅。EPS 其实还略 miss。',
+    verified: true,
+  },
+  {
+    id: 'nvda', cat: 'tech', date: '2025 年 8 月下旬',
+    mask: '某 AI 算力芯片绝对霸主',
+    intel: [
+      '数据中心 GPU 市占率 9 成以上，全市场市值第一',
+      '连续九个季度大幅 beat，但「beat 幅度递减」的担忧开始发酵',
+      '对华出口管制反复横跳，H20 收入确认存在不确定性',
+      '期权市场为本次财报定价约 ±6% 的单日波动',
+    ],
+    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +2%？',
+    yesPrice: 0.42, outcome: 'NO', hintMag: 0.08,
+    reveal: 'NVIDIA（NVDA）。营收利润双 beat，但数据中心收入环比仅微增、下季指引未含 H20 对华出口，次日收跌 -0.8%（181.60 → 180.17）——「beat 也涨不动」的经典一课。',
+    verified: true,
+  },
+  {
+    id: 'mu', cat: 'tech', date: '2025 年 12 月中旬',
+    mask: '某美国存储芯片大厂',
+    intel: [
+      'DRAM / NAND 双料厂商，HBM 产能已被 AI 客户预订一空',
+      '存储超级周期叙事发酵中：现货价连续数月上调',
+      '财报前股价一年翻了三倍有余，高位博弈情绪浓',
+      '华尔街预期 FQ1 EPS 约 $3.9，焦点在 HBM 供给锁定与毛利指引',
+    ],
+    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
+    yesPrice: 0.35, outcome: 'YES', hintMag: 0.10,
+    reveal: 'Micron（MU）。FQ1 大幅 beat 且上调指引，HBM 供给确认供不应求，次日 225.52 → 248.55，+10.2%——存储周期叙事继续自我实现。',
+    verified: true,
+  },
+  {
+    id: 'smci', cat: 'tech', date: '2025 年 8 月上旬',
+    mask: '某争议缠身的 AI 服务器组装商',
+    intel: [
+      '靠攒 AI 服务器一年股价十倍过，也因会计问题被做空机构狙击过',
+      '前审计师辞任风波刚平息，重新合规上市不久',
+      '毛利率连续两个季度下滑，市场怀疑其议价能力',
+      '期权隐含本次财报单日波动 ±14%，多空分歧极大',
+    ],
+    q: '财报公布后次一交易日，收盘跌幅是否 ≥ -10%？',
+    yesPrice: 0.30, outcome: 'YES', hintMag: 0.12,
+    reveal: 'Super Micro（SMCI）。营收 miss + 毛利率继续恶化 + 指引疲软，次日 57.26 → 46.79，-18.3%。高波动票的 downside 从不客气。',
+    verified: true,
+  },
+  {
+    id: 'pltr', cat: 'tech', date: '2025 年 8 月上旬',
+    mask: '某明星政企数据分析软件公司',
+    intel: [
+      '零售股东信仰极强，估值贵到卖方集体看不懂但股价一直涨',
+      '美国政府与商业客户双轮驱动，AI 平台（AIP）订单加速',
+      '财报前市值已挤进美股前二十，年内涨幅领跑大盘股',
+      '预期营收增速 ~38%，市场赌它「继续加速」',
+    ],
+    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
+    yesPrice: 0.45, outcome: 'YES', hintMag: 0.08,
+    reveal: 'Palantir（PLTR）。营收增速再加速并上调全年指引，次日 160.66 → 173.27，+7.9%。信仰票的财报，赌的是叙事惯性。',
+    verified: true,
+  },
+
+  /* ===== 百业财报摊 ===== */
+  {
+    id: 'meta', cat: 'biz', date: '2025 年 7 月底',
+    mask: '某社交广告双寡头之一',
+    intel: [
+      '旗下三大 App 日活合计 30 亿+，广告是绝对现金牛',
+      '正豪掷千亿建 AI 数据中心，市场担心 capex 失控',
+      '上季广告价格与曝光量双升，AI 推荐系统归因明显',
+      '预期 Q2 营收 ~$44.8B，焦点：AI 是否已实质提升广告效率',
+    ],
+    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +8%？',
+    yesPrice: 0.25, outcome: 'YES', hintMag: 0.10,
+    reveal: 'Meta（META）。营收大 beat、指引强劲，AI 提升广告转化的故事被数字坐实，次日 695.21 → 773.44，+11.3%。capex 担忧被增长直接碾过去。',
+    verified: true,
+  },
+  {
+    id: 'tsla', cat: 'biz', date: '2025 年 7 月下旬',
+    mask: '某电动车龙头（CEO 话很多）',
+    intel: [
+      '全球交付量连续两个季度同比下滑，欧洲市场尤其难看',
+      'CEO 政治站队争议持续损耗品牌，机器人出租车刚小范围上线',
+      '监管积分收入面临政策取消风险，汽车毛利承压',
+      '多头指望 Robotaxi/人形机器人叙事扛住基本面',
+    ],
+    q: '财报公布后次一交易日，收盘跌幅是否 ≥ -5%？',
+    yesPrice: 0.35, outcome: 'YES', hintMag: 0.10,
+    reveal: 'Tesla（TSLA）。营收创十年最大同比降幅，CEO 亲口承认「未来几个季度可能很难受」，次日 332.56 → 305.30，-8.2%。叙事没能扛住基本面。',
+    verified: true,
+  },
+  {
+    id: 'nflx', cat: 'biz', date: '2025 年 7 月中旬',
+    mask: '某流媒体订阅一哥',
+    intel: [
+      '提价 + 广告套餐双引擎，用户数早已不再披露',
+      '财报前股价年内涨约 40%，估值处于历史高位',
+      '市场预期营收利润双 beat 几乎是共识',
+      '关键在指引：全年营收指引是否上调、上调多少',
+    ],
+    q: '财报公布后次一交易日，是否收涨？',
+    yesPrice: 0.55, outcome: 'NO', hintMag: 0.08,
+    reveal: 'Netflix（NFLX）。如期双 beat 且上调全年指引，但「beat 已被完全 price in」，次日反而收跌约 -5%。共识兑现 = 利好出尽。',
+    verified: false,
+  },
+  {
+    id: 'hood', cat: 'biz', date: '2025 年 8 月上旬',
+    mask: '某零佣金券商新贵',
+    intel: [
+      '散户交易 + 加密业务双引擎，牛市 beta 拉满',
+      '刚推出股票代币化与预测市场业务，监管态度未明',
+      '二季度美股与 crypto 成交量同比大增，利好其交易收入',
+      '财报前股价年内已涨超一倍，预期打得很满',
+    ],
+    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
+    yesPrice: 0.40, outcome: 'NO', hintMag: 0.05,
+    reveal: 'Robinhood（HOOD）。业绩强劲但预期更满，次日反而收跌 -2.9%（106.10 → 103.05）。牛市 beta 票的财报，赔率往往比故事诚实。',
+    verified: true,
+  },
+  {
+    id: 'unh', cat: 'biz', date: '2025 年 7 月底',
+    mask: '某美国最大健康保险商',
+    intel: [
+      '年内股价近乎腰斩：医疗成本超预期 + 司法部调查 + CEO 更换',
+      '此前罕见撤回全年指引，投资者信心崩塌',
+      '新管理层首次完整亮相，市场等一个「成本见顶」信号',
+      '本次财报焦点：重新给出的全年指引落在哪里',
+    ],
+    q: '财报公布当日，是否收跌？',
+    yesPrice: 0.50, outcome: 'YES', hintMag: 0.06,
+    reveal: 'UnitedHealth（UNH）。重新给出的全年指引远低于市场预期，医疗成本未见顶，当日 282.12 → 261.07，-7.5%。左侧接飞刀，接的就是这一刀。',
+    verified: true,
+  },
+
+  /* ===== 宏观数据台 ===== */
+  {
+    id: 'cpi', cat: 'macro', date: '2025 年 9 月中旬',
+    mask: '美国 8 月 CPI 公布',
+    intel: [
+      '关税向消费端的传导是全年最大通胀悬念',
+      '前值：7 月 CPI 同比 2.7%，核心 3.1%',
+      '经济学家一致预期 8 月同比 2.9%',
+      '这是 9 月 FOMC 前最后一份 CPI，直接影响降息路径',
+    ],
+    q: '8 月 CPI 同比是否 ≥ 3.0%？',
+    yesPrice: 0.35, outcome: 'NO', hintMag: 0.10,
+    reveal: '实际公布 2.9%，正中一致预期。关税传导仍温和，为一周后的降息扫清了最后障碍。',
+    verified: false,
+  },
+  {
+    id: 'fomc', cat: 'macro', date: '2025 年 9 月中旬',
+    mask: '9 月 FOMC 议息会议',
+    intel: [
+      '8 月非农大幅走弱 + 前月数据大幅下修，就业市场亮红灯',
+      '市场已 100% 定价至少降 25bp，分歧在会不会一步到位降 50',
+      '白宫持续施压美联储大幅降息，新理事刚火线上任',
+      '利率期货给「降 50bp」定价约一成多',
+    ],
+    q: '本次会议是否降息 ≥ 50bp？',
+    yesPrice: 0.13, outcome: 'NO', hintMag: 0.18,
+    reveal: '如期只降 25bp（新理事 Miran 投了唯一的 50bp 反对票）。联储用最温和的方式重启了降息周期。',
+    verified: true,
+  },
+  {
+    id: 'shutdown', cat: 'macro', date: '2025 年 9 月底',
+    mask: '美国联邦政府拨款到期',
+    intel: [
+      '两党在医保补贴上僵持，参议院连续多轮投票失败',
+      '10 月 1 日零点为拨款截止线，白宫已下发停摆预案',
+      '历史上多数「拨款危机」在最后一夜达成妥协',
+      '预测市场给「真停摆」的定价一路走高',
+    ],
+    q: '10 月 1 日美国联邦政府是否正式停摆？',
+    yesPrice: 0.65, outcome: 'YES', hintMag: 0.15,
+    reveal: '停摆成真，并最终演变为美国史上最长的一次政府停摆（43 天）。经济数据发布全面停摆，联储被迫「盲飞」。',
+    verified: true,
+  },
+
+  /* ===== 地缘油罐 ===== */
+  {
+    id: 'iran', cat: 'geo', date: '2025 年 6 月 13 日凌晨',
+    mask: '中东两大宿敌濒临摊牌',
+    intel: [
+      '某国核计划谈判破裂，IAEA 刚通过违规决议',
+      '媒体连夜报道：以色列战机大规模起飞，德黑兰传出爆炸声',
+      '霍尔木兹海峡承运全球约两成原油，封锁风险被反复计价',
+      '事发前一日 WTI 收于 $68 附近，油市杠杆多头拥挤度不高',
+    ],
+    q: '当个交易日 WTI 原油收盘涨幅是否 ≥ +6%？',
+    yesPrice: 0.50, outcome: 'YES', hintMag: 0.12,
+    reveal: '以色列空袭伊朗核设施与军方高层（«崛起雄狮»行动），当日 WTI 收涨约 +7%，盘中一度 +13%。战争溢价一夜回归。',
+    verified: false,
+  },
+  {
+    id: 'gold', cat: 'geo', date: '2025 年 10 月上旬',
+    mask: '黄金冲击历史整数关口',
+    intel: [
+      '央行连续三年疯狂购金，去美元化叙事持续',
+      '美国政府停摆 + 降息周期开启，实际利率下行',
+      '金价 9 月已创历史新高，$4000 心理关口近在咫尺',
+      '华尔街多家投行刚刚上调目标价至 $4000 上方',
+    ],
+    q: '10 月内现货黄金是否收盘站上 $4000/盎司？',
+    yesPrice: 0.55, outcome: 'YES', hintMag: 0.15,
+    reveal: '10 月 9 日现货黄金历史上首次收在 $4000 上方（$4018.16）。停摆 + 降息 + 央行购金三箭齐发，黄金全年涨幅创 1979 年以来之最。',
+    verified: true,
+  },
+
+  /* ===== 币圈庙口 ===== */
+  {
+    id: 'btccrash', cat: 'crypto', date: '2025 年 10 月 10 日晚间',
+    mask: '白宫突发贸易战升级推文',
+    intel: [
+      '总统刚发文威胁对最大贸易伙伴加征 100% 关税，全球风险资产跳水',
+      'BTC 数小时前还在 $122k 附近的历史高位区',
+      '永续合约资金费率偏高，杠杆多头拥挤',
+      '美股已收盘，crypto 是唯一还开着的泄洪口',
+    ],
+    q: '24 小时内 BTC 是否跌破 $110,000？',
+    yesPrice: 0.25, outcome: 'YES', hintMag: 0.12,
+    reveal: '关税推文引发 crypto 史上最大清算日：全网爆仓约 $19B，BTC 数小时内从 $122k 砸穿 $105k。周末无处对冲，杠杆即燃料。',
+    verified: false,
+  },
+  {
+    id: 'btcxmas', cat: 'crypto', date: '2025 年 12 月下旬',
+    mask: '平安夜的 BTC 定价权之争',
+    intel: [
+      '10 月闪崩后 BTC 一路阴跌，11 月一度失守 $90k',
+      'ETF 连续数周净流出，DAT 公司停止增持',
+      '12 月中旬起小幅反弹，多头喊「圣诞行情」',
+      '空头则认为反弹只是下跌中继，$100k 得而复失是常态',
+    ],
+    q: '12 月 24 日 BTC 收盘是否 ≥ $100,000？',
+    yesPrice: 0.45, outcome: 'NO', hintMag: 0.05,
+    reveal: '平安夜 BTC 收在 $100k 下方。圣诞行情没有来，2025 年的 BTC 以一根疲惫的年线收官。',
+    verified: false,
+  },
+];
+
+/* ---------- 棋盘布局：24 格，角 0/6/12/18 ---------- */
+const CORNERS = {
+  0:  { key: 'go',    emoji: '🏁', name: '开盘钟', desc: '每过一圈发工资 +100' },
+  6:  { key: 'tax',   emoji: '💸', name: '交易税', desc: '缴纳现金的 5%' },
+  12: { key: 'rumor', emoji: '🍸', name: '小道消息', desc: '下一注若赢，赔付 ×1.25' },
+  18: { key: 'halt',  emoji: '🧊', name: '熔断休市', desc: '歇一格，什么都不做' },
+};
+const CAT_CYCLE = ['tech', 'biz', 'macro', 'geo', 'crypto'];
+const TILES = [];
+(function buildTiles() {
+  let ci = 0;
+  for (let p = 0; p < 24; p++) {
+    if (CORNERS[p]) { TILES.push({ pos: p, corner: CORNERS[p] }); continue; }
+    const cat = CAT_CYCLE[ci % CAT_CYCLE.length]; ci++;
+    TILES.push({ pos: p, cat });
+  }
+})();
+function posToGrid(p) {
+  if (p <= 6)  return [1, p + 1];
+  if (p <= 11) return [p - 5, 7];
+  if (p <= 18) return [7, 7 - (p - 12)];
+  return [7 - (p - 18), 1];
+}
+
+/* ---------- 全局状态 ---------- */
+const S = {
+  rng: null, seed: '', brain: 'sim',
+  name: '小虎', avatar: '🐯',
+  prompt: '', traits: { kelly: 0.25, edge: 0.05, conf: 0.55, contra: 0 },
+  apiKey: '', apiModel: 'claude-opus-5',
+  bankroll: 1000, pos: 0, rolls: 0, maxRolls: 18,
+  decks: {}, equity: [1000], log: [], rumorBuff: false,
+  paused: false, stepOnce: false, running: false, over: false,
+  speed: 1,
+};
+
+/* ---------- DOM 工具 ---------- */
+const $ = (id) => document.getElementById(id);
+function el(tag, cls, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html !== undefined) e.innerHTML = html;
+  return e;
+}
+function toast(msg, ms = 4200) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+function fmt(n) { return (n >= 0 ? '+' : '') + Math.round(n); }
+
+/* ---------- 捏 Agent 界面 ---------- */
+const AVATARS = ['🐯', '🦊', '🐢', '🦅', '🐂', '🐻', '🤖', '👺'];
+(function initSetup() {
+  const row = $('avatarRow');
+  AVATARS.forEach((a, i) => {
+    const b = el('button', i === 0 ? 'sel' : '', a);
+    b.type = 'button';
+    b.onclick = () => { row.querySelectorAll('button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); S.avatar = a; };
+    row.appendChild(b);
+  });
+  $('tabSim').onclick = () => { S.brain = 'sim'; $('tabSim').classList.add('sel'); $('tabApi').classList.remove('sel'); $('apiFields').classList.remove('show'); };
+  $('tabApi').onclick = () => { S.brain = 'api'; $('tabApi').classList.add('sel'); $('tabSim').classList.remove('sel'); $('apiFields').classList.add('show'); };
+  $('randSeed').onclick = () => { $('seedInput').value = 'seed-' + Math.random().toString(36).slice(2, 8); };
+
+  const sync = () => {
+    $('vKelly').textContent = (+$('sKelly').value / 100).toFixed(2);
+    $('vEdge').textContent = $('sEdge').value + 'pt';
+    $('vConf').textContent = (+$('sConf').value / 100).toFixed(2);
+    $('vContra').textContent = (+$('sContra').value / 100).toFixed(1);
+  };
+  ['sKelly', 'sEdge', 'sConf', 'sContra'].forEach(id => $(id).oninput = sync);
+  sync();
+
+  const PRESETS = {
+    value: {
+      prompt: '你是一个极端保守的价值型交易员。只有当你的估计和庄家报价差距超过 8 个百分点才出手，用八分之一 Kelly，单注不超过资金的 10%。大多数盘直接跳过——不亏钱是第一原则。',
+      k: 12, e: 8, c: 60, x: 0,
+    },
+    hunter: {
+      prompt: '你是一个纪律严明的事件驱动交易员。只有当你的估计与庄家报价的差距超过 5 个百分点才下注，用四分之一 Kelly 控制仓位，单注不超过资金的 20%。财报事件你更有信心，宏观事件保持谦逊。看不懂的盘直接跳过，跳过不丢人。',
+      k: 25, e: 5, c: 55, x: 0,
+    },
+    yolo: {
+      prompt: '你是一个 YOLO 赌狗，逢盘必赌，从不跳过。你天然不信市场定价，喜欢和大众对着干，仓位越大越兴奋，单注可以到资金的 40%。要么起飞要么归零。',
+      k: 90, e: 0, c: 30, x: -60,
+    },
+  };
+  document.querySelectorAll('[data-preset]').forEach(b => {
+    b.onclick = () => {
+      const p = PRESETS[b.dataset.preset];
+      $('agentPrompt').value = p.prompt;
+      $('sKelly').value = p.k; $('sEdge').value = p.e; $('sConf').value = p.c; $('sContra').value = p.x;
+      sync();
+    };
+  });
+
+  // prompt 关键词 → 模拟脑参数（透明可见：解析后直接改滑杆）
+  $('agentPrompt').addEventListener('change', () => {
+    const t = $('agentPrompt').value;
+    let k = +$('sKelly').value, e = +$('sEdge').value, c = +$('sConf').value, x = +$('sContra').value;
+    if (/梭哈|YOLO|赌狗|重仓|越大越/i.test(t)) k = Math.max(k, 80);
+    if (/保守|谨慎|八分之一|小仓/.test(t)) k = Math.min(k, 15);
+    if (/四分之一\s*Kelly/.test(t)) k = 25;
+    if (/半\s*Kelly/.test(t)) k = 50;
+    if (/逢盘必赌|从不跳过|全都要/.test(t)) e = 0;
+    if (/门槛|超过\s*8|大于\s*8/.test(t)) e = Math.max(e, 8);
+    if (/对着干|逆向|反着来|不信市场/.test(t)) x = Math.min(x, -50);
+    if (/跟随|顺势|相信市场/.test(t)) x = Math.max(x, 40);
+    if (/研究|深度|功课|专业/.test(t)) c = Math.max(c, 65);
+    $('sKelly').value = k; $('sEdge').value = e; $('sConf').value = c; $('sContra').value = x;
+    sync();
+  });
+
+  $('startBtn').onclick = startGame;
+})();
+
+/* ---------- 开局 ---------- */
+function startGame() {
+  S.name = $('agentName').value.trim() || 'Agent';
+  S.prompt = $('agentPrompt').value.trim();
+  S.traits = {
+    kelly: +$('sKelly').value / 100,
+    edge: +$('sEdge').value / 100,
+    conf: +$('sConf').value / 100,
+    contra: +$('sContra').value / 100,
+  };
+  S.apiKey = $('apiKey').value.trim();
+  S.apiModel = $('apiModel').value;
+  if (S.brain === 'api' && !S.apiKey) { toast('Claude 脑需要填 API key，或先切回模拟脑'); return; }
+
+  S.seed = $('seedInput').value.trim() || 'default';
+  S.rng = mulberry32(hashSeed(S.seed));
+  S.bankroll = 1000; S.pos = 0; S.rolls = 0; S.equity = [1000];
+  S.log = []; S.rumorBuff = false; S.paused = false; S.over = false;
+
+  // 每类一副牌，seed 洗牌
+  S.decks = {};
+  for (const c of Object.keys(CATS)) {
+    const cards = DECK.filter(d => d.cat === c).slice();
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(S.rng() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    S.decks[c] = cards;
+  }
+
+  renderBoard();
+  $('setupView').style.display = 'none';
+  $('gameView').classList.add('show');
+  $('feed').innerHTML = ''; $('logbox').innerHTML = '';
+  $('livePrompt').value = S.prompt;
+  $('lsKelly').value = S.traits.kelly * 100; $('lsEdge').value = S.traits.edge * 100;
+  $('lsConf').value = S.traits.conf * 100; $('lsContra').value = S.traits.contra * 100;
+  syncLive();
+
+  sysMsg(`🎲 seed = <b>${S.seed}</b> · ${S.brain === 'api' ? 'Claude 脑（' + S.apiModel + '）' : '模拟脑'} · ${S.avatar} <b>${S.name}</b> 进场，启动资金 1000`);
+  S.running = true;
+  gameLoop();
+}
+
+function syncLive() {
+  $('lvKelly').textContent = (+$('lsKelly').value / 100).toFixed(2);
+  $('lvEdge').textContent = $('lsEdge').value + 'pt';
+  $('lvConf').textContent = (+$('lsConf').value / 100).toFixed(2);
+  $('lvContra').textContent = (+$('lsContra').value / 100).toFixed(1);
+}
+['lsKelly', 'lsEdge', 'lsConf', 'lsContra'].forEach(id => $(id).oninput = () => { syncLive(); liveApply(); });
+$('livePrompt').addEventListener('change', liveApply);
+function liveApply() {
+  S.prompt = $('livePrompt').value.trim();
+  S.traits = {
+    kelly: +$('lsKelly').value / 100, edge: +$('lsEdge').value / 100,
+    conf: +$('lsConf').value / 100, contra: +$('lsContra').value / 100,
+  };
+  const n = $('applyNote'); n.style.display = 'inline';
+  setTimeout(() => n.style.display = 'none', 2000);
+}
+
+/* ---------- 渲染棋盘 ---------- */
+function renderBoard() {
+  const b = $('board'); b.innerHTML = '';
+  for (const t of TILES) {
+    const [r, c] = posToGrid(t.pos);
+    const d = el('div', 'tile' + (t.corner ? ' corner' : ''));
+    d.style.gridArea = `${r} / ${c}`;
+    d.id = 'tile-' + t.pos;
+    if (t.corner) {
+      d.innerHTML = `<div class="t-emoji">${t.corner.emoji}</div><div class="t-name">${t.corner.name}</div>`;
+    } else {
+      const cat = CATS[t.cat];
+      d.innerHTML = `<div class="band" style="background:${cat.color}"></div><div class="t-emoji">${cat.emoji}</div><div class="t-name">${cat.name}</div>`;
+    }
+    b.appendChild(d);
+  }
+  const center = el('div', 'board-center');
+  center.innerHTML = `
+    <div class="bc-title serif">事 件 街</div>
+    <div class="bankroll num" id="bankrollBox">1000<span class="unit">代币</span></div>
+    <div class="sub-stats num"><span id="lapBox">第 1 圈</span><span id="rollBox">0/${S.maxRolls} 手</span><span id="plBox">P&L +0</span></div>
+    <div class="dice" id="diceBox">🎲</div>
+    <svg class="spark-mini" id="sparkMini" width="180" height="40"></svg>
+  `;
+  $('board').appendChild(center);
+  placePawn(0);
+}
+function placePawn(pos) {
+  document.querySelectorAll('.pawn').forEach(p => p.remove());
+  document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+  const tile = $('tile-' + pos);
+  if (!tile) return;
+  tile.classList.add('active');
+  tile.appendChild(el('span', 'pawn', S.avatar));
+}
+function refreshCenter(deltaFlash) {
+  const bb = $('bankrollBox');
+  bb.innerHTML = `${Math.round(S.bankroll)}<span class="unit">代币</span>`;
+  bb.classList.remove('flash-up', 'flash-down');
+  if (deltaFlash > 0) bb.classList.add('flash-up');
+  if (deltaFlash < 0) bb.classList.add('flash-down');
+  $('lapBox').textContent = `第 ${Math.floor((S.rolls * 3.5) / 24) + 1} 圈`;
+  $('rollBox').textContent = `${S.rolls}/${S.maxRolls} 手`;
+  const pl = S.bankroll - 1000;
+  const pb = $('plBox');
+  pb.textContent = 'P&L ' + fmt(pl);
+  pb.style.color = pl >= 0 ? 'var(--win)' : 'var(--loss)';
+  drawSpark($('sparkMini'), S.equity, 180, 40, false);
+}
+
+/* ---------- 消息流 ---------- */
+function feedAdd(node) {
+  const f = $('feed'); f.appendChild(node); f.scrollTop = f.scrollHeight;
+}
+function sysMsg(html) { feedAdd(el('div', 'msg sys', html)); }
+function npcMsg(cat, html) {
+  feedAdd(el('div', 'msg npc', `<div class="who">${CATS[cat].emoji} ${CATS[cat].npc} · ${CATS[cat].name}</div>${html}`));
+}
+function agentMsg(html) {
+  feedAdd(el('div', 'msg agent', `<div class="who">${S.avatar} ${S.name}${S.brain === 'api' ? ' · Claude脑' : ' · 模拟脑'}</div>${html}`));
+}
+
+/* ---------- 主循环 ---------- */
+function delay(ms) {
+  return new Promise(res => {
+    const t0 = performance.now();
+    (function tick() {
+      if (S.over) return res();
+      if (S.paused && !S.stepOnce) return setTimeout(tick, 100);
+      if (performance.now() - t0 >= ms * S.speed) return res();
+      setTimeout(tick, 40);
+    })();
+  });
+}
+async function waitIfPaused() {
+  while (S.paused && !S.stepOnce && !S.over) await new Promise(r => setTimeout(r, 100));
+  S.stepOnce = false;
+}
+
+async function gameLoop() {
+  while (!S.over) {
+    await waitIfPaused();
+    if (S.rolls >= S.maxRolls) { endGame('收盘时间到'); break; }
+    if (S.bankroll < 10) { endGame('弹尽粮绝'); break; }
+    if (Object.values(S.decks).every(d => d.length === 0)) { endGame('所有盘口已清'); break; }
+
+    // 掷骰
+    const steps = 1 + Math.floor(S.rng() * 6);
+    S.rolls++;
+    $('diceBox').textContent = '⚀⚁⚂⚃⚄⚅'[steps - 1];
+    await delay(500);
+
+    // 走格子（逐格跳）
+    for (let i = 0; i < steps; i++) {
+      const prev = S.pos;
+      S.pos = (S.pos + 1) % 24;
+      if (S.pos === 0 && prev !== 0) {
+        S.bankroll += 100;
+        sysMsg('🏁 路过开盘钟，工资 <b class="pl-pos">+100</b>');
+        S.equity.push(S.bankroll);
+        refreshCenter(1);
+      }
+      placePawn(S.pos);
+      await delay(120);
+    }
+    refreshCenter(0);
+    await delay(300);
+
+    const tile = TILES[S.pos];
+    if (tile.corner) {
+      await handleCorner(tile.corner);
+    } else {
+      await handleNpcTile(tile.cat);
+    }
+    await delay(700);
+  }
+}
+
+async function handleCorner(c) {
+  if (c.key === 'go') {
+    sysMsg('🏁 正落开盘钟——顺手把钟敲了一下。');
+  } else if (c.key === 'tax') {
+    const tax = Math.max(20, Math.round(S.bankroll * 0.05));
+    S.bankroll -= tax;
+    S.equity.push(S.bankroll);
+    sysMsg(`💸 交易税：缴纳 <b class="pl-neg">-${tax}</b>`);
+    refreshCenter(-1);
+  } else if (c.key === 'rumor') {
+    S.rumorBuff = true;
+    sysMsg('🍸 酒吧里听到小道消息：<b style="color:var(--gold-bright)">下一注若赢，赔付 ×1.25</b>');
+  } else if (c.key === 'halt') {
+    sysMsg('🧊 熔断休市，喝口茶。');
+  }
+}
+
+/* ---------- NPC 格子：出题 → agent 决策 → 开盅 ---------- */
+function drawCard(cat) {
+  if (S.decks[cat].length) return { card: S.decks[cat].shift(), borrowed: null };
+  // 本类清空：找别家还有货的
+  for (const c of Object.keys(S.decks)) {
+    if (S.decks[c].length) return { card: S.decks[c].shift(), borrowed: c };
+  }
+  return { card: null, borrowed: null };
+}
+
+async function handleNpcTile(cat) {
+  const { card, borrowed } = drawCard(cat);
+  if (!card) { sysMsg('所有盘口都清空了。'); return; }
+  const host = borrowed || cat;
+  const cinfo = CATS[host];
+  if (borrowed) sysMsg(`${CATS[cat].npc}这里没盘了，把你介绍给了${cinfo.npc}。`);
+
+  const taunt = cinfo.taunt[Math.floor(S.rng() * cinfo.taunt.length)];
+  const pctYes = Math.round(card.yesPrice * 100);
+  npcMsg(host, `
+    「${taunt}」
+    <div class="intel">
+      <b>📅 ${card.date} · ${card.mask}</b>
+      <ul>${card.intel.map(x => `<li>${x}</li>`).join('')}</ul>
+      <div class="quote-line">🎯 ${card.q}<br>
+        报价：YES <span class="px">${pctYes}¢</span> · NO <span class="px">${100 - pctYes}¢</span>
+        <span style="font-weight:400;font-size:11.5px;color:#7A6B3E">（买中 1 股付 1）</span>
+      </div>
+    </div>
+  `);
+  await delay(1400);
+  await waitIfPaused();
+
+  // agent 决策
+  const thinking = el('div', 'msg agent', `<div class="who">${S.avatar} ${S.name}</div><i>盯盘思考中…</i>`);
+  feedAdd(thinking);
+  const t0 = performance.now();
+  let dec;
+  try {
+    dec = S.brain === 'api' ? await claudeDecide(card) : simDecide(card);
+  } catch (err) {
+    toast('Claude 调用失败（' + (err.message || err) + '），本格回退模拟脑');
+    dec = simDecide(card);
+  }
+  const think = Math.max(0, 900 - (performance.now() - t0));
+  await delay(think);
+  thinking.remove();
+
+  // 合法性钳制
+  const maxStake = Math.floor(S.bankroll * 0.4);
+  if (dec.action !== 'skip') {
+    dec.stake = Math.round(Math.min(Math.max(dec.stake || 0, 10), maxStake));
+    if (dec.stake < 10) dec.action = 'skip';
+  }
+
+  if (dec.action === 'skip') {
+    agentMsg(`🙅 <b>跳过</b>。${dec.reason || ''}`);
+    const rv = el('div', 'msg reveal-skip', `👁 开盅（未下注）：<b>${card.reveal.split('。')[0]}。</b> 结果 <b>${card.outcome}</b>${card.verified ? '' : ' <span class="unverified">⚠︎近似</span>'}`);
+    await delay(1100); feedAdd(rv);
+    addLog(card, dec, 0);
+    return;
+  }
+
+  const side = dec.action; // 'yes' | 'no'
+  const price = side === 'yes' ? card.yesPrice : 1 - card.yesPrice;
+  const pot = Math.round(dec.stake * (1 - price) / price);
+  agentMsg(`${side === 'yes' ? '🟢 买 <b>YES</b>' : '🔴 买 <b>NO</b>'} @ ${Math.round(price * 100)}¢ · 押 <b class="num">${dec.stake}</b>（赢可得 +${pot}）<br><span style="color:var(--text-dim)">${dec.reason || ''}</span>`);
+  await delay(1500);
+  await waitIfPaused();
+
+  // 开盅
+  const win = (side === 'yes') === (card.outcome === 'YES');
+  let pl;
+  if (win) {
+    pl = pot;
+    if (S.rumorBuff) { pl = Math.round(pl * 1.25); }
+  } else {
+    pl = -dec.stake;
+  }
+  const usedRumor = S.rumorBuff && win;
+  S.rumorBuff = false; // 无论输赢，下一注即消耗
+  S.bankroll += pl;
+  S.equity.push(S.bankroll);
+
+  const rv = el('div', 'msg ' + (win ? 'reveal-win' : 'reveal-loss'), `
+    <b>🔔 开盅 · 结果 ${card.outcome}</b>${card.verified ? '' : ' <span class="unverified">⚠︎数字为近似值</span>'}<br>
+    ${card.reveal}<br>
+    <span class="${win ? 'pl-pos' : 'pl-neg'}">本注 ${fmt(pl)}${usedRumor ? '（小道消息 ×1.25 已生效）' : ''}</span> · 余额 <b class="num">${Math.round(S.bankroll)}</b>
+  `);
+  feedAdd(rv);
+  refreshCenter(pl);
+  addLog(card, dec, pl);
+}
+
+function addLog(card, dec, pl) {
+  const ticker = card.reveal.match(/（([A-Z]{2,6})）/);
+  const sideTxt = dec.action === 'skip' ? '跳过' : (dec.action === 'yes' ? 'YES' : 'NO') + ' ' + dec.stake;
+  S.log.push({ card, dec, pl });
+  const row = el('div', 'logrow');
+  row.innerHTML = `
+    <span class="l-left">${CATS[card.cat].emoji} ${ticker ? ticker[1] : card.mask.slice(0, 8)} · ${sideTxt}</span>
+    <span class="l-right num ${pl > 0 ? 'pl-pos' : pl < 0 ? 'pl-neg' : ''}" >${dec.action === 'skip' ? '—' : fmt(pl)}</span>
+  `;
+  $('logbox').prepend(row);
+}
+
+/* ---------- 模拟脑 ---------- */
+function simDecide(card) {
+  const t = S.traits;
+  const pm = card.yesPrice;
+  const truth = card.outcome === 'YES' ? 1 : -1;
+  const noise = (S.rng() * 2 - 1) * 0.12;
+  // 自估 = 市场价 + 研究功力×事后可读性×真相方向 + 剩余噪声 + 逆向拉扯
+  let pa = pm + t.conf * card.hintMag * truth + (1 - t.conf) * noise + t.contra * (0.5 - pm) * 0.35;
+  pa = Math.min(0.97, Math.max(0.03, pa));
+  const edgeYes = pa - pm;
+  const side = edgeYes >= 0 ? 'yes' : 'no';
+  const edge = Math.abs(edgeYes);
+  if (edge < t.edge) {
+    return { action: 'skip', reason: `自估 ${Math.round(pa * 100)}% vs 报价 ${Math.round(pm * 100)}¢，edge ${(edge * 100).toFixed(1)}pt 不够门槛（${Math.round(t.edge * 100)}pt），不动。` };
+  }
+  const price = side === 'yes' ? pm : 1 - pm;
+  const kellyF = edge / (1 - price);          // 二元盘 Kelly 分数
+  let stake = Math.round(S.bankroll * Math.min(0.4, kellyF * t.kelly * 2));
+  stake = Math.max(10, stake);
+  return {
+    action: side, stake,
+    reason: `自估 YES ${Math.round(pa * 100)}% vs 报价 ${Math.round(pm * 100)}¢ → 买${side === 'yes' ? ' YES' : ' NO'}，edge ${(edge * 100).toFixed(1)}pt，按 ${t.kelly.toFixed(2)}×Kelly 出 ${stake}。`,
+  };
+}
+
+/* ---------- Claude 脑 ---------- */
+async function claudeDecide(card) {
+  const pctYes = Math.round(card.yesPrice * 100);
+  const histBrief = S.log.slice(-5).map(l =>
+    `${l.dec.action === 'skip' ? '跳过' : (l.dec.action + ' ' + l.dec.stake)} → ${l.pl > 0 ? '+' : ''}${l.pl}`).join('; ') || '（首单）';
+  const system = `你是玩家在大富翁式游戏「事件街」里的交易 agent。玩家为你写的人格与策略指令：
+---
+${S.prompt || '（玩家没写，按理性期望值最大化行事）'}
+---
+规则：NPC 给出一个被 mask 的真实历史事件的赛前情报和一个二元盘。报价即隐含概率（YES x¢ 表示买 YES 每股成本 x 美分、结算为 1 或 0）。你要选择买 YES、买 NO 或跳过，并给出下注金额（整数，最低 10，不超过当前资金的 40%）。你只能依据情报和你的策略，禁止猜测真实标的名称。报价可能失准——那就是你的 edge 来源；也可能没有 edge——跳过完全合法。`;
+  const user = `【当前资金】${Math.round(S.bankroll)} 代币
+【最近下注】${histBrief}
+【盘面】${card.date} · ${card.mask}
+情报：
+${card.intel.map(x => '- ' + x).join('\n')}
+问题：${card.q}
+报价：YES ${pctYes}¢ / NO ${100 - pctYes}¢
+请决策。`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': S.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: S.apiModel,
+      max_tokens: 4096,
+      output_config: {
+        effort: 'low',
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              action: { type: 'string', enum: ['yes', 'no', 'skip'] },
+              stake: { type: 'integer' },
+              reason: { type: 'string', description: '一两句话的中文决策理由，60字以内' },
+            },
+            required: ['action', 'stake', 'reason'],
+            additionalProperties: false,
+          },
+        },
+      },
+      system,
+      messages: [{ role: 'user', content: user }],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}${body ? '：' + body.slice(0, 120) : ''}`);
+  }
+  const data = await res.json();
+  if (data.stop_reason === 'refusal') throw new Error('模型拒答');
+  const txt = (data.content || []).find(b => b.type === 'text');
+  if (!txt) throw new Error('空响应');
+  return JSON.parse(txt.text);
+}
+
+/* ---------- 迷你/大 sparkline ---------- */
+function drawSpark(svg, series, w, h, big) {
+  if (!svg) return;
+  const n = series.length;
+  const min = Math.min(...series), max = Math.max(...series);
+  const span = Math.max(1, max - min);
+  const pad = big ? 8 : 3;
+  const X = i => pad + (n === 1 ? 0 : i / (n - 1)) * (w - pad * 2);
+  const Y = v => h - pad - ((v - min) / span) * (h - pad * 2);
+  let d = '', area = '';
+  series.forEach((v, i) => { d += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
+  area = d + `L${X(n - 1).toFixed(1)},${h - pad}L${X(0).toFixed(1)},${h - pad}Z`;
+  const base = Y(1000);
+  const last = series[n - 1];
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.innerHTML = `
+    ${big ? `<line x1="${pad}" y1="${base}" x2="${w - pad}" y2="${base}" stroke="#3A5A44" stroke-dasharray="3 4" stroke-width="1"/>` : ''}
+    <path d="${area}" fill="rgba(201,162,39,0.14)"/>
+    <path d="${d}" fill="none" stroke="#E3BC45" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(n - 1)}" cy="${Y(last)}" r="${big ? 4 : 2.6}" fill="${last >= 1000 ? '#6FBF8F' : '#D96A5B'}"/>
+  `;
+}
+
+/* ---------- 控制 ---------- */
+$('pauseBtn').onclick = () => {
+  S.paused = !S.paused;
+  $('pauseBtn').textContent = S.paused ? '▶ 继续' : '⏸ 暂停';
+};
+$('stepBtn').onclick = () => { if (S.paused) S.stepOnce = true; };
+$('speedSel').onchange = e => { S.speed = +e.target.value; };
+$('quitBtn').onclick = () => endGame('主动提前结算');
+
+/* ---------- 结算 ---------- */
+function endGame(why) {
+  if (S.over) return;
+  S.over = true; S.running = false;
+  sysMsg(`🔔 ${why}，收盘。`);
+
+  const bets = S.log.filter(l => l.dec.action !== 'skip');
+  const wins = bets.filter(l => l.pl > 0);
+  const skips = S.log.length - bets.length;
+  const pl = S.bankroll - 1000;
+  const best = bets.slice().sort((a, b) => b.pl - a.pl)[0];
+  const worst = bets.slice().sort((a, b) => a.pl - b.pl)[0];
+
+  const ratings = [
+    [2200, '👑 事件街之神 — 这一圈走完，庄家们连夜改赔率'],
+    [1600, '🦅 事件猎手 — edge 是真的被你叼走了'],
+    [1150, '🧭 稳健操盘手 — 活着，且小有盈余'],
+    [900,  '🎓 交学费的一年 — 亏得不多，学得不少'],
+    [500,  '🥬 新鲜韭菜 — NPC 们对你表示由衷感谢'],
+    [-1,   '🕳 破产艺术家 — 从 1000 到几乎归零，也是一种完成度'],
+  ];
+  const rating = ratings.find(r => S.bankroll >= r[0])[1];
+
+  $('finalRating').textContent = rating;
+  const fb = $('finalBankroll');
+  fb.textContent = Math.round(S.bankroll) + ' 代币';
+  fb.style.color = pl >= 0 ? 'var(--win)' : 'var(--loss)';
+
+  $('finalSpark').innerHTML = '<svg id="bigSpark" width="560" height="120" style="max-width:100%"></svg>';
+  drawSpark($('bigSpark'), S.equity, 560, 120, true);
+
+  $('finalStats').innerHTML = `
+    <div class="stat"><div class="k">总收益</div><div class="v num" style="color:${pl >= 0 ? 'var(--win)' : 'var(--loss)'}">${fmt(pl)}（${(pl / 10).toFixed(1)}%）</div></div>
+    <div class="stat"><div class="k">下注 / 跳过</div><div class="v num">${bets.length} / ${skips}</div></div>
+    <div class="stat"><div class="k">胜率</div><div class="v num">${bets.length ? Math.round(wins.length / bets.length * 100) + '%' : '—'}</div></div>
+  `;
+
+  // 分类战绩
+  const catAgg = {};
+  for (const l of bets) {
+    const c = l.card.cat;
+    catAgg[c] = catAgg[c] || { n: 0, pl: 0 };
+    catAgg[c].n++; catAgg[c].pl += l.pl;
+  }
+  $('finalCatTable').innerHTML = `
+    <tr><th>分类战绩</th><th class="r">注数</th><th class="r">P&L</th></tr>
+    ${Object.entries(catAgg).map(([c, a]) => `
+      <tr><td>${CATS[c].emoji} ${CATS[c].name}</td><td class="r num">${a.n}</td>
+      <td class="r num ${a.pl >= 0 ? 'pl-pos' : 'pl-neg'}">${fmt(a.pl)}</td></tr>`).join('')}
+  `;
+
+  let betRows = '';
+  if (best && best.pl > 0) betRows += `<tr><td>🏆 最佳一注</td><td colspan="2">${tick(best)} ${best.dec.action.toUpperCase()} ${best.dec.stake} <span class="pl-pos num">${fmt(best.pl)}</span></td></tr>`;
+  if (worst && worst.pl < 0) betRows += `<tr><td>💀 最惨一注</td><td colspan="2">${tick(worst)} ${worst.dec.action.toUpperCase()} ${worst.dec.stake} <span class="pl-neg num">${fmt(worst.pl)}</span></td></tr>`;
+  $('finalBets').innerHTML = betRows;
+
+  function tick(l) { const m = l.card.reveal.match(/（([A-Z]{2,6})）/); return m ? m[1] : l.card.mask.slice(0, 6); }
+
+  $('finalOverlay').classList.add('show');
+}
+
+$('againSame').onclick = () => {
+  $('finalOverlay').classList.remove('show');
+  $('gameView').classList.remove('show');
+  $('setupView').style.display = 'block';
+  window.scrollTo({ top: 0 });
+};
+$('againNew').onclick = () => {
+  $('seedInput').value = 'seed-' + Math.random().toString(36).slice(2, 8);
+  $('finalOverlay').classList.remove('show');
+  $('gameView').classList.remove('show');
+  $('setupView').style.display = 'block';
+  window.scrollTo({ top: 0 });
+};
+</script>
