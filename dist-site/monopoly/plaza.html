@@ -347,7 +347,7 @@ const I18N = {
     vigZero: '抽水为零，两边报价严格加总到 1.00。',
     calibLead: '这条线怎么来的 · 按期限分开校准',
     thBin: '格子', thN: '历史挂过', thWins: '实际对了', thRealized: '实测命中', thPriceNow: '现在报价',
-    calibNote: '报价 = (该格历史命中数 + 40 × 先验) / (该格历史盘数 + 40)。'
+    calibNote: k => `报价 = (该格历史命中数 + ${k} × 先验) / (该格历史盘数 + ${k})。`
       + '1 / 3 / 5 日盘分开算 —— 期限不同，涨的基准率就不同。'
       + '定价只用揭晓之前已结算的盘，今天的实盘不给自己定价。',
     gapNote: (n, q, h, g, over, sig) =>
@@ -449,7 +449,7 @@ const I18N = {
     vigZero: 'Zero vig — the two quotes sum to exactly 1.00.',
     calibLead: 'Where this line comes from · calibrated per horizon',
     thBin: 'Bin', thN: 'Posted', thWins: 'Correct', thRealized: 'Realized', thPriceNow: 'Quote now',
-    calibNote: 'Quote = (bin wins + 40 × prior) / (bin count + 40). '
+    calibNote: k => `Quote = (bin wins + ${k} × prior) / (bin count + ${k}). `
       + '1 / 3 / 5-day books are calibrated separately — base rates differ by horizon. '
       + 'Pricing only uses bets settled before reveal; today\'s live board never prices itself.',
     gapNote: (n, q, h, g, over, sig) =>
@@ -549,6 +549,7 @@ function setLang(next){
   lang = next === 'en' ? 'en' : 'zh';
   localStorage.setItem(LANG_KEY, lang);
   applyLang();
+  hintTxtKey = null;   // applyLang 刚把 hint 重写成通用文案，缓存作废，下帧按人名重写
   if (!BOOKS) return;
   refreshCorner();
   fillBubble();
@@ -641,7 +642,10 @@ const SKINS = {
   gold:  { name: '金装',   name_en: 'Gold Fit',     cost: 4000, c: '#e0aa45',
            note: '赢麻了才穿得起。低调是不可能低调的。', note_en: 'Only the truly up can afford it. Zero subtlety.' },
 };
-const skinPal = id => ({ c: (SKINS[id] || SKINS.green).c });
+/* 每帧都要用，memo 掉：同一皮肤别反复造新对象。 */
+const skinPalCache = Object.create(null);
+const skinPal = id =>
+  skinPalCache[id] || (skinPalCache[id] = { c: (SKINS[id] || SKINS.green).c });
 
 /* ================================================================
    玩家档案
@@ -727,15 +731,15 @@ const SLOTS = [
   { x: 72, y: 74, stallX: 44 },
   { x: 224, y: 74, stallX: 196 },
 ];
-function cast(){
-  return (BOOKS || []).map((book, i) => ({
-    book, ...(SLOTS[i] || { x: 148, y: 74, stallX: 120 }),
-    pal: i === 0 ? null : { r: '#3f6fa8', R: '#2c5080', j: '#c4362f', J: '#8f2420' },
-  }));
-}
+/* BOOKS 是启动时定死的静态数据，摊位阵容只在这里构建一次 ——
+   帧循环里别再 map 出新数组。皮肤/位置真有动态需求时再局部处理。 */
+const CAST = (BOOKS || []).map((book, i) => ({
+  book, ...(SLOTS[i] || { x: 148, y: 74, stallX: 120 }),
+  pal: i === 0 ? null : { r: '#3f6fa8', R: '#2c5080', j: '#c4362f', J: '#8f2420' },
+}));
 function nearestTo(x, y){
   let best = null, bestD = 1e9;
-  for (const n of cast()){
+  for (const n of CAST){
     const d = Math.hypot(x - n.x, y - n.y);
     if (d < bestD){ bestD = d; best = n; }
   }
@@ -754,7 +758,10 @@ addEventListener('keydown', e => {
   keys[k] = true;
   if (k === 'e'){
     if (dlgOpen()) closeDlg();                       // 对话中 E = 关闭，别原地重开
-    else if (nearNpc() && !bagOpen()) talkTo(nearNpc());
+    else if (!bagOpen()){
+      const n = nearNpc();
+      if (n) talkTo(n);
+    }
   }
   if (k === 'b') bagOpen() ? closeBag() : openBag();
   if (e.key === 'Escape'){ closeDlg(); closeBag(); }
@@ -804,16 +811,16 @@ function drawBack(){
     cx.fillStyle = '#63b356'; cx.fillRect(tx + 2, 38, 9, 10);
   }
 
-  for (const n of cast()) drawStall(n.stallX);
+  for (const n of CAST) drawStall(n.stallX);
 }
 
 function drawFront(){
-  for (const n of cast()) drawCounter(n.stallX);
+  for (const n of CAST) drawCounter(n.stallX);
 }
 
-/* 任务感叹号：飘在他头顶、压在雨棚前面，才读得出「这个人有事找你」。 */
-function drawMarker(t){
-  const n = nearNpc();
+/* 任务感叹号：飘在他头顶、压在雨棚前面，才读得出「这个人有事找你」。
+   nearNpc 每帧只在 loop 里算一次，这里吃传进来的结果。 */
+function drawMarker(t, n){
   if (!n) return;
   const bob = Math.round(Math.sin(t / 320) * 2);
   const x = n.x + 6, y = 58 + bob;
@@ -822,18 +829,28 @@ function drawMarker(t){
   cx.fillRect(x, y + 10, 4, 2);
 }
 
-/* 气泡是 DOM 元素，跟着画布缩放定位 —— 这样文字始终是清晰的矢量渲染。 */
+/* 气泡是 DOM 元素，跟着画布缩放定位 —— 这样文字始终是清晰的矢量渲染。
+   两个函数每帧都会被 loop 叫到，所以各自记住上次写进 DOM 的状态：
+   最近的 NPC / 缩放 / 语言没变就直接返回，不重排样式、不重写 innerHTML。 */
 const bubbleEl = document.getElementById('bubble');
-function placeBubble(){
-  const n = nearNpc() || cast()[0];
+let bubblePosKey = null;   // 上次定位：NPC × SCALE
+let bubbleTxtKey = null;   // 上次文案：NPC × lang（BOOKS 静态，idea 随 book 定死）
+function placeBubble(near = nearNpc()){
+  const n = near || CAST[0];
   if (!n) return;
+  const key = CAST.indexOf(n) + ':' + SCALE;
+  if (key === bubblePosKey) return;
+  bubblePosKey = key;
   bubbleEl.style.right = (320 - n.x - 14) * SCALE + 'px';
   bubbleEl.style.top = 8 * SCALE + 'px';
   bubbleEl.style.fontSize = Math.max(15, Math.round(SCALE * 6.5)) + 'px';
   bubbleEl.style.padding = `${SCALE * 3}px ${SCALE * 4}px`;
 }
-function fillBubble(){
-  const n = nearNpc() || cast()[0];
+function fillBubble(near = nearNpc()){
+  const n = near || CAST[0];
+  const key = lang + ':' + (n ? CAST.indexOf(n) : -1);
+  if (key === bubbleTxtKey) return;
+  bubbleTxtKey = key;
   const idea = n && liveIdeasOf(n.book)[0];
   if (!idea){ bubbleEl.style.display = 'none'; return; }
   bubbleEl.style.display = '';
@@ -842,6 +859,10 @@ function fillBubble(){
 }
 
 let last = 0;
+const hintEl = document.getElementById('hint');
+let hintTxtKey = null;     // hint 上次写的（NPC × lang），相同就不动 innerHTML
+let hintOnLast = null;     // hint 上次的显隐
+let bubbleOpLast = null;   // 气泡上次的透明度
 function loop(t){
   const dt = Math.min(40, t - last); last = t;
   const busy = dlgOpen() || bagOpen();
@@ -860,26 +881,31 @@ function loop(t){
     hero.step += dt;
   }
 
+  const who = nearNpc();            // 每帧只扫一次，画标记/hint/气泡全吃这个结果
+
   drawBack();
-  for (const n of cast())
+  for (const n of CAST)
     sprite(NPC, n.x, n.y + (Math.sin(t / 500) > 0 ? 0 : 1), false, n.pal);
   drawFront();
   cx.fillStyle = 'rgba(0,0,0,.16)';
   cx.fillRect(Math.round(hero.x) + 2, Math.round(hero.y) + 16, 12, 3);
   const hop = (dx || dy) && Math.floor(hero.step / 140) % 2 ? 1 : 0;
   sprite(HERO, Math.round(hero.x), Math.round(hero.y) - hop, hero.f, skinPal(P.skin));
-  drawMarker(t);
+  drawMarker(t, who);
 
-  const who = nearNpc();
-  const hint = document.getElementById('hint');
-  hint.classList.toggle('on', !!who && !busy);
+  const hintOn = !!who && !busy;
+  if (hintOn !== hintOnLast){ hintEl.classList.toggle('on', hintOn); hintOnLast = hintOn; }
   if (who){
-    const name = esc(aName(who.book.agent)) || T('vendor');
-    hint.innerHTML = T('hintTalk', name);
+    const key = lang + ':' + CAST.indexOf(who);
+    if (key !== hintTxtKey){          // 最近 NPC 或语言变了才重写
+      hintTxtKey = key;
+      hintEl.innerHTML = T('hintTalk', esc(aName(who.book.agent)) || T('vendor'));
+    }
   }
-  bubbleEl.style.opacity = busy ? 0 : 1;
+  const op = busy ? '0' : '1';
+  if (op !== bubbleOpLast){ bubbleEl.style.opacity = op; bubbleOpLast = op; }
   /* 面板打开时不许换 B —— 正看着的摊主不能被走近的另一个偷换掉。 */
-  if (who && !busy){ B = who.book; fillBubble(); placeBubble(); }
+  if (who && !busy){ B = who.book; fillBubble(who); placeBubble(who); }
   requestAnimationFrame(loop);
 }
 const cornerEl = document.getElementById('corner');
@@ -915,15 +941,21 @@ function openDlg(){
   showDlgTab('bets');
   render();
 }
-document.querySelectorAll('#dlg .tabs button').forEach(btn => {
-  btn.onclick = () => showDlgTab(btn.dataset.tab);
-});
-function showDlgTab(name){
-  document.querySelectorAll('#dlg .tabs button').forEach(b =>
-    b.setAttribute('aria-selected', b.dataset.tab === name));
-  document.querySelectorAll('#dlg .tab').forEach(t =>
-    t.classList.toggle('on', t.id === 'tab-' + name));
+/* dlg / bag 两处 tab 头长得一模一样，wiring 抽成一份。
+   prefix 同时是 data- 属性名（data-tab / data-btab）和面板 id 前缀（tab- / btab-）。
+   返回 show(name) 给需要程序化切页的地方用。 */
+function wireTabs(rootSel, prefix){
+  const show = name => {
+    document.querySelectorAll(rootSel + ' .tabs button').forEach(b =>
+      b.setAttribute('aria-selected', b.dataset[prefix] === name));
+    document.querySelectorAll(rootSel + ' .tab').forEach(t =>
+      t.classList.toggle('on', t.id === prefix + '-' + name));
+  };
+  document.querySelectorAll(rootSel + ' .tabs button').forEach(btn =>
+    btn.onclick = () => show(btn.dataset[prefix]));
+  return show;
 }
+const showDlgTab = wireTabs('#dlg', 'tab');
 $('dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeDlg(); });
 
 function render(){
@@ -1081,8 +1113,24 @@ function vig(){
   const bk = dlgBook();
   return (bk && bk.stats && bk.stats.vig) || 0;
 }
+/* 定价参数单源：管线即将在 stats 里导出 prior_strength / prior_price（horizon→先验）。
+   优先读它们；老 book.js 没这些字段时回退成原来的写死值（40 / 0.53），行为不变。 */
+function priorStrength(bk){
+  const v = bk && bk.stats && bk.stats.prior_strength;
+  return v != null ? v : 40;
+}
+function priorPrice(bk, horizon){
+  const pp = bk && bk.stats && bk.stats.prior_price;
+  const h = horizon || 1;
+  if (pp){
+    /* JSON 序列化后 dict 的键是字符串数字，数字/字符串两种都认。 */
+    const v = pp[h] != null ? pp[h] : pp[String(h)];
+    if (v != null) return v;
+  }
+  return 0.53;
+}
 function quote(i){
-  const p = i.price != null ? i.price : 0.53;
+  const p = i.price != null ? i.price : priorPrice(dlgBook(), i.horizon);
   const v = vig();
   return [Math.min(.97, p + v), Math.min(.97, 1 - p + v)];
 }
@@ -1163,7 +1211,7 @@ function calibTable(){
         <td>${r.realized == null ? '—' : (r.realized * 100).toFixed(0) + '%'}</td>
         <td><b>${(r.price * 100).toFixed(0)}¢</b></td></tr>`).join('')}
     </tbody></table>
-    <p class="note" style="margin-top:6px">${T('calibNote')}</p>`;
+    <p class="note" style="margin-top:6px">${T('calibNote', priorStrength(dlgBook()))}</p>`;
 }
 
 function gapNote(){
@@ -1242,30 +1290,20 @@ function placeLive(id, side){
   const [pYes, pNo] = quote(i);
   const buff = P.buff;
   const bk = dlgBook();
-  let win = Math.round(stake / (side === 'YES' ? pYes : pNo));
+  const win = Math.round(stake / (side === 'YES' ? pYes : pNo));
   P.seq = (P.seq || 0) + 1;
   /* 快照题面：就算这个 idea 以后从 book.js 里消失，背包也说得清这注押的是什么。 */
   const rec = { side, stake, win, buff, seq: P.seq, at: Date.now(),
                 ticker: i.ticker, date: i.date, price: i.price, horizon: i.horizon,
                 question: i.question, q_en: i.q_en || null,
                 agent: (bk && bk.agent && bk.agent.name) || null,
-                practice: false };
-
-  const r = resolutionOf(id) || i;                 // 结算判定优先 ledger
-  if (r.status !== 'resolved' || !r.outcome){
-    P.chips -= stake;
-    rec.pending = true; rec.ok = null;
-  } else {
-    const out = outUp(r);
-    if (buff === 'rumor' && side === out) win = Math.round(win * 1.25);
-    rec.win = win;
-    rec.ok = side === out;
-    rec.pending = false;
-    P.chips += rec.ok ? win - stake : -stake;
-    P.peak = Math.max(P.peak, P.chips);
-  }
+                practice: false, pending: true, ok: null };
+  /* live 盘恒为 open（管线只把当天未揭晓的题放进 live.ideas），下注一律挂起扣本金。
+     结算只走 settleLiveBets 这一个入口 —— 万一答案其实已经在 ledger 里，它也会当场入账。 */
+  P.chips -= stake;
   if (buff) P.buff = null;
   P.bets[id] = rec;
+  settleLiveBets();
   saveP();
   renderBets();
 }
@@ -1334,14 +1372,7 @@ const openBag = () => { closeDlg(); $('bag').classList.add('on'); renderBag(); }
 const closeBag = () => $('bag').classList.remove('on');
 const bagOpen = () => $('bag').classList.contains('on');
 
-document.querySelectorAll('[data-btab]').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('[data-btab]').forEach(b =>
-      b.setAttribute('aria-selected', b === btn));
-    document.querySelectorAll('#bag .tab').forEach(t =>
-      t.classList.toggle('on', t.id === 'btab-' + btn.dataset.btab));
-  };
-});
+wireTabs('#bag', 'btab');
 $('bag').addEventListener('click', e => { if (e.target.id === 'bag') closeBag(); });
 
 function renderBag(){
