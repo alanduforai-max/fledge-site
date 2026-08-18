@@ -781,7 +781,9 @@
     }
   }
 }</pre>
-    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Any MCP client that speaks Streamable HTTP with custom headers works the same way. claude.ai web connectors do not support header auth yet \u2014 use Claude Code for now.</p>
+    <div class="tool-group"><h3>claude.ai (web \u00b7 desktop \u00b7 mobile)</h3></div>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Settings \u2192 Connectors \u2192 <b>Add custom connector</b> \u2192 paste <code>https://mcp.fledgetradelab.com/mcp</code> \u2192 Connect. You\u2019ll be asked to sign in (Google or email) and approve \u2014 no token copying. Custom connectors require a paid claude.ai plan.</p>
+    <p style="font-size:var(--size-body-sm);color:var(--text-secondary)">Any other MCP client works too: Streamable HTTP with either OAuth or an <code>Authorization: Bearer</code> header.</p>
   </section>
 
   <section class="section-tight" id="plugin">
