@@ -35,7 +35,7 @@
   h1, h2, h3, .serif { font-family: "Songti SC", "Noto Serif SC", "STSong", serif; }
 
   .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
-  header.masthead { text-align: center; padding: 8px 0 18px; }
+  header.masthead { text-align: center; padding: 8px 0 18px; position: relative; }
   header.masthead h1 {
     margin: 0; font-size: 40px; letter-spacing: 0.12em; color: var(--gold-bright);
     text-shadow: 0 1px 0 rgba(0,0,0,0.5);
@@ -49,6 +49,13 @@
     padding: 6px 16px;
   }
   header.masthead .plaza-link:hover { background: rgba(201,162,39,0.15); }
+  .lang-toggle {
+    position: absolute; top: 4px; right: 0;
+    background: #142A1C; color: var(--gold-bright); border: 1px solid var(--gold);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    letter-spacing: 0.08em; font-family: inherit;
+  }
+  .lang-toggle:hover { background: rgba(201,162,39,0.15); }
 
   /* ============ 捏 Agent 界面 ============ */
   .setup {
@@ -128,7 +135,6 @@
   .tile .t-name { font-size: clamp(8px, 1.2vw, 10.5px); color: #5A5344; line-height: 1.15; }
   .tile.corner { background: var(--cream-dim); border: 1.5px solid var(--gold); }
   .tile.active { outline: 3px solid var(--gold-bright); outline-offset: -2px; box-shadow: 0 0 18px rgba(227,188,69,0.55); }
-  .tile.used-out { filter: saturate(0.4) brightness(0.85); }
   .tile .pawn {
     position: absolute; bottom: 2px; right: 3px; font-size: clamp(13px, 2vw, 19px);
     filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
@@ -180,7 +186,6 @@
   .intel li { margin-bottom: 2px; }
   .quote-line { margin-top: 7px; font-weight: 700; }
   .quote-line .px { font-family: ui-monospace, Menlo, monospace; background: #241F0E; color: var(--gold-bright); border-radius: 5px; padding: 1px 7px; }
-  .unverified { font-size: 10.5px; color: #B08968; }
   .pl-pos { color: var(--win); font-weight: 800; }
   .pl-neg { color: var(--loss); font-weight: 800; }
 
@@ -233,41 +238,42 @@
 
 <div class="wrap">
   <header class="masthead">
+    <button class="lang-toggle" id="langToggle" type="button">EN</button>
     <h1>事 件 街</h1>
-    <div class="sub">EVENT STREET · AGENT 试炼场</div>
-    <a class="plaza-link" href="plaza.html">像素广场 · 和热搜老哥对赌 →</a>
+    <div class="sub" id="mastSub">EVENT STREET · AGENT 试炼场</div>
+    <a class="plaza-link" id="plazaLink" href="plaza.html">像素广场 · 和热搜老哥对赌 →</a>
   </header>
 
   <!-- ============ 捏 Agent ============ -->
   <section class="setup" id="setupView">
-    <h2>捏一个交易 Agent</h2>
-    <p class="hint-line">棋盘上每个格子是一个 NPC 庄家，逐日按真实历史事件开盘（标的已 mask）。你的 agent 将独自走完棋盘，读盘、定方向、定 size。同一 seed 牌序与骰子完全一致——改一版 prompt 再跑一局，就是一次受控对比实验。</p>
+    <h2 id="stTitle">捏一个交易 Agent</h2>
+    <p class="hint-line" id="stHint"></p>
 
     <div class="row2">
       <div class="field" style="flex:2">
-        <label>AGENT 名字</label>
-        <input type="text" id="agentName" value="小虎" maxlength="12">
+        <label id="fName">AGENT 名字</label>
+        <input type="text" id="agentName" value="小虎" maxlength="16">
       </div>
       <div class="field" style="flex:3">
-        <label>棋子</label>
+        <label id="fAvatar">棋子</label>
         <div class="avatar-row" id="avatarRow"></div>
       </div>
     </div>
 
     <div class="field">
-      <label>大脑</label>
+      <label id="fBrain">大脑</label>
       <div class="brain-tabs">
-        <button id="tabSim" class="sel" type="button">模拟脑（内置启发式）</button>
-        <button id="tabApi" type="button">Claude 脑（真·LLM）</button>
+        <button id="tabSim" class="sel" type="button"></button>
+        <button id="tabApi" type="button"></button>
       </div>
       <div class="api-fields" id="apiFields">
         <div class="row2">
           <div class="field" style="flex:2">
-            <label>ANTHROPIC API KEY（只存在本页内存，不落盘）</label>
+            <label id="fKey">ANTHROPIC API KEY</label>
             <input type="password" id="apiKey" placeholder="sk-ant-...">
           </div>
           <div class="field" style="flex:1">
-            <label>模型</label>
+            <label id="fModel">MODEL</label>
             <select id="apiModel">
               <option value="claude-opus-5">claude-opus-5</option>
               <option value="claude-sonnet-5">claude-sonnet-5</option>
@@ -275,42 +281,42 @@
             </select>
           </div>
         </div>
-        <p class="note">⚠️ 发布在 claude.ai 的 Artifact 页面受 CSP 限制无法外联 API——Claude 脑请把本文件下载到本地用浏览器打开。调用失败会自动回退模拟脑。</p>
+        <p class="note" id="apiNote"></p>
       </div>
-      <p class="note" id="simNote">模拟脑把下面的 prompt 解析成性格参数（解析结果会实时同步到滑杆），决策 = 自估概率 vs NPC 报价的 edge 模型。「研究功力」越高，自估越贴近事后真相——这是给测试场造 alpha 梯度用的已知作弊参数。</p>
+      <p class="note" id="simNote"></p>
     </div>
 
     <div class="field">
-      <label>快速人格模板</label>
+      <label id="fPreset">快速人格模板</label>
       <div class="preset-row">
-        <button type="button" data-preset="value"><b>稳健价值派</b>只在 edge 很大时出手，半 Kelly 以下，宁可跳过。</button>
-        <button type="button" data-preset="hunter"><b>事件猎手</b>财报与地缘事件重仓，追求期望值，纪律性 sizing。</button>
-        <button type="button" data-preset="yolo"><b>YOLO 赌狗</b>逢盘必赌，梭哈体质，与市场对着干。</button>
+        <button type="button" data-preset="value"><b id="pvT"></b><span id="pvD"></span></button>
+        <button type="button" data-preset="hunter"><b id="phT"></b><span id="phD"></span></button>
+        <button type="button" data-preset="yolo"><b id="pyT"></b><span id="pyD"></span></button>
       </div>
     </div>
 
     <div class="field">
-      <label>AGENT PROMPT（随时可改，Claude 脑原文即 system prompt）</label>
-      <textarea id="agentPrompt">你是一个纪律严明的事件驱动交易员。只有当你的估计与庄家报价的差距超过 5 个百分点才下注，用四分之一 Kelly 控制仓位，单注不超过资金的 20%。财报事件你更有信心，宏观事件保持谦逊。看不懂的盘直接跳过，跳过不丢人。</textarea>
+      <label id="fPrompt">AGENT PROMPT</label>
+      <textarea id="agentPrompt"></textarea>
     </div>
 
     <div class="field">
-      <label>模拟脑性格参数</label>
+      <label id="fTraits">模拟脑性格参数</label>
       <div class="slider-grid">
         <div class="slider-item">
-          <label><span>下注激进度（Kelly 系数）</span><span class="val" id="vKelly">0.25</span></label>
+          <label><span id="uKelly"></span><span class="val" id="vKelly">0.25</span></label>
           <input type="range" id="sKelly" min="5" max="100" value="25">
         </div>
         <div class="slider-item">
-          <label><span>入场 edge 门槛</span><span class="val" id="vEdge">5pt</span></label>
+          <label><span id="uEdge"></span><span class="val" id="vEdge">5pt</span></label>
           <input type="range" id="sEdge" min="0" max="15" value="5">
         </div>
         <div class="slider-item">
-          <label><span>研究功力（贴近真相度）</span><span class="val" id="vConf">0.55</span></label>
+          <label><span id="uConf"></span><span class="val" id="vConf">0.55</span></label>
           <input type="range" id="sConf" min="0" max="100" value="55">
         </div>
         <div class="slider-item">
-          <label><span>逆向指数（对着市场干）</span><span class="val" id="vContra">0.0</span></label>
+          <label><span id="uContra"></span><span class="val" id="vContra">0.0</span></label>
           <input type="range" id="sContra" min="-100" max="100" value="0">
         </div>
       </div>
@@ -318,16 +324,16 @@
 
     <div class="row2">
       <div class="field">
-        <label>SEED（同 seed = 同牌序同骰子，可复现）</label>
+        <label id="fSeed">SEED</label>
         <input type="text" id="seedInput" value="fledge-2026">
       </div>
-      <div class="field" style="max-width:130px">
+      <div class="field" style="max-width:150px">
         <label>&nbsp;</label>
-        <button type="button" id="randSeed" style="width:100%;padding:10px;background:#142A1C;color:var(--text);border:1px solid var(--paper-edge);border-radius:8px;cursor:pointer;">随机 seed</button>
+        <button type="button" id="randSeed" style="width:100%;padding:10px;background:#142A1C;color:var(--text);border:1px solid var(--paper-edge);border-radius:8px;cursor:pointer;font-family:inherit;"></button>
       </div>
     </div>
 
-    <button class="go-btn" id="startBtn" type="button">放 AGENT 进场 · 启动资金 1000</button>
+    <button class="go-btn" id="startBtn" type="button"></button>
   </section>
 
   <!-- ============ 棋盘 ============ -->
@@ -337,67 +343,64 @@
     </div>
     <div class="side">
       <div class="panel">
-        <h3>交易大厅</h3>
+        <h3 id="feedTitle">交易大厅</h3>
         <div class="feed" id="feed"></div>
       </div>
       <div class="panel">
         <div class="ctrl-row" style="justify-content:flex-start">
-          <button id="pauseBtn" class="primary" type="button">⏸ 暂停</button>
-          <button id="stepBtn" type="button">单步 ▸</button>
+          <button id="pauseBtn" class="primary" type="button"></button>
+          <button id="stepBtn" type="button"></button>
           <select id="speedSel">
-            <option value="1.6">慢速</option>
-            <option value="1" selected>常速</option>
-            <option value="0.45">快速</option>
-            <option value="0.15">极速</option>
+            <option value="1.6" id="spSlow"></option>
+            <option value="1" selected id="spNorm"></option>
+            <option value="0.45" id="spFast"></option>
+            <option value="0.15" id="spTurbo"></option>
           </select>
-          <button id="quitBtn" type="button">提前结算</button>
+          <button id="quitBtn" type="button"></button>
         </div>
       </div>
       <div class="panel agent-panel">
         <details>
-          <summary>🛠 中途改 Agent（下一格生效）</summary>
+          <summary id="liveSummary"></summary>
           <div class="field">
             <label>PROMPT</label>
             <textarea id="livePrompt"></textarea>
           </div>
           <div class="slider-grid">
             <div class="slider-item">
-              <label><span>Kelly</span><span class="val" id="lvKelly"></span></label>
+              <label><span id="luKelly"></span><span class="val" id="lvKelly"></span></label>
               <input type="range" id="lsKelly" min="5" max="100">
             </div>
             <div class="slider-item">
-              <label><span>edge 门槛</span><span class="val" id="lvEdge"></span></label>
+              <label><span id="luEdge"></span><span class="val" id="lvEdge"></span></label>
               <input type="range" id="lsEdge" min="0" max="15">
             </div>
             <div class="slider-item">
-              <label><span>研究功力</span><span class="val" id="lvConf"></span></label>
+              <label><span id="luConf"></span><span class="val" id="lvConf"></span></label>
               <input type="range" id="lsConf" min="0" max="100">
             </div>
             <div class="slider-item">
-              <label><span>逆向指数</span><span class="val" id="lvContra"></span></label>
+              <label><span id="luContra"></span><span class="val" id="lvContra"></span></label>
               <input type="range" id="lsContra" min="-100" max="100">
             </div>
           </div>
-          <span class="apply-note" id="applyNote">✓ 已更新，下一格生效</span>
+          <span class="apply-note" id="applyNote"></span>
         </details>
       </div>
       <div class="panel">
-        <h3>账本</h3>
+        <h3 id="logTitle">账本</h3>
         <div class="logbox" id="logbox"></div>
       </div>
     </div>
   </section>
 
-  <footer class="credits">
-    盘面事件取自 2025 年真实市场（财报 / 宏观 / 地缘 / 币圈），赛前情报按 point-in-time 口径撰写、标的已 mask；全部 17 张牌的结算数字均经 Alpha Vantage 日线核实。<br>
-    NPC 报价为游戏化赔率，不构成任何投资建议。Fledge Trading Lab · 原型 demo
-  </footer>
+  <footer class="credits" id="footerNote"></footer>
 </div>
 
 <!-- ============ 结算 ============ -->
 <div class="overlay" id="finalOverlay">
   <div class="final">
-    <h2>收 盘 结 算</h2>
+    <h2 id="finalTitle">收 盘 结 算</h2>
     <div class="rating" id="finalRating"></div>
     <div class="big-final num" id="finalBankroll"></div>
     <div style="text-align:center" id="finalSpark"></div>
@@ -405,8 +408,8 @@
     <table id="finalCatTable"></table>
     <table id="finalBets"></table>
     <div class="btn-row">
-      <button class="primary" id="againSame" type="button">同一副牌重跑（改 prompt 做对比）</button>
-      <button id="againNew" type="button">换一副牌</button>
+      <button class="primary" id="againSame" type="button"></button>
+      <button id="againNew" type="button"></button>
     </div>
   </div>
 </div>
@@ -415,9 +418,165 @@
 
 <script>
 /* ================================================================
-   事件街 Event Street — agent 试炼场
-   所有事件为 2025 年真实历史事件，intel 为赛前 point-in-time 信息。
+   事件街 Event Street — agent 试炼场（中英双语）
+   所有事件为 2025 年真实历史事件，结算数字均经 Alpha Vantage 核实。
+   All events are real 2025 markets; settlement numbers verified
+   against Alpha Vantage daily data.
    ================================================================ */
+
+/* ---------- 语言 ---------- */
+let LANG = localStorage.getItem('es_lang') || 'zh';
+
+const UI = {
+  zh: {
+    mastSub: 'EVENT STREET · AGENT 试炼场',
+    plazaLink: '像素广场 · 和热搜老哥对赌 →',
+    stTitle: '捏一个交易 Agent',
+    stHint: '棋盘上每个格子是一个 NPC 庄家，逐日按真实历史事件开盘（标的已 mask）。你的 agent 将独自走完棋盘，读盘、定方向、定 size。同一 seed 牌序与骰子完全一致——改一版 prompt 再跑一局，就是一次受控对比实验。',
+    fName: 'AGENT 名字', fAvatar: '棋子', fBrain: '大脑',
+    tabSim: '模拟脑（内置启发式）', tabApi: 'Claude 脑（真·LLM）',
+    fKey: 'ANTHROPIC API KEY（只存在本页内存，不落盘）', fModel: '模型',
+    apiNote: '⚠️ 发布在 claude.ai 的 Artifact 页面受 CSP 限制无法外联 API——Claude 脑请把本文件下载到本地用浏览器打开。调用失败会自动回退模拟脑。',
+    simNote: '模拟脑把下面的 prompt 解析成性格参数（解析结果会实时同步到滑杆），决策 = 自估概率 vs NPC 报价的 edge 模型。「研究功力」越高，自估越贴近事后真相——这是给测试场造 alpha 梯度用的已知作弊参数。',
+    fPreset: '快速人格模板',
+    pvT: '稳健价值派', pvD: '只在 edge 很大时出手，半 Kelly 以下，宁可跳过。',
+    phT: '事件猎手', phD: '财报与地缘事件重仓，追求期望值，纪律性 sizing。',
+    pyT: 'YOLO 赌狗', pyD: '逢盘必赌，梭哈体质，与市场对着干。',
+    fPrompt: 'AGENT PROMPT（随时可改，Claude 脑原文即 system prompt）',
+    fTraits: '模拟脑性格参数',
+    uKelly: '下注激进度（Kelly 系数）', uEdge: '入场 edge 门槛', uConf: '研究功力（贴近真相度）', uContra: '逆向指数（对着市场干）',
+    fSeed: 'SEED（同 seed = 同牌序同骰子，可复现）', randSeed: '随机 seed',
+    startBtn: '放 AGENT 进场 · 启动资金 1000',
+    feedTitle: '交易大厅', logTitle: '账本',
+    pause: '⏸ 暂停', resume: '▶ 继续', step: '单步 ▸',
+    spSlow: '慢速', spNorm: '常速', spFast: '快速', spTurbo: '极速',
+    quit: '提前结算',
+    liveSummary: '🛠 中途改 Agent（下一格生效）', applyNote: '✓ 已更新，下一格生效',
+    footerNote: '盘面事件取自 2025 年真实市场（财报 / 宏观 / 地缘 / 币圈），赛前情报按 point-in-time 口径撰写、标的已 mask；全部 17 张牌的结算数字均经 Alpha Vantage 日线核实。<br>NPC 报价为游戏化赔率，不构成任何投资建议。Fledge Trading Lab · 原型 demo',
+    finalTitle: '收 盘 结 算',
+    againSame: '同一副牌重跑（改 prompt 做对比）', againNew: '换一副牌',
+    chips: '代币', lap: n => `第 ${n} 圈`, rolls: (a, b) => `${a}/${b} 手`,
+    needKey: 'Claude 脑需要填 API key，或先切回模拟脑',
+    seedLine: (seed, brain, av, name) => `🎲 seed = <b>${seed}</b> · ${brain} · ${av} <b>${name}</b> 进场，启动资金 1000`,
+    brainSim: '模拟脑', brainApi: m => `Claude 脑（${m}）`,
+    payday: '🏁 路过开盘钟，工资 <b class="pl-pos">+100</b>',
+    goCorner: '🏁 正落开盘钟——顺手把钟敲了一下。',
+    tax: t => `💸 交易税：缴纳 <b class="pl-neg">-${t}</b>`,
+    rumor: '🍸 酒吧里听到小道消息：<b style="color:var(--gold-bright)">下一注若赢，赔付 ×1.25</b>',
+    halt: '🧊 熔断休市，喝口茶。',
+    referral: (a, b) => `${a}这里没盘了，把你介绍给了${b}。`,
+    allClear: '所有盘口都清空了。',
+    quoteLine: '（买中 1 股付 1）',
+    thinking: '<i>盯盘思考中…</i>',
+    apiFail: e => `Claude 调用失败（${e}），本格回退模拟脑`,
+    skipBet: '🙅 <b>跳过</b>。',
+    buyLine: (side, px, stake, pot) => `${side === 'yes' ? '🟢 买 <b>YES</b>' : '🔴 买 <b>NO</b>'} @ ${px}¢ · 押 <b class="num">${stake}</b>（赢可得 +${pot}）`,
+    revealSkip: (first, outcome) => `👁 开盅（未下注）：<b>${first}。</b> 结果 <b>${outcome}</b>`,
+    revealHead: o => `🔔 开盅 · 结果 ${o}`,
+    betResult: (pl, rumor, bal) => `本注 ${pl}${rumor ? '（小道消息 ×1.25 已生效）' : ''}</span> · 余额 <b class="num">${bal}</b>`,
+    endWhy: { time: '收盘时间到', broke: '弹尽粮绝', empty: '所有盘口已清', quit: '主动提前结算' },
+    endBell: w => `🔔 ${w}，收盘。`,
+    skipMark: '跳过', firstBet: '（首单）',
+    stTotal: '总收益', stBets: '下注 / 跳过', stHit: '胜率',
+    thCat: '分类战绩', thN: '注数', thPL: 'P&L',
+    bestBet: '🏆 最佳一注', worstBet: '💀 最惨一注',
+    ratings: [
+      [2200, '👑 事件街之神 — 这一圈走完，庄家们连夜改赔率'],
+      [1600, '🦅 事件猎手 — edge 是真的被你叼走了'],
+      [1150, '🧭 稳健操盘手 — 活着，且小有盈余'],
+      [900, '🎓 交学费的一年 — 亏得不多，学得不少'],
+      [500, '🥬 新鲜韭菜 — NPC 们对你表示由衷感谢'],
+      [-1e9, '🕳 破产艺术家 — 从 1000 到几乎归零，也是一种完成度'],
+    ],
+    unverified: '⚠︎数字为近似值',
+    simSkipReason: (pa, pm, e, th) => `自估 ${pa}% vs 报价 ${pm}¢，edge ${e}pt 不够门槛（${th}pt），不动。`,
+    simBetReason: (pa, pm, side, e, k, stake) => `自估 YES ${pa}% vs 报价 ${pm}¢ → 买 ${side.toUpperCase()}，edge ${e}pt，按 ${k}×Kelly 出 ${stake}。`,
+  },
+  en: {
+    mastSub: 'EVENT STREET · AGENT PROVING GROUND',
+    plazaLink: 'Pixel Plaza · bet against live NPCs →',
+    stTitle: 'Forge a Trading Agent',
+    stHint: 'Every tile is an NPC bookmaker running a market on a real historical event (ticker masked). Your agent walks the board alone — reads the intel, picks a side, sizes the bet. Same seed = identical deck order and dice, so rerunning with a new prompt is a controlled A/B experiment.',
+    fName: 'AGENT NAME', fAvatar: 'PIECE', fBrain: 'BRAIN',
+    tabSim: 'Sim brain (built-in heuristic)', tabApi: 'Claude brain (real LLM)',
+    fKey: 'ANTHROPIC API KEY (kept in page memory only)', fModel: 'MODEL',
+    apiNote: '⚠️ Artifact pages on claude.ai block external API calls (CSP) — for the Claude brain, download this file and open it locally. Failed calls fall back to the sim brain.',
+    simNote: 'The sim brain parses your prompt into trait parameters (synced live to the sliders); decisions come from an edge model: own estimate vs the NPC quote. Higher "research skill" pulls estimates toward the eventual truth — a deliberately disclosed cheat parameter that gives this proving ground an alpha gradient.',
+    fPreset: 'QUICK PERSONA PRESETS',
+    pvT: 'Steady Value', pvD: 'Acts only on big edges, sub-half-Kelly, happy to skip.',
+    phT: 'Event Hunter', phD: 'Loads up on earnings & geopolitics, EV-driven, disciplined sizing.',
+    pyT: 'YOLO Degen', pyD: 'Bets every market, max-size instincts, fades the crowd.',
+    fPrompt: 'AGENT PROMPT (editable anytime; the Claude brain uses it verbatim as its system prompt)',
+    fTraits: 'SIM-BRAIN TRAITS',
+    uKelly: 'Aggression (Kelly fraction)', uEdge: 'Entry edge threshold', uConf: 'Research skill (truth proximity)', uContra: 'Contrarian dial',
+    fSeed: 'SEED (same seed = same deck & dice)', randSeed: 'Random seed',
+    startBtn: 'SEND AGENT IN · BANKROLL 1000',
+    feedTitle: 'Trading Floor', logTitle: 'Ledger',
+    pause: '⏸ Pause', resume: '▶ Resume', step: 'Step ▸',
+    spSlow: 'Slow', spNorm: 'Normal', spFast: 'Fast', spTurbo: 'Turbo',
+    quit: 'Cash out',
+    liveSummary: '🛠 Edit agent mid-run (applies next tile)', applyNote: '✓ Updated — applies next tile',
+    footerNote: 'All events are real 2025 markets (earnings / macro / geopolitics / crypto); pre-event intel is written point-in-time with tickers masked; all 17 settlement numbers are verified against Alpha Vantage daily data.<br>NPC quotes are gamified odds — nothing here is investment advice. Fledge Trading Lab · prototype demo',
+    finalTitle: 'MARKET CLOSE',
+    againSame: 'Rerun same deck (A/B your prompt)', againNew: 'New deck',
+    chips: 'chips', lap: n => `Lap ${n}`, rolls: (a, b) => `${a}/${b} rolls`,
+    needKey: 'The Claude brain needs an API key — or switch back to the sim brain',
+    seedLine: (seed, brain, av, name) => `🎲 seed = <b>${seed}</b> · ${brain} · ${av} <b>${name}</b> enters with a bankroll of 1000`,
+    brainSim: 'Sim brain', brainApi: m => `Claude brain (${m})`,
+    payday: '🏁 Passed the Opening Bell — payday <b class="pl-pos">+100</b>',
+    goCorner: '🏁 Landed right on the Opening Bell. Gave it a ring.',
+    tax: t => `💸 Trading tax: paid <b class="pl-neg">-${t}</b>`,
+    rumor: '🍸 A hot tip at the bar: <b style="color:var(--gold-bright)">next winning bet pays ×1.25</b>',
+    halt: '🧊 Circuit breaker. Tea break.',
+    referral: (a, b) => `${a} is out of lines and referred you to ${b}.`,
+    allClear: 'Every book has been cleared.',
+    quoteLine: '(each winning share pays 1)',
+    thinking: '<i>Reading the tape…</i>',
+    apiFail: e => `Claude call failed (${e}); falling back to sim brain for this tile`,
+    skipBet: '🙅 <b>Pass</b>. ',
+    buyLine: (side, px, stake, pot) => `${side === 'yes' ? '🟢 Buy <b>YES</b>' : '🔴 Buy <b>NO</b>'} @ ${px}¢ · stake <b class="num">${stake}</b> (win pays +${pot})`,
+    revealSkip: (first, outcome) => `👁 Reveal (no bet): <b>${first}.</b> Outcome: <b>${outcome}</b>`,
+    revealHead: o => `🔔 Reveal · Outcome ${o}`,
+    betResult: (pl, rumor, bal) => `This bet ${pl}${rumor ? ' (Hot Tip ×1.25 applied)' : ''}</span> · balance <b class="num">${bal}</b>`,
+    endWhy: { time: 'Session over', broke: 'Busted', empty: 'All books cleared', quit: 'Cashed out early' },
+    endBell: w => `🔔 ${w} — market closed.`,
+    skipMark: 'pass', firstBet: '(first bet)',
+    stTotal: 'Total P&L', stBets: 'Bets / Skips', stHit: 'Hit rate',
+    thCat: 'By category', thN: 'Bets', thPL: 'P&L',
+    bestBet: '🏆 Best bet', worstBet: '💀 Worst bet',
+    ratings: [
+      [2200, '👑 God of Event Street — the bookies repriced overnight'],
+      [1600, '🦅 Event Hunter — that edge was real'],
+      [1150, '🧭 Steady Operator — alive, and in the green'],
+      [900, '🎓 Tuition Year — lost a little, learned a lot'],
+      [500, '🥬 Fresh Cabbage — the NPCs thank you sincerely'],
+      [-1e9, '🕳 Bankruptcy Artist — 1000 to nearly zero is also a kind of completion'],
+    ],
+    unverified: '⚠︎approximate figures',
+    simSkipReason: (pa, pm, e, th) => `My read ${pa}% vs quote ${pm}¢ — ${e}pt edge is under my ${th}pt bar. Pass.`,
+    simBetReason: (pa, pm, side, e, k, stake) => `My read: YES ${pa}% vs quote ${pm}¢ → buy ${side.toUpperCase()}, edge ${e}pt, ${k}×Kelly → stake ${stake}.`,
+  },
+};
+const T = () => UI[LANG];
+
+/* 预设 prompt（双语，用于模板按钮与语言切换时的整体替换） */
+const PRESET_PROMPTS = {
+  value: {
+    zh: '你是一个极端保守的价值型交易员。只有当你的估计和庄家报价差距超过 8 个百分点才出手，用八分之一 Kelly，单注不超过资金的 10%。大多数盘直接跳过——不亏钱是第一原则。',
+    en: 'You are an extremely conservative value-style trader. Act only when your estimate differs from the quote by more than 8 points. Use one-eighth Kelly and never stake more than 10% of bankroll. Skip most markets — not losing money is rule number one.',
+    k: 12, e: 8, c: 60, x: 0,
+  },
+  hunter: {
+    zh: '你是一个纪律严明的事件驱动交易员。只有当你的估计与庄家报价的差距超过 5 个百分点才下注，用四分之一 Kelly 控制仓位，单注不超过资金的 20%。财报事件你更有信心，宏观事件保持谦逊。看不懂的盘直接跳过，跳过不丢人。',
+    en: 'You are a disciplined event-driven trader. Bet only when your estimate differs from the quote by more than 5 points. Size with quarter-Kelly, never over 20% of bankroll per bet. Be more confident on earnings, humble on macro. Skip anything you cannot read — skipping is free.',
+    k: 25, e: 5, c: 55, x: 0,
+  },
+  yolo: {
+    zh: '你是一个 YOLO 赌狗，逢盘必赌，从不跳过。你天然不信市场定价，喜欢和大众对着干，仓位越大越兴奋，单注可以到资金的 40%。要么起飞要么归零。',
+    en: 'You are a YOLO degenerate: bet every market, never skip. You distrust market prices by default and love fading the crowd. Bigger positions excite you — up to 40% of bankroll per bet. Moon or zero.',
+    k: 90, e: 0, c: 30, x: -60,
+  },
+};
 
 /* ---------- 确定性随机 ---------- */
 function hashSeed(str) {
@@ -437,282 +596,479 @@ function mulberry32(a) {
   };
 }
 
-/* ---------- NPC 分类 ---------- */
+/* ---------- NPC 分类（双语） ---------- */
 const CATS = {
-  tech:   { name: '科技财报局', npc: 'K线仙人', emoji: '🧙‍♂️', color: 'var(--cat-tech)',
-            taunt: ['又到开盲盒的日子了，小友。', '这家公司我看了三个季度，你猜怎么着？', '盘已开好，就等你家 agent 出手。'] },
-  biz:    { name: '百业财报摊', npc: '财报奶奶', emoji: '👵', color: 'var(--cat-biz)',
-            taunt: ['奶奶我做庄五十年，没见过不敢下注的。', '来来来，今天这单有点意思。', '孩子，赔率都给你摆好了。'] },
-  macro:  { name: '宏观数据台', npc: '数据姬', emoji: '📊', color: 'var(--cat-macro)',
-            taunt: ['数据公布前 60 秒，最后报价。', '经济学家的一致预期，从来只是参考。', '本台只认数字，不认故事。'] },
-  geo:    { name: '地缘油罐', npc: '油罐子', emoji: '🛢️', color: 'var(--cat-geo)',
-            taunt: ['中东的风声，比油价先动。', '打不打不知道，赔率先挂出来。', '桶里的每一滴都在等消息。'] },
-  crypto: { name: '币圈庙口', npc: '哈希僧', emoji: '⛓️', color: 'var(--cat-crypto)',
-            taunt: ['施主，链上无常。', '贫僧只设盘，不渡人。', '这一单，赌的是人心。'] },
+  tech: {
+    emoji: '🧙‍♂️', color: 'var(--cat-tech)',
+    zh: { name: '科技财报局', npc: 'K线仙人', taunts: ['又到开盲盒的日子了，小友。', '这家公司我看了三个季度，你猜怎么着？', '盘已开好，就等你家 agent 出手。'] },
+    en: { name: 'Tech Earnings Desk', npc: 'Candle Sage', taunts: ['Mystery-box day again, young one.', "I've watched this company for three quarters. Care to guess?", "The line is set. Your agent's move."] },
+  },
+  biz: {
+    emoji: '👵', color: 'var(--cat-biz)',
+    zh: { name: '百业财报摊', npc: '财报奶奶', taunts: ['奶奶我做庄五十年，没见过不敢下注的。', '来来来，今天这单有点意思。', '孩子，赔率都给你摆好了。'] },
+    en: { name: 'Main St. Earnings Stand', npc: 'Granny Earnings', taunts: ['Fifty years making book, never met an agent too scared to bet.', "Come, come — today's line is a fun one.", 'The odds are laid out, child.'] },
+  },
+  macro: {
+    emoji: '📊', color: 'var(--cat-macro)',
+    zh: { name: '宏观数据台', npc: '数据姬', taunts: ['数据公布前 60 秒，最后报价。', '经济学家的一致预期，从来只是参考。', '本台只认数字，不认故事。'] },
+    en: { name: 'Macro Data Desk', npc: 'Data Dame', taunts: ['Sixty seconds to the print. Final line.', 'Economist consensus is only ever a reference.', 'This desk trades numbers, not stories.'] },
+  },
+  geo: {
+    emoji: '🛢️', color: 'var(--cat-geo)',
+    zh: { name: '地缘油罐', npc: '油罐子', taunts: ['中东的风声，比油价先动。', '打不打不知道，赔率先挂出来。', '桶里的每一滴都在等消息。'] },
+    en: { name: 'Geopolitics & Barrels', npc: 'Oil Drum', taunts: ['The wind from the Gulf moves before the price does.', 'War or no war — the line goes up first.', 'Every barrel is waiting on a headline.'] },
+  },
+  crypto: {
+    emoji: '⛓️', color: 'var(--cat-crypto)',
+    zh: { name: '币圈庙口', npc: '哈希僧', taunts: ['施主，链上无常。', '贫僧只设盘，不渡人。', '这一单，赌的是人心。'] },
+    en: { name: 'Crypto Temple', npc: 'Hash Monk', taunts: ['Impermanence on-chain, friend.', 'This monk sets lines, not souls.', "This one's a bet on human nature."] },
+  },
 };
 
-/* ---------- 事件牌组（真实历史，intel = 赛前信息，标的 mask） ----------
-   yesPrice: NPC 报 YES 的价格（隐含概率）
-   outcome:  'YES' | 'NO'
-   hintMag:  「事后看有多可读」0~0.25，喂给模拟脑的研究功力通道
-   verified: 结果数字是否经 Alpha Vantage 核实
------------------------------------------------------------------- */
+/* ---------- 事件牌组（真实历史，双语；结算数字经 Alpha Vantage 核实） ---------- */
 const DECK = [
   /* ===== 科技财报局 ===== */
   {
-    id: 'orcl', cat: 'tech', date: '2025 年 9 月上旬',
-    mask: '某老牌企业数据库软件巨头',
-    intel: [
-      '创立近 50 年，数据库市占率长期第一，近两年狂砸 AI 数据中心',
-      '财报前股价年内已涨约 45%，市场开始把它当 AI 基建股定价',
-      '上季度管理层放话：云基础设施收入增速将「非常惊人」',
-      '本季华尔街预期 EPS ≈ $1.48，焦点全在剩余履约义务（RPO）指引',
-    ],
-    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +15%？',
-    yesPrice: 0.08, outcome: 'YES', hintMag: 0.05,
-    reveal: 'Oracle（ORCL）。RPO 一夜暴增至 $455B，管理层给出四年云收入指引，次日 241.51 → 328.33，+35.9%——1992 年以来最大单日涨幅。EPS 其实还略 miss。',
-    verified: true,
+    id: 'orcl', cat: 'tech', yesPrice: 0.08, outcome: 'YES', hintMag: 0.05, verified: true,
+    zh: {
+      date: '2025 年 9 月上旬', mask: '某老牌企业数据库软件巨头',
+      intel: [
+        '创立近 50 年，数据库市占率长期第一，近两年狂砸 AI 数据中心',
+        '财报前股价年内已涨约 45%，市场开始把它当 AI 基建股定价',
+        '上季度管理层放话：云基础设施收入增速将「非常惊人」',
+        '本季华尔街预期 EPS ≈ $1.48，焦点全在剩余履约义务（RPO）指引',
+      ],
+      q: '财报公布后次一交易日，收盘涨幅是否 ≥ +15%？',
+      reveal: 'Oracle（ORCL）。RPO 一夜暴增至 $455B，管理层给出四年云收入指引，次日 241.51 → 328.33，+35.9%——1992 年以来最大单日涨幅。EPS 其实还略 miss。',
+    },
+    en: {
+      date: 'Early Sept 2025', mask: 'A veteran enterprise database software giant',
+      intel: [
+        'Founded almost 50 years ago; #1 database market share; pouring billions into AI data centers',
+        'Stock already up ~45% YTD into the print; market re-rating it as AI infrastructure',
+        "Last quarter management teased 'dramatically higher' cloud infrastructure growth",
+        'Street expects EPS ≈ $1.48; all eyes on remaining performance obligations (RPO) guidance',
+      ],
+      q: 'Next trading day after earnings: does it close ≥ +15%?',
+      reveal: 'Oracle (ORCL). RPO exploded to $455B overnight with a four-year cloud revenue roadmap; next day 241.51 → 328.33, +35.9% — the biggest single-day gain since 1992. EPS actually missed slightly.',
+    },
   },
   {
-    id: 'nvda', cat: 'tech', date: '2025 年 8 月下旬',
-    mask: '某 AI 算力芯片绝对霸主',
-    intel: [
-      '数据中心 GPU 市占率 9 成以上，全市场市值第一',
-      '连续九个季度大幅 beat，但「beat 幅度递减」的担忧开始发酵',
-      '对华出口管制反复横跳，H20 收入确认存在不确定性',
-      '期权市场为本次财报定价约 ±6% 的单日波动',
-    ],
-    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +2%？',
-    yesPrice: 0.42, outcome: 'NO', hintMag: 0.08,
-    reveal: 'NVIDIA（NVDA）。营收利润双 beat，但数据中心收入环比仅微增、下季指引未含 H20 对华出口，次日收跌 -0.8%（181.60 → 180.17）——「beat 也涨不动」的经典一课。',
-    verified: true,
+    id: 'nvda', cat: 'tech', yesPrice: 0.42, outcome: 'NO', hintMag: 0.08, verified: true,
+    zh: {
+      date: '2025 年 8 月下旬', mask: '某 AI 算力芯片绝对霸主',
+      intel: [
+        '数据中心 GPU 市占率 9 成以上，全市场市值第一',
+        '连续九个季度大幅 beat，但「beat 幅度递减」的担忧开始发酵',
+        '对华出口管制反复横跳，H20 收入确认存在不确定性',
+        '期权市场为本次财报定价约 ±6% 的单日波动',
+      ],
+      q: '财报公布后次一交易日，收盘涨幅是否 ≥ +2%？',
+      reveal: 'NVIDIA（NVDA）。营收利润双 beat，但数据中心收入环比仅微增、下季指引未含 H20 对华出口，次日收跌 -0.8%（181.60 → 180.17）——「beat 也涨不动」的经典一课。',
+    },
+    en: {
+      date: 'Late Aug 2025', mask: 'The undisputed king of AI compute chips',
+      intel: [
+        '90%+ data-center GPU share; largest market cap in the world',
+        "Nine straight big beats, but 'shrinking beat' worries are brewing",
+        'China export rules keep flip-flopping; H20 revenue recognition uncertain',
+        'Options price a ±6% single-day move for the print',
+      ],
+      q: 'Next trading day after earnings: does it close ≥ +2%?',
+      reveal: "NVIDIA (NVDA). Beat on revenue and profit, but data-center grew only modestly QoQ and guidance excluded H20 China sales; next day -0.8% (181.60 → 180.17) — the classic 'beats, but doesn't move' lesson.",
+    },
   },
   {
-    id: 'mu', cat: 'tech', date: '2025 年 12 月中旬',
-    mask: '某美国存储芯片大厂',
-    intel: [
-      'DRAM / NAND 双料厂商，HBM 产能已被 AI 客户预订一空',
-      '存储超级周期叙事发酵中：现货价连续数月上调',
-      '财报前股价一年翻了三倍有余，高位博弈情绪浓',
-      '华尔街预期 FQ1 EPS 约 $3.9，焦点在 HBM 供给锁定与毛利指引',
-    ],
-    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
-    yesPrice: 0.35, outcome: 'YES', hintMag: 0.10,
-    reveal: 'Micron（MU）。FQ1 大幅 beat 且上调指引，HBM 供给确认供不应求，次日 225.52 → 248.55，+10.2%——存储周期叙事继续自我实现。',
-    verified: true,
+    id: 'mu', cat: 'tech', yesPrice: 0.35, outcome: 'YES', hintMag: 0.10, verified: true,
+    zh: {
+      date: '2025 年 12 月中旬', mask: '某美国存储芯片大厂',
+      intel: [
+        'DRAM / NAND 双料厂商，HBM 产能已被 AI 客户预订一空',
+        '存储超级周期叙事发酵中：现货价连续数月上调',
+        '财报前股价一年翻了三倍有余，高位博弈情绪浓',
+        '华尔街预期 FQ1 EPS 约 $3.9，焦点在 HBM 供给锁定与毛利指引',
+      ],
+      q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
+      reveal: 'Micron（MU）。FQ1 大幅 beat 且上调指引，HBM 供给确认供不应求，次日 225.52 → 248.55，+10.2%——存储周期叙事继续自我实现。',
+    },
+    en: {
+      date: 'Mid Dec 2025', mask: 'A major US memory-chip maker',
+      intel: [
+        'Makes both DRAM and NAND; HBM capacity fully booked by AI customers',
+        'Memory super-cycle narrative building: spot prices raised for months straight',
+        'Stock more than tripled over the past year into the print; high-altitude positioning',
+        'Street expects FQ1 EPS ~$3.9; focus on HBM lock-ins and margin guidance',
+      ],
+      q: 'Next trading day after earnings: does it close ≥ +5%?',
+      reveal: 'Micron (MU). Huge FQ1 beat-and-raise, HBM confirmed sold out; next day 225.52 → 248.55, +10.2% — the memory-cycle narrative keeps self-fulfilling.',
+    },
   },
   {
-    id: 'smci', cat: 'tech', date: '2025 年 8 月上旬',
-    mask: '某争议缠身的 AI 服务器组装商',
-    intel: [
-      '靠攒 AI 服务器一年股价十倍过，也因会计问题被做空机构狙击过',
-      '前审计师辞任风波刚平息，重新合规上市不久',
-      '毛利率连续两个季度下滑，市场怀疑其议价能力',
-      '期权隐含本次财报单日波动 ±14%，多空分歧极大',
-    ],
-    q: '财报公布后次一交易日，收盘跌幅是否 ≥ -10%？',
-    yesPrice: 0.30, outcome: 'YES', hintMag: 0.12,
-    reveal: 'Super Micro（SMCI）。营收 miss + 毛利率继续恶化 + 指引疲软，次日 57.26 → 46.79，-18.3%。高波动票的 downside 从不客气。',
-    verified: true,
+    id: 'smci', cat: 'tech', yesPrice: 0.30, outcome: 'YES', hintMag: 0.12, verified: true,
+    zh: {
+      date: '2025 年 8 月上旬', mask: '某争议缠身的 AI 服务器组装商',
+      intel: [
+        '靠攒 AI 服务器一年股价十倍过，也因会计问题被做空机构狙击过',
+        '前审计师辞任风波刚平息，重新合规上市不久',
+        '毛利率连续两个季度下滑，市场怀疑其议价能力',
+        '期权隐含本次财报单日波动 ±14%，多空分歧极大',
+      ],
+      q: '财报公布后次一交易日，收盘跌幅是否 ≥ -10%？',
+      reveal: 'Super Micro（SMCI）。营收 miss + 毛利率继续恶化 + 指引疲软，次日 57.26 → 46.79，-18.3%。高波动票的 downside 从不客气。',
+    },
+    en: {
+      date: 'Early Aug 2025', mask: 'A controversial AI server assembler',
+      intel: [
+        'Rode AI servers to a 10x once, and survived a short-seller accounting attack',
+        'Auditor-resignation drama recently settled; freshly re-compliant',
+        'Gross margin down two quarters straight; pricing power in doubt',
+        'Options imply ±14% for the print; extreme bull-bear split',
+      ],
+      q: 'Next trading day after earnings: does it close ≤ -10%?',
+      reveal: 'Super Micro (SMCI). Revenue miss + further margin erosion + weak guide; next day 57.26 → 46.79, -18.3%. High-vol names show no mercy on the downside.',
+    },
   },
   {
-    id: 'pltr', cat: 'tech', date: '2025 年 8 月上旬',
-    mask: '某明星政企数据分析软件公司',
-    intel: [
-      '零售股东信仰极强，估值贵到卖方集体看不懂但股价一直涨',
-      '美国政府与商业客户双轮驱动，AI 平台（AIP）订单加速',
-      '财报前市值已挤进美股前二十，年内涨幅领跑大盘股',
-      '预期营收增速 ~38%，市场赌它「继续加速」',
-    ],
-    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
-    yesPrice: 0.45, outcome: 'YES', hintMag: 0.08,
-    reveal: 'Palantir（PLTR）。营收增速再加速并上调全年指引，次日 160.66 → 173.27，+7.9%。信仰票的财报，赌的是叙事惯性。',
-    verified: true,
+    id: 'pltr', cat: 'tech', yesPrice: 0.45, outcome: 'YES', hintMag: 0.08, verified: true,
+    zh: {
+      date: '2025 年 8 月上旬', mask: '某明星政企数据分析软件公司',
+      intel: [
+        '零售股东信仰极强，估值贵到卖方集体看不懂但股价一直涨',
+        '美国政府与商业客户双轮驱动，AI 平台（AIP）订单加速',
+        '财报前市值已挤进美股前二十，年内涨幅领跑大盘股',
+        '预期营收增速 ~38%，市场赌它「继续加速」',
+      ],
+      q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
+      reveal: 'Palantir（PLTR）。营收增速再加速并上调全年指引，次日 160.66 → 173.27，+7.9%。信仰票的财报，赌的是叙事惯性。',
+    },
+    en: {
+      date: 'Early Aug 2025', mask: 'A star government-and-enterprise data analytics firm',
+      intel: [
+        "Cult-strength retail shareholder base; valuation the sell side can't model, yet the stock keeps rising",
+        'US government + commercial dual engines; AI platform (AIP) orders accelerating',
+        'Already a top-20 US market cap into the print; leads large caps YTD',
+        'Street expects ~38% revenue growth; the market is betting on re-acceleration',
+      ],
+      q: 'Next trading day after earnings: does it close ≥ +5%?',
+      reveal: 'Palantir (PLTR). Growth re-accelerated and the full-year guide was raised; next day 160.66 → 173.27, +7.9%. Faith stocks trade on narrative momentum.',
+    },
   },
 
   /* ===== 百业财报摊 ===== */
   {
-    id: 'meta', cat: 'biz', date: '2025 年 7 月底',
-    mask: '某社交广告双寡头之一',
-    intel: [
-      '旗下三大 App 日活合计 30 亿+，广告是绝对现金牛',
-      '正豪掷千亿建 AI 数据中心，市场担心 capex 失控',
-      '上季广告价格与曝光量双升，AI 推荐系统归因明显',
-      '预期 Q2 营收 ~$44.8B，焦点：AI 是否已实质提升广告效率',
-    ],
-    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +8%？',
-    yesPrice: 0.25, outcome: 'YES', hintMag: 0.10,
-    reveal: 'Meta（META）。营收大 beat、指引强劲，AI 提升广告转化的故事被数字坐实，次日 695.21 → 773.44，+11.3%。capex 担忧被增长直接碾过去。',
-    verified: true,
+    id: 'meta', cat: 'biz', yesPrice: 0.25, outcome: 'YES', hintMag: 0.10, verified: true,
+    zh: {
+      date: '2025 年 7 月底', mask: '某社交广告双寡头之一',
+      intel: [
+        '旗下三大 App 日活合计 30 亿+，广告是绝对现金牛',
+        '正豪掷千亿建 AI 数据中心，市场担心 capex 失控',
+        '上季广告价格与曝光量双升，AI 推荐系统归因明显',
+        '预期 Q2 营收 ~$44.8B，焦点：AI 是否已实质提升广告效率',
+      ],
+      q: '财报公布后次一交易日，收盘涨幅是否 ≥ +8%？',
+      reveal: 'Meta（META）。营收大 beat、指引强劲，AI 提升广告转化的故事被数字坐实，次日 695.21 → 773.44，+11.3%。capex 担忧被增长直接碾过去。',
+    },
+    en: {
+      date: 'Late July 2025', mask: 'One half of the social-advertising duopoly',
+      intel: [
+        '3 billion+ combined daily actives across three apps; ads are a cash machine',
+        'Spending hundreds of billions on AI data centers; capex-blowout worries',
+        'Last quarter both ad prices and impressions rose, credited to AI recommendations',
+        'Street expects Q2 revenue ~$44.8B; key question: is AI actually lifting ad efficiency?',
+      ],
+      q: 'Next trading day after earnings: does it close ≥ +8%?',
+      reveal: 'Meta (META). Big revenue beat, strong guide — the AI-lifts-ads story confirmed by numbers; next day 695.21 → 773.44, +11.3%. Growth steamrolled the capex worry.',
+    },
   },
   {
-    id: 'tsla', cat: 'biz', date: '2025 年 7 月下旬',
-    mask: '某电动车龙头（CEO 话很多）',
-    intel: [
-      '全球交付量连续两个季度同比下滑，欧洲市场尤其难看',
-      'CEO 政治站队争议持续损耗品牌，机器人出租车刚小范围上线',
-      '监管积分收入面临政策取消风险，汽车毛利承压',
-      '多头指望 Robotaxi/人形机器人叙事扛住基本面',
-    ],
-    q: '财报公布后次一交易日，收盘跌幅是否 ≥ -5%？',
-    yesPrice: 0.35, outcome: 'YES', hintMag: 0.10,
-    reveal: 'Tesla（TSLA）。营收创十年最大同比降幅，CEO 亲口承认「未来几个季度可能很难受」，次日 332.56 → 305.30，-8.2%。叙事没能扛住基本面。',
-    verified: true,
+    id: 'tsla', cat: 'biz', yesPrice: 0.35, outcome: 'YES', hintMag: 0.10, verified: true,
+    zh: {
+      date: '2025 年 7 月下旬', mask: '某电动车龙头（CEO 话很多）',
+      intel: [
+        '全球交付量连续两个季度同比下滑，欧洲市场尤其难看',
+        'CEO 政治站队争议持续损耗品牌，机器人出租车刚小范围上线',
+        '监管积分收入面临政策取消风险，汽车毛利承压',
+        '多头指望 Robotaxi/人形机器人叙事扛住基本面',
+      ],
+      q: '财报公布后次一交易日，收盘跌幅是否 ≥ -5%？',
+      reveal: 'Tesla（TSLA）。营收创十年最大同比降幅，CEO 亲口承认「未来几个季度可能很难受」，次日 332.56 → 305.30，-8.2%。叙事没能扛住基本面。',
+    },
+    en: {
+      date: 'Late July 2025', mask: 'The EV leader (very talkative CEO)',
+      intel: [
+        'Global deliveries down YoY two quarters straight; Europe especially ugly',
+        "CEO's political battles keep bleeding the brand; robotaxi just soft-launched",
+        'Regulatory-credit revenue at policy risk; auto margins under pressure',
+        'Bulls counting on the Robotaxi / humanoid narrative to carry the fundamentals',
+      ],
+      q: 'Next trading day after earnings: does it close ≤ -5%?',
+      reveal: "Tesla (TSLA). Largest revenue decline in a decade, and the CEO admitted 'a few rough quarters' ahead; next day 332.56 → 305.30, -8.2%. The narrative didn't carry the fundamentals.",
+    },
   },
   {
-    id: 'nflx', cat: 'biz', date: '2025 年 7 月中旬',
-    mask: '某流媒体订阅一哥',
-    intel: [
-      '提价 + 广告套餐双引擎，用户数早已不再披露',
-      '财报前股价年内涨约 40%，估值处于历史高位',
-      '市场预期营收利润双 beat 几乎是共识',
-      '关键在指引：全年营收指引是否上调、上调多少',
-    ],
-    q: '财报公布后次一交易日，是否收涨？',
-    yesPrice: 0.55, outcome: 'NO', hintMag: 0.08,
-    reveal: 'Netflix（NFLX）。如期双 beat 且上调全年指引，但「beat 已被完全 price in」，次日收跌 -5.1%。共识兑现 = 利好出尽。',
-    verified: true,
+    id: 'nflx', cat: 'biz', yesPrice: 0.55, outcome: 'NO', hintMag: 0.08, verified: true,
+    zh: {
+      date: '2025 年 7 月中旬', mask: '某流媒体订阅一哥',
+      intel: [
+        '提价 + 广告套餐双引擎，用户数早已不再披露',
+        '财报前股价年内涨约 40%，估值处于历史高位',
+        '市场预期营收利润双 beat 几乎是共识',
+        '关键在指引：全年营收指引是否上调、上调多少',
+      ],
+      q: '财报公布后次一交易日，是否收涨？',
+      reveal: 'Netflix（NFLX）。如期双 beat 且上调全年指引，但「beat 已被完全 price in」，次日收跌 -5.1%。共识兑现 = 利好出尽。',
+    },
+    en: {
+      date: 'Mid July 2025', mask: 'The streaming subscription leader',
+      intel: [
+        'Price hikes + ad tier twin engines; stopped disclosing subscriber counts long ago',
+        'Stock up ~40% YTD into the print; valuation at historic highs',
+        'A double beat is near-consensus',
+        'The real question: does the full-year revenue guide get raised, and by how much',
+      ],
+      q: 'Next trading day after earnings: does it close up at all?',
+      reveal: 'Netflix (NFLX). Double beat and raised guide, exactly as expected — but the beat was fully priced in; next day -5.1%. Consensus fulfilled = sell the news.',
+    },
   },
   {
-    id: 'hood', cat: 'biz', date: '2025 年 7 月底',
-    mask: '某零佣金券商新贵',
-    intel: [
-      '散户交易 + 加密业务双引擎，牛市 beta 拉满',
-      '刚推出股票代币化与预测市场业务，监管态度未明',
-      '二季度美股与 crypto 成交量同比大增，利好其交易收入',
-      '财报前股价年内已涨超一倍，预期打得很满',
-    ],
-    q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
-    yesPrice: 0.40, outcome: 'NO', hintMag: 0.05,
-    reveal: 'Robinhood（HOOD）。业绩强劲但预期更满，次日反而收跌 -2.9%（106.10 → 103.05）。牛市 beta 票的财报，赔率往往比故事诚实。',
-    verified: true,
+    id: 'hood', cat: 'biz', yesPrice: 0.40, outcome: 'NO', hintMag: 0.05, verified: true,
+    zh: {
+      date: '2025 年 7 月底', mask: '某零佣金券商新贵',
+      intel: [
+        '散户交易 + 加密业务双引擎，牛市 beta 拉满',
+        '刚推出股票代币化与预测市场业务，监管态度未明',
+        '二季度美股与 crypto 成交量同比大增，利好其交易收入',
+        '财报前股价年内已涨超一倍，预期打得很满',
+      ],
+      q: '财报公布后次一交易日，收盘涨幅是否 ≥ +5%？',
+      reveal: 'Robinhood（HOOD）。业绩强劲但预期更满，次日反而收跌 -2.9%（106.10 → 103.05）。牛市 beta 票的财报，赔率往往比故事诚实。',
+    },
+    en: {
+      date: 'Late July 2025', mask: 'The zero-commission brokerage upstart',
+      intel: [
+        'Retail trading + crypto dual engines; maximum bull-market beta',
+        'Just launched tokenized stocks and prediction markets; regulators noncommittal',
+        'Q2 equity and crypto volumes up big YoY — good for trading revenue',
+        'Stock more than doubled YTD into the print; expectations stretched',
+      ],
+      q: 'Next trading day after earnings: does it close ≥ +5%?',
+      reveal: 'Robinhood (HOOD). Strong results, stronger expectations; next day it actually closed -2.9% (106.10 → 103.05). For beta stocks, the odds are more honest than the story.',
+    },
   },
   {
-    id: 'unh', cat: 'biz', date: '2025 年 7 月底',
-    mask: '某美国最大健康保险商',
-    intel: [
-      '年内股价近乎腰斩：医疗成本超预期 + 司法部调查 + CEO 更换',
-      '此前罕见撤回全年指引，投资者信心崩塌',
-      '新管理层首次完整亮相，市场等一个「成本见顶」信号',
-      '本次财报焦点：重新给出的全年指引落在哪里',
-    ],
-    q: '财报公布当日，是否收跌？',
-    yesPrice: 0.50, outcome: 'YES', hintMag: 0.06,
-    reveal: 'UnitedHealth（UNH）。重新给出的全年指引远低于市场预期，医疗成本未见顶，当日 282.12 → 261.07，-7.5%。左侧接飞刀，接的就是这一刀。',
-    verified: true,
+    id: 'unh', cat: 'biz', yesPrice: 0.50, outcome: 'YES', hintMag: 0.06, verified: true,
+    zh: {
+      date: '2025 年 7 月底', mask: '某美国最大健康保险商',
+      intel: [
+        '年内股价近乎腰斩：医疗成本超预期 + 司法部调查 + CEO 更换',
+        '此前罕见撤回全年指引，投资者信心崩塌',
+        '新管理层首次完整亮相，市场等一个「成本见顶」信号',
+        '本次财报焦点：重新给出的全年指引落在哪里',
+      ],
+      q: '财报公布当日，是否收跌？',
+      reveal: 'UnitedHealth（UNH）。重新给出的全年指引远低于市场预期，医疗成本未见顶，当日 282.12 → 261.07，-7.5%。左侧接飞刀，接的就是这一刀。',
+    },
+    en: {
+      date: 'Late July 2025', mask: 'The largest US health insurer',
+      intel: [
+        'Stock nearly halved YTD: cost blowouts + DOJ probe + CEO change',
+        'Made a rare full-year guidance withdrawal earlier; investor confidence shattered',
+        "New management's first full appearance; market waiting for a 'costs peaked' signal",
+        'Key item: where the reinstated full-year guide lands',
+      ],
+      q: 'On earnings day itself: does the stock close down?',
+      reveal: 'UnitedHealth (UNH). Reinstated guidance far below expectations — costs not yet peaked; the day went 282.12 → 261.07, -7.5%. Catching falling knives means catching this one.',
+    },
   },
 
   /* ===== 宏观数据台 ===== */
   {
-    id: 'cpi', cat: 'macro', date: '2025 年 9 月中旬',
-    mask: '美国 8 月 CPI 公布',
-    intel: [
-      '关税向消费端的传导是全年最大通胀悬念',
-      '前值：7 月 CPI 同比 2.7%，核心 3.1%',
-      '经济学家一致预期 8 月同比 2.9%',
-      '这是 9 月 FOMC 前最后一份 CPI，直接影响降息路径',
-    ],
-    q: '8 月 CPI 同比是否 ≥ 3.0%？',
-    yesPrice: 0.35, outcome: 'NO', hintMag: 0.10,
-    reveal: '实际公布 2.9%（CPI 指数 323.98 vs 上年同期 314.80，+2.92%），正中一致预期。关税传导仍温和，为一周后的降息扫清了最后障碍。',
-    verified: true,
+    id: 'cpi', cat: 'macro', yesPrice: 0.35, outcome: 'NO', hintMag: 0.10, verified: true,
+    zh: {
+      date: '2025 年 9 月中旬', mask: '美国 8 月 CPI 公布',
+      intel: [
+        '关税向消费端的传导是全年最大通胀悬念',
+        '前值：7 月 CPI 同比 2.7%，核心 3.1%',
+        '经济学家一致预期 8 月同比 2.9%',
+        '这是 9 月 FOMC 前最后一份 CPI，直接影响降息路径',
+      ],
+      q: '8 月 CPI 同比是否 ≥ 3.0%？',
+      reveal: '实际公布 2.9%（CPI 指数 323.98 vs 上年同期 314.80，+2.92%），正中一致预期。关税传导仍温和，为一周后的降息扫清了最后障碍。',
+    },
+    en: {
+      date: 'Mid Sept 2025', mask: 'US August CPI release',
+      intel: [
+        "Tariff pass-through to consumers is the year's biggest inflation question",
+        'Prior: July CPI +2.7% YoY, core 3.1%',
+        'Economist consensus: 2.9% YoY for August',
+        'The last CPI before the September FOMC — it sets the rate-cut path',
+      ],
+      q: 'August CPI YoY ≥ 3.0%?',
+      reveal: 'Printed 2.9% (index 323.98 vs 314.80 a year earlier, +2.92%) — dead on consensus. Tariff pass-through still mild; the last obstacle before the cut was cleared.',
+    },
   },
   {
-    id: 'fomc', cat: 'macro', date: '2025 年 9 月中旬',
-    mask: '9 月 FOMC 议息会议',
-    intel: [
-      '8 月非农大幅走弱 + 前月数据大幅下修，就业市场亮红灯',
-      '市场已 100% 定价至少降 25bp，分歧在会不会一步到位降 50',
-      '白宫持续施压美联储大幅降息，新理事刚火线上任',
-      '利率期货给「降 50bp」定价约一成多',
-    ],
-    q: '本次会议是否降息 ≥ 50bp？',
-    yesPrice: 0.13, outcome: 'NO', hintMag: 0.18,
-    reveal: '如期只降 25bp（新理事 Miran 投了唯一的 50bp 反对票）。联储用最温和的方式重启了降息周期。',
-    verified: true,
+    id: 'fomc', cat: 'macro', yesPrice: 0.13, outcome: 'NO', hintMag: 0.18, verified: true,
+    zh: {
+      date: '2025 年 9 月中旬', mask: '9 月 FOMC 议息会议',
+      intel: [
+        '8 月非农大幅走弱 + 前月数据大幅下修，就业市场亮红灯',
+        '市场已 100% 定价至少降 25bp，分歧在会不会一步到位降 50',
+        '白宫持续施压美联储大幅降息，新理事刚火线上任',
+        '利率期货给「降 50bp」定价约一成多',
+      ],
+      q: '本次会议是否降息 ≥ 50bp？',
+      reveal: '如期只降 25bp（新理事 Miran 投了唯一的 50bp 反对票）。联储用最温和的方式重启了降息周期。',
+    },
+    en: {
+      date: 'Mid Sept 2025', mask: 'The September FOMC meeting',
+      intel: [
+        'August payrolls badly missed, with big downward revisions — labor market flashing red',
+        'Market prices a 25bp cut at 100%; the debate is whether they go 50 in one step',
+        'White House loudly pressing for big cuts; a new governor just seated',
+        "Futures price 'cut ≥ 50bp' at low-teens odds",
+      ],
+      q: 'Does this meeting cut ≥ 50bp?',
+      reveal: '25bp, as expected (new governor Miran cast the lone dissent for 50). The Fed restarted the cutting cycle in the gentlest way possible.',
+    },
   },
   {
-    id: 'shutdown', cat: 'macro', date: '2025 年 9 月底',
-    mask: '美国联邦政府拨款到期',
-    intel: [
-      '两党在医保补贴上僵持，参议院连续多轮投票失败',
-      '10 月 1 日零点为拨款截止线，白宫已下发停摆预案',
-      '历史上多数「拨款危机」在最后一夜达成妥协',
-      '预测市场给「真停摆」的定价一路走高',
-    ],
-    q: '10 月 1 日美国联邦政府是否正式停摆？',
-    yesPrice: 0.65, outcome: 'YES', hintMag: 0.15,
-    reveal: '停摆成真，并最终演变为美国史上最长的一次政府停摆（43 天）。经济数据发布全面停摆，联储被迫「盲飞」。',
-    verified: true,
+    id: 'shutdown', cat: 'macro', yesPrice: 0.65, outcome: 'YES', hintMag: 0.15, verified: true,
+    zh: {
+      date: '2025 年 9 月底', mask: '美国联邦政府拨款到期',
+      intel: [
+        '两党在医保补贴上僵持，参议院连续多轮投票失败',
+        '10 月 1 日零点为拨款截止线，白宫已下发停摆预案',
+        '历史上多数「拨款危机」在最后一夜达成妥协',
+        '预测市场给「真停摆」的定价一路走高',
+      ],
+      q: '10 月 1 日美国联邦政府是否正式停摆？',
+      reveal: '停摆成真，并最终演变为美国史上最长的一次政府停摆（43 天）。经济数据发布全面停摆，联储被迫「盲飞」。',
+    },
+    en: {
+      date: 'Late Sept 2025', mask: 'Federal funding deadline hits',
+      intel: [
+        'Two parties deadlocked over healthcare subsidies; Senate votes failing round after round',
+        'Oct 1, 00:00 is the funding cliff; White House shutdown memos already circulating',
+        'Historically, most funding standoffs settle on the final night',
+        'Prediction markets pricing a real shutdown higher and higher',
+      ],
+      q: 'Does the US federal government officially shut down on Oct 1?',
+      reveal: 'Shutdown happened — and became the longest in US history (43 days). Economic data releases froze; the Fed flew blind.',
+    },
   },
 
   /* ===== 地缘油罐 ===== */
   {
-    id: 'iran', cat: 'geo', date: '2025 年 6 月 13 日凌晨',
-    mask: '中东两大宿敌濒临摊牌',
-    intel: [
-      '某国核计划谈判破裂，IAEA 刚通过违规决议',
-      '媒体连夜报道：以色列战机大规模起飞，德黑兰传出爆炸声',
-      '霍尔木兹海峡承运全球约两成原油，封锁风险被反复计价',
-      '事发前一日 WTI 收于 $68 附近，油市杠杆多头拥挤度不高',
-    ],
-    q: '当个交易日 WTI 原油收盘涨幅是否 ≥ +6%？',
-    yesPrice: 0.50, outcome: 'YES', hintMag: 0.12,
-    reveal: '以色列空袭伊朗核设施与军方高层（«崛起雄狮»行动），当日 WTI 收涨 +7.4%（68.73 → 73.84），盘中一度涨逾一成。战争溢价一夜回归。',
-    verified: true,
+    id: 'iran', cat: 'geo', yesPrice: 0.50, outcome: 'YES', hintMag: 0.12, verified: true,
+    zh: {
+      date: '2025 年 6 月 13 日凌晨', mask: '中东两大宿敌濒临摊牌',
+      intel: [
+        '某国核计划谈判破裂，IAEA 刚通过违规决议',
+        '媒体连夜报道：以色列战机大规模起飞，德黑兰传出爆炸声',
+        '霍尔木兹海峡承运全球约两成原油，封锁风险被反复计价',
+        '事发前一日 WTI 收于 $68 附近，油市杠杆多头拥挤度不高',
+      ],
+      q: '当个交易日 WTI 原油收盘涨幅是否 ≥ +6%？',
+      reveal: '以色列空袭伊朗核设施与军方高层（«崛起雄狮»行动），当日 WTI 收涨 +7.4%（68.73 → 73.84），盘中一度涨逾一成。战争溢价一夜回归。',
+    },
+    en: {
+      date: 'Small hours, June 13, 2025', mask: 'Two Middle East arch-rivals on the brink',
+      intel: [
+        'Nuclear talks collapsed; the IAEA just passed a non-compliance resolution',
+        'Overnight reports: Israeli jets massing, explosions heard in Tehran',
+        'Hormuz carries ~20% of global crude; blockade risk priced in repeatedly',
+        'WTI closed near $68 the day before; leveraged longs not crowded',
+      ],
+      q: 'Does WTI close ≥ +6% on the trading day?',
+      reveal: "Israel struck Iran's nuclear sites and military leadership (Operation Rising Lion). WTI closed +7.4% (68.73 → 73.84), briefly up over 10% intraday. The war premium returned overnight.",
+    },
   },
   {
-    id: 'gold', cat: 'geo', date: '2025 年 10 月上旬',
-    mask: '黄金冲击历史整数关口',
-    intel: [
-      '央行连续三年疯狂购金，去美元化叙事持续',
-      '美国政府停摆 + 降息周期开启，实际利率下行',
-      '金价 9 月已创历史新高，$4000 心理关口近在咫尺',
-      '华尔街多家投行刚刚上调目标价至 $4000 上方',
-    ],
-    q: '10 月内现货黄金是否收盘站上 $4000/盎司？',
-    yesPrice: 0.55, outcome: 'YES', hintMag: 0.15,
-    reveal: '10 月 9 日现货黄金历史上首次收在 $4000 上方（$4018.16）。停摆 + 降息 + 央行购金三箭齐发，黄金全年涨幅创 1979 年以来之最。',
-    verified: true,
+    id: 'gold', cat: 'geo', yesPrice: 0.55, outcome: 'YES', hintMag: 0.15, verified: true,
+    zh: {
+      date: '2025 年 10 月上旬', mask: '黄金冲击历史整数关口',
+      intel: [
+        '央行连续三年疯狂购金，去美元化叙事持续',
+        '美国政府停摆 + 降息周期开启，实际利率下行',
+        '金价 9 月已创历史新高，$4000 心理关口近在咫尺',
+        '华尔街多家投行刚刚上调目标价至 $4000 上方',
+      ],
+      q: '10 月内现货黄金是否收盘站上 $4000/盎司？',
+      reveal: '10 月 9 日现货黄金历史上首次收在 $4000 上方（$4018.16）。停摆 + 降息 + 央行购金三箭齐发，黄金全年涨幅创 1979 年以来之最。',
+    },
+    en: {
+      date: 'Early Oct 2025', mask: 'Gold charging a historic round number',
+      intel: [
+        'Central banks on a three-year buying spree; de-dollarization narrative rolling',
+        'US government shutdown + a fresh cutting cycle = falling real yields',
+        'Gold made all-time highs in September; the $4,000 psychological level in sight',
+        'Several banks just raised targets above $4,000',
+      ],
+      q: 'Does spot gold close above $4,000/oz at any point in October?',
+      reveal: "Oct 9: spot gold closed above $4,000 for the first time in history ($4,018.16). Shutdown + cuts + central-bank buying, three arrows at once — gold's best year since 1979.",
+    },
   },
 
   /* ===== 币圈庙口 ===== */
   {
-    id: 'btccrash', cat: 'crypto', date: '2025 年 10 月 10 日晚间',
-    mask: '白宫突发贸易战升级推文',
-    intel: [
-      '总统刚发文威胁对最大贸易伙伴加征 100% 关税，全球风险资产跳水',
-      'BTC 数小时前还在 $122k 附近的历史高位区',
-      '永续合约资金费率偏高，杠杆多头拥挤',
-      '美股已收盘，crypto 是唯一还开着的泄洪口',
-    ],
-    q: '推文次日（UTC）BTC 收盘跌幅是否 ≥ 5%？',
-    yesPrice: 0.25, outcome: 'YES', hintMag: 0.12,
-    reveal: '关税推文引发 crypto 史上最大清算日：全网爆仓约 $19B，UTC 收盘 $121,715 → $112,980（-7.2%），盘中一度砸穿 $105k。周末无处对冲，杠杆即燃料。',
-    verified: true,
+    id: 'btccrash', cat: 'crypto', yesPrice: 0.25, outcome: 'YES', hintMag: 0.12, verified: true,
+    zh: {
+      date: '2025 年 10 月 10 日晚间', mask: '白宫突发贸易战升级推文',
+      intel: [
+        '总统刚发文威胁对最大贸易伙伴加征 100% 关税，全球风险资产跳水',
+        'BTC 数小时前还在 $122k 附近的历史高位区',
+        '永续合约资金费率偏高，杠杆多头拥挤',
+        '美股已收盘，crypto 是唯一还开着的泄洪口',
+      ],
+      q: '推文次日（UTC）BTC 收盘跌幅是否 ≥ 5%？',
+      reveal: '关税推文引发 crypto 史上最大清算日：全网爆仓约 $19B，UTC 收盘 $121,715 → $112,980（-7.2%），盘中一度砸穿 $105k。周末无处对冲，杠杆即燃料。',
+    },
+    en: {
+      date: 'Evening, Oct 10, 2025', mask: 'A surprise trade-war escalation tweet from the White House',
+      intel: [
+        'The President just threatened 100% tariffs on the largest trading partner; risk assets diving',
+        'BTC was near its $122k all-time-high zone hours earlier',
+        'Perp funding rates elevated; leveraged longs crowded',
+        'US equities already closed — crypto is the only open release valve',
+      ],
+      q: 'Next UTC day: does BTC close down ≥ 5%?',
+      reveal: "The tariff tweet triggered crypto's biggest liquidation day ever: ~$19B wiped out; UTC close $121,715 → $112,980 (-7.2%), briefly smashing through $105k intraday. Nowhere to hedge on a weekend — leverage was the fuel.",
+    },
   },
   {
-    id: 'btcxmas', cat: 'crypto', date: '2025 年 12 月下旬',
-    mask: '平安夜的 BTC 定价权之争',
-    intel: [
-      '10 月闪崩后 BTC 一路阴跌，11 月一度失守 $90k',
-      'ETF 连续数周净流出，DAT 公司停止增持',
-      '12 月在 $85k–$95k 区间反复拉锯，多头喊「圣诞奇迹」',
-      '空头则认为任何反弹都是下跌中继，$100k 遥不可及',
-    ],
-    q: '12 月 24 日 BTC 收盘是否 ≥ $100,000？',
-    yesPrice: 0.12, outcome: 'NO', hintMag: 0.10,
-    reveal: '平安夜 BTC 收 $87,609，距 $100k 差着一整段牛市。圣诞奇迹没有来，2025 年的 BTC 以一根疲惫的年线收官（12-31 收 $87,498）。',
-    verified: true,
+    id: 'btcxmas', cat: 'crypto', yesPrice: 0.12, outcome: 'NO', hintMag: 0.10, verified: true,
+    zh: {
+      date: '2025 年 12 月下旬', mask: '平安夜的 BTC 定价权之争',
+      intel: [
+        '10 月闪崩后 BTC 一路阴跌，11 月一度失守 $90k',
+        'ETF 连续数周净流出，DAT 公司停止增持',
+        '12 月在 $85k–$95k 区间反复拉锯，多头喊「圣诞奇迹」',
+        '空头则认为任何反弹都是下跌中继，$100k 遥不可及',
+      ],
+      q: '12 月 24 日 BTC 收盘是否 ≥ $100,000？',
+      reveal: '平安夜 BTC 收 $87,609，距 $100k 差着一整段牛市。圣诞奇迹没有来，2025 年的 BTC 以一根疲惫的年线收官（12-31 收 $87,498）。',
+    },
+    en: {
+      date: 'Late Dec 2025', mask: "Christmas Eve battle for BTC's price level",
+      intel: [
+        'After the October crash BTC ground lower; briefly lost $90k in November',
+        'Weeks of ETF outflows; corporate treasuries stopped accumulating',
+        "December stuck chopping in $85k–$95k; bulls calling for a 'Christmas miracle'",
+        'Bears say every bounce is a bear-market rally; $100k is out of reach',
+      ],
+      q: 'Does BTC close ≥ $100,000 on Dec 24?',
+      reveal: 'Christmas Eve BTC closed at $87,609 — a whole bull market short of $100k. No miracle came; BTC ended 2025 on a tired yearly candle ($87,498 on Dec 31).',
+    },
   },
 ];
 
-/* ---------- 棋盘布局：24 格，角 0/6/12/18 ---------- */
+/* ---------- 棋盘布局：24 格，角 0/6/12/18（双语） ---------- */
 const CORNERS = {
-  0:  { key: 'go',    emoji: '🏁', name: '开盘钟', desc: '每过一圈发工资 +100' },
-  6:  { key: 'tax',   emoji: '💸', name: '交易税', desc: '缴纳现金的 5%' },
-  12: { key: 'rumor', emoji: '🍸', name: '小道消息', desc: '下一注若赢，赔付 ×1.25' },
-  18: { key: 'halt',  emoji: '🧊', name: '熔断休市', desc: '歇一格，什么都不做' },
+  0:  { key: 'go',    emoji: '🏁', zh: { name: '开盘钟' }, en: { name: 'Opening Bell' } },
+  6:  { key: 'tax',   emoji: '💸', zh: { name: '交易税' }, en: { name: 'Trading Tax' } },
+  12: { key: 'rumor', emoji: '🍸', zh: { name: '小道消息' }, en: { name: 'Hot Tip' } },
+  18: { key: 'halt',  emoji: '🧊', zh: { name: '熔断休市' }, en: { name: 'Circuit Breaker' } },
 };
 const CAT_CYCLE = ['tech', 'biz', 'macro', 'geo', 'crypto'];
 const TILES = [];
@@ -756,6 +1112,52 @@ function toast(msg, ms = 4200) {
   setTimeout(() => t.classList.remove('show'), ms);
 }
 function fmt(n) { return (n >= 0 ? '+' : '') + Math.round(n); }
+const cardT = (card) => card[LANG] || card.zh;
+const catT = (c) => CATS[c][LANG] || CATS[c].zh;
+const cornerT = (c) => c[LANG] || c.zh;
+
+/* ---------- 语言应用 ---------- */
+function applyLang() {
+  const t = T();
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
+  $('langToggle').textContent = LANG === 'zh' ? 'EN' : '中';
+  const set = (id, v, html) => { const e = $(id); if (e) { if (html) e.innerHTML = v; else e.textContent = v; } };
+  set('mastSub', t.mastSub); set('plazaLink', t.plazaLink);
+  set('stTitle', t.stTitle); set('stHint', t.stHint);
+  set('fName', t.fName); set('fAvatar', t.fAvatar); set('fBrain', t.fBrain);
+  set('tabSim', t.tabSim); set('tabApi', t.tabApi);
+  set('fKey', t.fKey); set('fModel', t.fModel);
+  set('apiNote', t.apiNote); set('simNote', t.simNote);
+  set('fPreset', t.fPreset);
+  set('pvT', t.pvT); set('pvD', t.pvD); set('phT', t.phT); set('phD', t.phD); set('pyT', t.pyT); set('pyD', t.pyD);
+  set('fPrompt', t.fPrompt); set('fTraits', t.fTraits);
+  set('uKelly', t.uKelly); set('uEdge', t.uEdge); set('uConf', t.uConf); set('uContra', t.uContra);
+  set('luKelly', t.uKelly); set('luEdge', t.uEdge); set('luConf', t.uConf); set('luContra', t.uContra);
+  set('fSeed', t.fSeed); set('randSeed', t.randSeed);
+  set('startBtn', t.startBtn);
+  set('feedTitle', t.feedTitle); set('logTitle', t.logTitle);
+  set('pauseBtn', S.paused ? t.resume : t.pause); set('stepBtn', t.step);
+  set('spSlow', t.spSlow); set('spNorm', t.spNorm); set('spFast', t.spFast); set('spTurbo', t.spTurbo);
+  set('quitBtn', t.quit);
+  set('liveSummary', t.liveSummary); set('applyNote', t.applyNote);
+  set('footerNote', t.footerNote, true);
+  set('finalTitle', t.finalTitle);
+  set('againSame', t.againSame); set('againNew', t.againNew);
+  if ($('board').children.length) {
+    for (const tile of TILES) {
+      const d = $('tile-' + tile.pos);
+      if (!d) continue;
+      const nameEl = d.querySelector('.t-name');
+      if (nameEl) nameEl.textContent = tile.corner ? cornerT(tile.corner).name : catT(tile.cat).name;
+    }
+    refreshCenter(0);
+  }
+  const ta = $('agentPrompt');
+  const cur = ta.value.trim();
+  for (const p of Object.values(PRESET_PROMPTS)) {
+    if (cur === p.zh || cur === p.en) { ta.value = p[LANG]; break; }
+  }
+}
 
 /* ---------- 捏 Agent 界面 ---------- */
 const AVATARS = ['🐯', '🦊', '🐢', '🦅', '🐂', '🐻', '🤖', '👺'];
@@ -770,6 +1172,11 @@ const AVATARS = ['🐯', '🦊', '🐢', '🦅', '🐂', '🐻', '🤖', '👺']
   $('tabSim').onclick = () => { S.brain = 'sim'; $('tabSim').classList.add('sel'); $('tabApi').classList.remove('sel'); $('apiFields').classList.remove('show'); };
   $('tabApi').onclick = () => { S.brain = 'api'; $('tabApi').classList.add('sel'); $('tabSim').classList.remove('sel'); $('apiFields').classList.add('show'); };
   $('randSeed').onclick = () => { $('seedInput').value = 'seed-' + Math.random().toString(36).slice(2, 8); };
+  $('langToggle').onclick = () => {
+    LANG = LANG === 'zh' ? 'en' : 'zh';
+    localStorage.setItem('es_lang', LANG);
+    applyLang();
+  };
 
   const sync = () => {
     $('vKelly').textContent = (+$('sKelly').value / 100).toFixed(2);
@@ -780,47 +1187,36 @@ const AVATARS = ['🐯', '🦊', '🐢', '🦅', '🐂', '🐻', '🤖', '👺']
   ['sKelly', 'sEdge', 'sConf', 'sContra'].forEach(id => $(id).oninput = sync);
   sync();
 
-  const PRESETS = {
-    value: {
-      prompt: '你是一个极端保守的价值型交易员。只有当你的估计和庄家报价差距超过 8 个百分点才出手，用八分之一 Kelly，单注不超过资金的 10%。大多数盘直接跳过——不亏钱是第一原则。',
-      k: 12, e: 8, c: 60, x: 0,
-    },
-    hunter: {
-      prompt: '你是一个纪律严明的事件驱动交易员。只有当你的估计与庄家报价的差距超过 5 个百分点才下注，用四分之一 Kelly 控制仓位，单注不超过资金的 20%。财报事件你更有信心，宏观事件保持谦逊。看不懂的盘直接跳过，跳过不丢人。',
-      k: 25, e: 5, c: 55, x: 0,
-    },
-    yolo: {
-      prompt: '你是一个 YOLO 赌狗，逢盘必赌，从不跳过。你天然不信市场定价，喜欢和大众对着干，仓位越大越兴奋，单注可以到资金的 40%。要么起飞要么归零。',
-      k: 90, e: 0, c: 30, x: -60,
-    },
-  };
+  $('agentPrompt').value = PRESET_PROMPTS.hunter[LANG];
+
   document.querySelectorAll('[data-preset]').forEach(b => {
     b.onclick = () => {
-      const p = PRESETS[b.dataset.preset];
-      $('agentPrompt').value = p.prompt;
+      const p = PRESET_PROMPTS[b.dataset.preset];
+      $('agentPrompt').value = p[LANG];
       $('sKelly').value = p.k; $('sEdge').value = p.e; $('sConf').value = p.c; $('sContra').value = p.x;
       sync();
     };
   });
 
-  // prompt 关键词 → 模拟脑参数（透明可见：解析后直接改滑杆）
+  // prompt 关键词 → 模拟脑参数（中英关键词都识别；解析结果直接改滑杆，保持透明）
   $('agentPrompt').addEventListener('change', () => {
     const t = $('agentPrompt').value;
     let k = +$('sKelly').value, e = +$('sEdge').value, c = +$('sConf').value, x = +$('sContra').value;
-    if (/梭哈|YOLO|赌狗|重仓|越大越/i.test(t)) k = Math.max(k, 80);
-    if (/保守|谨慎|八分之一|小仓/.test(t)) k = Math.min(k, 15);
-    if (/四分之一\s*Kelly/.test(t)) k = 25;
-    if (/半\s*Kelly/.test(t)) k = 50;
-    if (/逢盘必赌|从不跳过|全都要/.test(t)) e = 0;
-    if (/门槛|超过\s*8|大于\s*8/.test(t)) e = Math.max(e, 8);
-    if (/对着干|逆向|反着来|不信市场/.test(t)) x = Math.min(x, -50);
-    if (/跟随|顺势|相信市场/.test(t)) x = Math.max(x, 40);
-    if (/研究|深度|功课|专业/.test(t)) c = Math.max(c, 65);
+    if (/梭哈|YOLO|赌狗|重仓|越大越|all.?in|degen|max.?size|moon/i.test(t)) k = Math.max(k, 80);
+    if (/保守|谨慎|八分之一|小仓|conservative|cautious|one.?eighth|small size/i.test(t)) k = Math.min(k, 15);
+    if (/四分之一\s*Kelly|quarter.?kelly/i.test(t)) k = 25;
+    if (/半\s*Kelly|half.?kelly/i.test(t)) k = 50;
+    if (/逢盘必赌|从不跳过|全都要|never skip|bet every/i.test(t)) e = 0;
+    if (/门槛|超过\s*8|大于\s*8|more than 8|8 points/i.test(t)) e = Math.max(e, 8);
+    if (/对着干|逆向|反着来|不信市场|contrarian|fade|distrust/i.test(t)) x = Math.min(x, -50);
+    if (/跟随|顺势|相信市场|momentum|follow the market|trust the market/i.test(t)) x = Math.max(x, 40);
+    if (/研究|深度|功课|专业|research|deep dive|homework/i.test(t)) c = Math.max(c, 65);
     $('sKelly').value = k; $('sEdge').value = e; $('sConf').value = c; $('sContra').value = x;
     sync();
   });
 
   $('startBtn').onclick = startGame;
+  applyLang();
 })();
 
 /* ---------- 开局 ---------- */
@@ -835,14 +1231,13 @@ function startGame() {
   };
   S.apiKey = $('apiKey').value.trim();
   S.apiModel = $('apiModel').value;
-  if (S.brain === 'api' && !S.apiKey) { toast('Claude 脑需要填 API key，或先切回模拟脑'); return; }
+  if (S.brain === 'api' && !S.apiKey) { toast(T().needKey); return; }
 
   S.seed = $('seedInput').value.trim() || 'default';
   S.rng = mulberry32(hashSeed(S.seed));
   S.bankroll = 1000; S.pos = 0; S.rolls = 0; S.equity = [1000];
   S.log = []; S.rumorBuff = false; S.paused = false; S.over = false;
 
-  // 每类一副牌，seed 洗牌
   S.decks = {};
   for (const c of Object.keys(CATS)) {
     const cards = DECK.filter(d => d.cat === c).slice();
@@ -861,8 +1256,10 @@ function startGame() {
   $('lsKelly').value = S.traits.kelly * 100; $('lsEdge').value = S.traits.edge * 100;
   $('lsConf').value = S.traits.conf * 100; $('lsContra').value = S.traits.contra * 100;
   syncLive();
+  applyLang();
 
-  sysMsg(`🎲 seed = <b>${S.seed}</b> · ${S.brain === 'api' ? 'Claude 脑（' + S.apiModel + '）' : '模拟脑'} · ${S.avatar} <b>${S.name}</b> 进场，启动资金 1000`);
+  const t = T();
+  sysMsg(t.seedLine(S.seed, S.brain === 'api' ? t.brainApi(S.apiModel) : t.brainSim, S.avatar, S.name));
   S.running = true;
   gameLoop();
 }
@@ -894,23 +1291,24 @@ function renderBoard() {
     d.style.gridArea = `${r} / ${c}`;
     d.id = 'tile-' + t.pos;
     if (t.corner) {
-      d.innerHTML = `<div class="t-emoji">${t.corner.emoji}</div><div class="t-name">${t.corner.name}</div>`;
+      d.innerHTML = `<div class="t-emoji">${t.corner.emoji}</div><div class="t-name">${cornerT(t.corner).name}</div>`;
     } else {
       const cat = CATS[t.cat];
-      d.innerHTML = `<div class="band" style="background:${cat.color}"></div><div class="t-emoji">${cat.emoji}</div><div class="t-name">${cat.name}</div>`;
+      d.innerHTML = `<div class="band" style="background:${cat.color}"></div><div class="t-emoji">${cat.emoji}</div><div class="t-name">${catT(t.cat).name}</div>`;
     }
     b.appendChild(d);
   }
   const center = el('div', 'board-center');
   center.innerHTML = `
     <div class="bc-title serif">事 件 街</div>
-    <div class="bankroll num" id="bankrollBox">1000<span class="unit">代币</span></div>
-    <div class="sub-stats num"><span id="lapBox">第 1 圈</span><span id="rollBox">0/${S.maxRolls} 手</span><span id="plBox">P&L +0</span></div>
+    <div class="bankroll num" id="bankrollBox">1000<span class="unit"></span></div>
+    <div class="sub-stats num"><span id="lapBox"></span><span id="rollBox"></span><span id="plBox"></span></div>
     <div class="dice" id="diceBox">🎲</div>
     <svg class="spark-mini" id="sparkMini" width="180" height="40"></svg>
   `;
   $('board').appendChild(center);
   placePawn(0);
+  refreshCenter(0);
 }
 function placePawn(pos) {
   document.querySelectorAll('.pawn').forEach(p => p.remove());
@@ -921,13 +1319,15 @@ function placePawn(pos) {
   tile.appendChild(el('span', 'pawn', S.avatar));
 }
 function refreshCenter(deltaFlash) {
+  const t = T();
   const bb = $('bankrollBox');
-  bb.innerHTML = `${Math.round(S.bankroll)}<span class="unit">代币</span>`;
+  if (!bb) return;
+  bb.innerHTML = `${Math.round(S.bankroll)}<span class="unit">${t.chips}</span>`;
   bb.classList.remove('flash-up', 'flash-down');
   if (deltaFlash > 0) bb.classList.add('flash-up');
   if (deltaFlash < 0) bb.classList.add('flash-down');
-  $('lapBox').textContent = `第 ${Math.floor((S.rolls * 3.5) / 24) + 1} 圈`;
-  $('rollBox').textContent = `${S.rolls}/${S.maxRolls} 手`;
+  $('lapBox').textContent = t.lap(Math.floor((S.rolls * 3.5) / 24) + 1);
+  $('rollBox').textContent = t.rolls(S.rolls, S.maxRolls);
   const pl = S.bankroll - 1000;
   const pb = $('plBox');
   pb.textContent = 'P&L ' + fmt(pl);
@@ -941,10 +1341,12 @@ function feedAdd(node) {
 }
 function sysMsg(html) { feedAdd(el('div', 'msg sys', html)); }
 function npcMsg(cat, html) {
-  feedAdd(el('div', 'msg npc', `<div class="who">${CATS[cat].emoji} ${CATS[cat].npc} · ${CATS[cat].name}</div>${html}`));
+  const c = catT(cat);
+  feedAdd(el('div', 'msg npc', `<div class="who">${CATS[cat].emoji} ${c.npc} · ${c.name}</div>${html}`));
 }
 function agentMsg(html) {
-  feedAdd(el('div', 'msg agent', `<div class="who">${S.avatar} ${S.name}${S.brain === 'api' ? ' · Claude脑' : ' · 模拟脑'}</div>${html}`));
+  const t = T();
+  feedAdd(el('div', 'msg agent', `<div class="who">${S.avatar} ${S.name} · ${S.brain === 'api' ? t.brainApi(S.apiModel) : t.brainSim}</div>${html}`));
 }
 
 /* ---------- 主循环 ---------- */
@@ -967,23 +1369,21 @@ async function waitIfPaused() {
 async function gameLoop() {
   while (!S.over) {
     await waitIfPaused();
-    if (S.rolls >= S.maxRolls) { endGame('收盘时间到'); break; }
-    if (S.bankroll < 10) { endGame('弹尽粮绝'); break; }
-    if (Object.values(S.decks).every(d => d.length === 0)) { endGame('所有盘口已清'); break; }
+    if (S.rolls >= S.maxRolls) { endGame('time'); break; }
+    if (S.bankroll < 10) { endGame('broke'); break; }
+    if (Object.values(S.decks).every(d => d.length === 0)) { endGame('empty'); break; }
 
-    // 掷骰
     const steps = 1 + Math.floor(S.rng() * 6);
     S.rolls++;
     $('diceBox').textContent = '⚀⚁⚂⚃⚄⚅'[steps - 1];
     await delay(500);
 
-    // 走格子（逐格跳）
     for (let i = 0; i < steps; i++) {
       const prev = S.pos;
       S.pos = (S.pos + 1) % 24;
       if (S.pos === 0 && prev !== 0) {
         S.bankroll += 100;
-        sysMsg('🏁 路过开盘钟，工资 <b class="pl-pos">+100</b>');
+        sysMsg(T().payday);
         S.equity.push(S.bankroll);
         refreshCenter(1);
       }
@@ -1004,71 +1404,78 @@ async function gameLoop() {
 }
 
 async function handleCorner(c) {
+  const t = T();
   if (c.key === 'go') {
-    sysMsg('🏁 正落开盘钟——顺手把钟敲了一下。');
+    sysMsg(t.goCorner);
   } else if (c.key === 'tax') {
     const tax = Math.max(20, Math.round(S.bankroll * 0.05));
     S.bankroll -= tax;
     S.equity.push(S.bankroll);
-    sysMsg(`💸 交易税：缴纳 <b class="pl-neg">-${tax}</b>`);
+    sysMsg(t.tax(tax));
     refreshCenter(-1);
   } else if (c.key === 'rumor') {
     S.rumorBuff = true;
-    sysMsg('🍸 酒吧里听到小道消息：<b style="color:var(--gold-bright)">下一注若赢，赔付 ×1.25</b>');
+    sysMsg(t.rumor);
   } else if (c.key === 'halt') {
-    sysMsg('🧊 熔断休市，喝口茶。');
+    sysMsg(t.halt);
   }
 }
 
 /* ---------- NPC 格子：出题 → agent 决策 → 开盅 ---------- */
 function drawCard(cat) {
   if (S.decks[cat].length) return { card: S.decks[cat].shift(), borrowed: null };
-  // 本类清空：找别家还有货的
   for (const c of Object.keys(S.decks)) {
     if (S.decks[c].length) return { card: S.decks[c].shift(), borrowed: c };
   }
   return { card: null, borrowed: null };
 }
 
-async function handleNpcTile(cat) {
-  const { card, borrowed } = drawCard(cat);
-  if (!card) { sysMsg('所有盘口都清空了。'); return; }
-  const host = borrowed || cat;
-  const cinfo = CATS[host];
-  if (borrowed) sysMsg(`${CATS[cat].npc}这里没盘了，把你介绍给了${cinfo.npc}。`);
+function revealFirst(card) {
+  const r = cardT(card).reveal;
+  const stop = LANG === 'zh' ? '。' : '.';
+  const i = r.indexOf(stop);
+  return i > 0 ? r.slice(0, i) : r;
+}
 
-  const taunt = cinfo.taunt[Math.floor(S.rng() * cinfo.taunt.length)];
+async function handleNpcTile(cat) {
+  const t = T();
+  const { card, borrowed } = drawCard(cat);
+  if (!card) { sysMsg(t.allClear); return; }
+  const host = borrowed || cat;
+  const hostT = catT(host);
+  if (borrowed) sysMsg(t.referral(catT(cat).npc, hostT.npc));
+
+  const taunt = hostT.taunts[Math.floor(S.rng() * hostT.taunts.length)];
+  const ct = cardT(card);
   const pctYes = Math.round(card.yesPrice * 100);
   npcMsg(host, `
     「${taunt}」
     <div class="intel">
-      <b>📅 ${card.date} · ${card.mask}</b>
-      <ul>${card.intel.map(x => `<li>${x}</li>`).join('')}</ul>
-      <div class="quote-line">🎯 ${card.q}<br>
-        报价：YES <span class="px">${pctYes}¢</span> · NO <span class="px">${100 - pctYes}¢</span>
-        <span style="font-weight:400;font-size:11.5px;color:#7A6B3E">（买中 1 股付 1）</span>
+      <b>📅 ${ct.date} · ${ct.mask}</b>
+      <ul>${ct.intel.map(x => `<li>${x}</li>`).join('')}</ul>
+      <div class="quote-line">🎯 ${ct.q}<br>
+        YES <span class="px">${pctYes}¢</span> · NO <span class="px">${100 - pctYes}¢</span>
+        <span style="font-weight:400;font-size:11.5px;color:#7A6B3E">${t.quoteLine}</span>
       </div>
     </div>
   `);
   await delay(1400);
   await waitIfPaused();
 
-  // agent 决策
-  const thinking = el('div', 'msg agent', `<div class="who">${S.avatar} ${S.name}</div><i>盯盘思考中…</i>`);
+  const thinking = el('div', 'msg agent', `<div class="who">${S.avatar} ${S.name}</div>${t.thinking}`);
   feedAdd(thinking);
   const t0 = performance.now();
   let dec;
   try {
     dec = S.brain === 'api' ? await claudeDecide(card) : simDecide(card);
   } catch (err) {
-    toast('Claude 调用失败（' + (err.message || err) + '），本格回退模拟脑');
+    toast(t.apiFail(err.message || err));
     dec = simDecide(card);
   }
   const think = Math.max(0, 900 - (performance.now() - t0));
   await delay(think);
   thinking.remove();
 
-  // 合法性钳制
   const maxStake = Math.floor(S.bankroll * 0.4);
   if (dec.action !== 'skip') {
     dec.stake = Math.round(Math.min(Math.max(dec.stake || 0, 10), maxStake));
@@ -1076,21 +1483,20 @@ async function handleNpcTile(cat) {
   }
 
   if (dec.action === 'skip') {
-    agentMsg(`🙅 <b>跳过</b>。${dec.reason || ''}`);
-    const rv = el('div', 'msg reveal-skip', `👁 开盅（未下注）：<b>${card.reveal.split('。')[0]}。</b> 结果 <b>${card.outcome}</b>${card.verified ? '' : ' <span class="unverified">⚠︎近似</span>'}`);
+    agentMsg(`${t.skipBet}${dec.reason || ''}`);
+    const rv = el('div', 'msg reveal-skip', `${t.revealSkip(revealFirst(card), card.outcome)}${card.verified ? '' : ' <span class="unverified">' + t.unverified + '</span>'}`);
     await delay(1100); feedAdd(rv);
     addLog(card, dec, 0);
     return;
   }
 
-  const side = dec.action; // 'yes' | 'no'
+  const side = dec.action;
   const price = side === 'yes' ? card.yesPrice : 1 - card.yesPrice;
   const pot = Math.round(dec.stake * (1 - price) / price);
-  agentMsg(`${side === 'yes' ? '🟢 买 <b>YES</b>' : '🔴 买 <b>NO</b>'} @ ${Math.round(price * 100)}¢ · 押 <b class="num">${dec.stake}</b>（赢可得 +${pot}）<br><span style="color:var(--text-dim)">${dec.reason || ''}</span>`);
+  agentMsg(`${t.buyLine(side, Math.round(price * 100), dec.stake, pot)}<br><span style="color:var(--text-dim)">${dec.reason || ''}</span>`);
   await delay(1500);
   await waitIfPaused();
 
-  // 开盅
   const win = (side === 'yes') === (card.outcome === 'YES');
   let pl;
   if (win) {
@@ -1105,9 +1511,9 @@ async function handleNpcTile(cat) {
   S.equity.push(S.bankroll);
 
   const rv = el('div', 'msg ' + (win ? 'reveal-win' : 'reveal-loss'), `
-    <b>🔔 开盅 · 结果 ${card.outcome}</b>${card.verified ? '' : ' <span class="unverified">⚠︎数字为近似值</span>'}<br>
-    ${card.reveal}<br>
-    <span class="${win ? 'pl-pos' : 'pl-neg'}">本注 ${fmt(pl)}${usedRumor ? '（小道消息 ×1.25 已生效）' : ''}</span> · 余额 <b class="num">${Math.round(S.bankroll)}</b>
+    <b>${t.revealHead(card.outcome)}</b>${card.verified ? '' : ' <span class="unverified">' + t.unverified + '</span>'}<br>
+    ${cardT(card).reveal}<br>
+    <span class="${win ? 'pl-pos' : 'pl-neg'}">${t.betResult(fmt(pl), usedRumor, Math.round(S.bankroll))}
   `);
   feedAdd(rv);
   refreshCenter(pl);
@@ -1115,12 +1521,13 @@ async function handleNpcTile(cat) {
 }
 
 function addLog(card, dec, pl) {
-  const ticker = card.reveal.match(/（([A-Z]{2,6})）/);
-  const sideTxt = dec.action === 'skip' ? '跳过' : (dec.action === 'yes' ? 'YES' : 'NO') + ' ' + dec.stake;
+  const t = T();
+  const ticker = card.zh.reveal.match(/（([A-Z]{2,6})）/);
+  const sideTxt = dec.action === 'skip' ? t.skipMark : (dec.action === 'yes' ? 'YES' : 'NO') + ' ' + dec.stake;
   S.log.push({ card, dec, pl });
   const row = el('div', 'logrow');
   row.innerHTML = `
-    <span class="l-left">${CATS[card.cat].emoji} ${ticker ? ticker[1] : card.mask.slice(0, 8)} · ${sideTxt}</span>
+    <span class="l-left">${CATS[card.cat].emoji} ${ticker ? ticker[1] : cardT(card).mask.slice(0, 12)} · ${sideTxt}</span>
     <span class="l-right num ${pl > 0 ? 'pl-pos' : pl < 0 ? 'pl-neg' : ''}" >${dec.action === 'skip' ? '—' : fmt(pl)}</span>
   `;
   $('logbox').prepend(row);
@@ -1129,46 +1536,64 @@ function addLog(card, dec, pl) {
 /* ---------- 模拟脑 ---------- */
 function simDecide(card) {
   const t = S.traits;
+  const tt = T();
   const pm = card.yesPrice;
   const truth = card.outcome === 'YES' ? 1 : -1;
   const noise = (S.rng() * 2 - 1) * 0.12;
-  // 自估 = 市场价 + 研究功力×事后可读性×真相方向 + 剩余噪声 + 逆向拉扯
   let pa = pm + t.conf * card.hintMag * truth + (1 - t.conf) * noise + t.contra * (0.5 - pm) * 0.35;
   pa = Math.min(0.97, Math.max(0.03, pa));
   const edgeYes = pa - pm;
   const side = edgeYes >= 0 ? 'yes' : 'no';
   const edge = Math.abs(edgeYes);
   if (edge < t.edge) {
-    return { action: 'skip', reason: `自估 ${Math.round(pa * 100)}% vs 报价 ${Math.round(pm * 100)}¢，edge ${(edge * 100).toFixed(1)}pt 不够门槛（${Math.round(t.edge * 100)}pt），不动。` };
+    return { action: 'skip', reason: tt.simSkipReason(Math.round(pa * 100), Math.round(pm * 100), (edge * 100).toFixed(1), Math.round(t.edge * 100)) };
   }
   const price = side === 'yes' ? pm : 1 - pm;
-  const kellyF = edge / (1 - price);          // 二元盘 Kelly 分数
+  const kellyF = edge / (1 - price);
   let stake = Math.round(S.bankroll * Math.min(0.4, kellyF * t.kelly * 2));
   stake = Math.max(10, stake);
   return {
     action: side, stake,
-    reason: `自估 YES ${Math.round(pa * 100)}% vs 报价 ${Math.round(pm * 100)}¢ → 买${side === 'yes' ? ' YES' : ' NO'}，edge ${(edge * 100).toFixed(1)}pt，按 ${t.kelly.toFixed(2)}×Kelly 出 ${stake}。`,
+    reason: tt.simBetReason(Math.round(pa * 100), Math.round(pm * 100), side, (edge * 100).toFixed(1), t.kelly.toFixed(2), stake),
   };
 }
 
 /* ---------- Claude 脑 ---------- */
 async function claudeDecide(card) {
+  const ct = cardT(card);
   const pctYes = Math.round(card.yesPrice * 100);
   const histBrief = S.log.slice(-5).map(l =>
-    `${l.dec.action === 'skip' ? '跳过' : (l.dec.action + ' ' + l.dec.stake)} → ${l.pl > 0 ? '+' : ''}${l.pl}`).join('; ') || '（首单）';
-  const system = `你是玩家在大富翁式游戏「事件街」里的交易 agent。玩家为你写的人格与策略指令：
+    `${l.dec.action === 'skip' ? T().skipMark : (l.dec.action + ' ' + l.dec.stake)} → ${l.pl > 0 ? '+' : ''}${l.pl}`).join('; ') || T().firstBet;
+
+  const system = LANG === 'zh'
+    ? `你是玩家在大富翁式游戏「事件街」里的交易 agent。玩家为你写的人格与策略指令：
 ---
 ${S.prompt || '（玩家没写，按理性期望值最大化行事）'}
 ---
-规则：NPC 给出一个被 mask 的真实历史事件的赛前情报和一个二元盘。报价即隐含概率（YES x¢ 表示买 YES 每股成本 x 美分、结算为 1 或 0）。你要选择买 YES、买 NO 或跳过，并给出下注金额（整数，最低 10，不超过当前资金的 40%）。你只能依据情报和你的策略，禁止猜测真实标的名称。报价可能失准——那就是你的 edge 来源；也可能没有 edge——跳过完全合法。`;
-  const user = `【当前资金】${Math.round(S.bankroll)} 代币
+规则：NPC 给出一个被 mask 的真实历史事件的赛前情报和一个二元盘。报价即隐含概率（YES x¢ 表示买 YES 每股成本 x 美分、结算为 1 或 0）。你要选择买 YES、买 NO 或跳过，并给出下注金额（整数，最低 10，不超过当前资金的 40%）。你只能依据情报和你的策略，禁止猜测真实标的名称。报价可能失准——那就是你的 edge 来源；也可能没有 edge——跳过完全合法。`
+    : `You are the player's trading agent in "Event Street", a Monopoly-style game. The player's persona & strategy instructions for you:
+---
+${S.prompt || '(none given — act as a rational EV maximizer)'}
+---
+Rules: an NPC bookmaker presents pre-event intel for a masked real historical event plus a binary market. The quote is the implied probability (YES at x¢ costs x cents per share, settles at 1 or 0). Choose buy YES, buy NO, or skip, and give an integer stake (min 10, max 40% of current bankroll). Use only the intel and your strategy; never guess the real ticker. Quotes may be miscalibrated — that's your edge; there may be no edge at all — skipping is perfectly legal.`;
+
+  const user = LANG === 'zh'
+    ? `【当前资金】${Math.round(S.bankroll)} 代币
 【最近下注】${histBrief}
-【盘面】${card.date} · ${card.mask}
+【盘面】${ct.date} · ${ct.mask}
 情报：
-${card.intel.map(x => '- ' + x).join('\n')}
-问题：${card.q}
+${ct.intel.map(x => '- ' + x).join('\n')}
+问题：${ct.q}
 报价：YES ${pctYes}¢ / NO ${100 - pctYes}¢
-请决策。`;
+请决策。`
+    : `[Bankroll] ${Math.round(S.bankroll)} chips
+[Recent bets] ${histBrief}
+[Market] ${ct.date} · ${ct.mask}
+Intel:
+${ct.intel.map(x => '- ' + x).join('\n')}
+Question: ${ct.q}
+Quote: YES ${pctYes}¢ / NO ${100 - pctYes}¢
+Decide.`;
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -1190,7 +1615,7 @@ ${card.intel.map(x => '- ' + x).join('\n')}
             properties: {
               action: { type: 'string', enum: ['yes', 'no', 'skip'] },
               stake: { type: 'integer' },
-              reason: { type: 'string', description: '一两句话的中文决策理由，60字以内' },
+              reason: { type: 'string', description: LANG === 'zh' ? '一两句话的中文决策理由，60字以内' : 'One or two short English sentences of reasoning, under 200 chars' },
             },
             required: ['action', 'stake', 'reason'],
             additionalProperties: false,
@@ -1203,12 +1628,12 @@ ${card.intel.map(x => '- ' + x).join('\n')}
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}${body ? '：' + body.slice(0, 120) : ''}`);
+    throw new Error(`HTTP ${res.status}${body ? ': ' + body.slice(0, 120) : ''}`);
   }
   const data = await res.json();
-  if (data.stop_reason === 'refusal') throw new Error('模型拒答');
+  if (data.stop_reason === 'refusal') throw new Error(LANG === 'zh' ? '模型拒答' : 'model refused');
   const txt = (data.content || []).find(b => b.type === 'text');
-  if (!txt) throw new Error('空响应');
+  if (!txt) throw new Error(LANG === 'zh' ? '空响应' : 'empty response');
   return JSON.parse(txt.text);
 }
 
@@ -1221,9 +1646,9 @@ function drawSpark(svg, series, w, h, big) {
   const pad = big ? 8 : 3;
   const X = i => pad + (n === 1 ? 0 : i / (n - 1)) * (w - pad * 2);
   const Y = v => h - pad - ((v - min) / span) * (h - pad * 2);
-  let d = '', area = '';
+  let d = '';
   series.forEach((v, i) => { d += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
-  area = d + `L${X(n - 1).toFixed(1)},${h - pad}L${X(0).toFixed(1)},${h - pad}Z`;
+  const area = d + `L${X(n - 1).toFixed(1)},${h - pad}L${X(0).toFixed(1)},${h - pad}Z`;
   const base = Y(1000);
   const last = series[n - 1];
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
@@ -1238,17 +1663,18 @@ function drawSpark(svg, series, w, h, big) {
 /* ---------- 控制 ---------- */
 $('pauseBtn').onclick = () => {
   S.paused = !S.paused;
-  $('pauseBtn').textContent = S.paused ? '▶ 继续' : '⏸ 暂停';
+  $('pauseBtn').textContent = S.paused ? T().resume : T().pause;
 };
 $('stepBtn').onclick = () => { if (S.paused) S.stepOnce = true; };
 $('speedSel').onchange = e => { S.speed = +e.target.value; };
-$('quitBtn').onclick = () => endGame('主动提前结算');
+$('quitBtn').onclick = () => endGame('quit');
 
 /* ---------- 结算 ---------- */
-function endGame(why) {
+function endGame(whyKey) {
   if (S.over) return;
   S.over = true; S.running = false;
-  sysMsg(`🔔 ${why}，收盘。`);
+  const t = T();
+  sysMsg(t.endBell(t.endWhy[whyKey] || whyKey));
 
   const bets = S.log.filter(l => l.dec.action !== 'skip');
   const wins = bets.filter(l => l.pl > 0);
@@ -1257,31 +1683,22 @@ function endGame(why) {
   const best = bets.slice().sort((a, b) => b.pl - a.pl)[0];
   const worst = bets.slice().sort((a, b) => a.pl - b.pl)[0];
 
-  const ratings = [
-    [2200, '👑 事件街之神 — 这一圈走完，庄家们连夜改赔率'],
-    [1600, '🦅 事件猎手 — edge 是真的被你叼走了'],
-    [1150, '🧭 稳健操盘手 — 活着，且小有盈余'],
-    [900,  '🎓 交学费的一年 — 亏得不多，学得不少'],
-    [500,  '🥬 新鲜韭菜 — NPC 们对你表示由衷感谢'],
-    [-1,   '🕳 破产艺术家 — 从 1000 到几乎归零，也是一种完成度'],
-  ];
-  const rating = ratings.find(r => S.bankroll >= r[0])[1];
+  const rating = t.ratings.find(r => S.bankroll >= r[0])[1];
 
   $('finalRating').textContent = rating;
   const fb = $('finalBankroll');
-  fb.textContent = Math.round(S.bankroll) + ' 代币';
+  fb.textContent = Math.round(S.bankroll) + ' ' + t.chips;
   fb.style.color = pl >= 0 ? 'var(--win)' : 'var(--loss)';
 
   $('finalSpark').innerHTML = '<svg id="bigSpark" width="560" height="120" style="max-width:100%"></svg>';
   drawSpark($('bigSpark'), S.equity, 560, 120, true);
 
   $('finalStats').innerHTML = `
-    <div class="stat"><div class="k">总收益</div><div class="v num" style="color:${pl >= 0 ? 'var(--win)' : 'var(--loss)'}">${fmt(pl)}（${(pl / 10).toFixed(1)}%）</div></div>
-    <div class="stat"><div class="k">下注 / 跳过</div><div class="v num">${bets.length} / ${skips}</div></div>
-    <div class="stat"><div class="k">胜率</div><div class="v num">${bets.length ? Math.round(wins.length / bets.length * 100) + '%' : '—'}</div></div>
+    <div class="stat"><div class="k">${t.stTotal}</div><div class="v num" style="color:${pl >= 0 ? 'var(--win)' : 'var(--loss)'}">${fmt(pl)} (${(pl / 10).toFixed(1)}%)</div></div>
+    <div class="stat"><div class="k">${t.stBets}</div><div class="v num">${bets.length} / ${skips}</div></div>
+    <div class="stat"><div class="k">${t.stHit}</div><div class="v num">${bets.length ? Math.round(wins.length / bets.length * 100) + '%' : '—'}</div></div>
   `;
 
-  // 分类战绩
   const catAgg = {};
   for (const l of bets) {
     const c = l.card.cat;
@@ -1289,18 +1706,17 @@ function endGame(why) {
     catAgg[c].n++; catAgg[c].pl += l.pl;
   }
   $('finalCatTable').innerHTML = `
-    <tr><th>分类战绩</th><th class="r">注数</th><th class="r">P&L</th></tr>
+    <tr><th>${t.thCat}</th><th class="r">${t.thN}</th><th class="r">${t.thPL}</th></tr>
     ${Object.entries(catAgg).map(([c, a]) => `
-      <tr><td>${CATS[c].emoji} ${CATS[c].name}</td><td class="r num">${a.n}</td>
+      <tr><td>${CATS[c].emoji} ${catT(c).name}</td><td class="r num">${a.n}</td>
       <td class="r num ${a.pl >= 0 ? 'pl-pos' : 'pl-neg'}">${fmt(a.pl)}</td></tr>`).join('')}
   `;
 
+  const tick = l => { const m = l.card.zh.reveal.match(/（([A-Z]{2,6})）/); return m ? m[1] : cardT(l.card).mask.slice(0, 8); };
   let betRows = '';
-  if (best && best.pl > 0) betRows += `<tr><td>🏆 最佳一注</td><td colspan="2">${tick(best)} ${best.dec.action.toUpperCase()} ${best.dec.stake} <span class="pl-pos num">${fmt(best.pl)}</span></td></tr>`;
-  if (worst && worst.pl < 0) betRows += `<tr><td>💀 最惨一注</td><td colspan="2">${tick(worst)} ${worst.dec.action.toUpperCase()} ${worst.dec.stake} <span class="pl-neg num">${fmt(worst.pl)}</span></td></tr>`;
+  if (best && best.pl > 0) betRows += `<tr><td>${t.bestBet}</td><td colspan="2">${tick(best)} ${best.dec.action.toUpperCase()} ${best.dec.stake} <span class="pl-pos num">${fmt(best.pl)}</span></td></tr>`;
+  if (worst && worst.pl < 0) betRows += `<tr><td>${t.worstBet}</td><td colspan="2">${tick(worst)} ${worst.dec.action.toUpperCase()} ${worst.dec.stake} <span class="pl-neg num">${fmt(worst.pl)}</span></td></tr>`;
   $('finalBets').innerHTML = betRows;
-
-  function tick(l) { const m = l.card.reveal.match(/（([A-Z]{2,6})）/); return m ? m[1] : l.card.mask.slice(0, 6); }
 
   $('finalOverlay').classList.add('show');
 }

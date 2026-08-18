@@ -63,6 +63,14 @@
     box-shadow:0 0 0 3px rgba(20,15,10,.86); text-decoration:none;
   }
   .home:hover{background:rgba(20,15,10,.96); color:var(--gold)}
+  /* 右上角的中/EN 切换。样式跟 .home 一个模子，叠在它下面。 */
+  .lang{
+    position:absolute; right:14px; top:57px; padding:8px 14px; z-index:5; cursor:pointer;
+    background:rgba(20,15,10,.86); color:#f7eeda; font-size:13px; font-family:var(--ui);
+    box-shadow:0 0 0 3px rgba(20,15,10,.86); border:0; letter-spacing:1px;
+  }
+  .lang:hover{background:rgba(20,15,10,.96)}
+  .lang b{color:var(--gold)}
 
   /* ---------- 对话框 ---------- */
   #dlg,#bag{
@@ -207,7 +215,8 @@
   <div id="bubble"></div>
   <div class="hint" id="hint">按 <kbd>E</kbd> 和摊主说话</div>
   <div class="corner" id="corner"></div>
-  <a class="home" href="index.html">← 事件街棋盘</a>
+  <a class="home" id="homeLink" href="index.html">← 事件街棋盘</a>
+  <button class="lang" id="langBtn" type="button"><b>中</b> / EN</button>
 </div>
 
 <div id="dlg" role="dialog" aria-modal="true">
@@ -218,7 +227,7 @@
         <h1 id="npcName">—</h1>
         <div class="sub" id="npcSub">—</div>
       </div>
-      <div class="mood">此刻心态<b id="npcMood">—</b></div>
+      <div class="mood"><span id="moodLbl">此刻心态</span><b id="npcMood">—</b></div>
       <button class="close" onclick="closeDlg()">✕</button>
     </div>
 
@@ -244,9 +253,9 @@
       <canvas class="face" id="myFace" width="18" height="18"></canvas>
       <div class="who">
         <h1><span id="myNick">—</span></h1>
-        <div class="sub"><span id="myTitle">—</span> · 事件街广场</div>
+        <div class="sub"><span id="myTitle">—</span> <span id="plazaLoc">· 事件街广场</span></div>
       </div>
-      <div class="mood">我的代币<b id="myChips">—</b></div>
+      <div class="mood"><span id="chipsLbl">我的代币</span><b id="myChips">—</b></div>
       <button class="close" onclick="closeBag()">✕</button>
     </div>
     <div class="tabs" role="tablist">
@@ -279,6 +288,268 @@ if (!BOOKS) document.body.innerHTML =
   '<p style="color:#f6ecd6;font-family:monospace;padding:40px;line-height:2">'
   + '缺少 book.js。先运行：<br><br>&nbsp;&nbsp;python -m agent.backfill --days 20</p>';
 let B = BOOKS && BOOKS[0];
+let dlgB = null;                 // 对话打开时的 book 快照。面板一律读它，别读会被帧循环偷换的 B。
+const dlgBook = () => dlgB || B;
+
+/* book.js 的数据要进 innerHTML，一律先过这里。引号也转，属性位才安全。 */
+function escapeHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+const esc = escapeHtml;
+
+/* 新管线会在顶层挂 ledger（每注一条，按 id 判定结算）。旧 book.js 没有 —— Map 为空就回退扫 idea。 */
+const LEDGER = new Map(((window.BOOK && window.BOOK.ledger) || []).map(r => [r.id, r]));
+/* ledger 用小写 yes/no，旧 idea 用大写 YES/NO。比较前一律拉平。 */
+const outUp = r => String((r && r.outcome) || '').toUpperCase();
+
+/* ================================================================
+   双语 —— chrome 文案走字典；book.js 的数据只在带 *_en 字段时才切英文，
+   没有就保持中文原文（管线端设计好的回退，别硬翻）。
+   ================================================================ */
+const LANG_KEY = 'fledge.lang';
+let lang = localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'zh';
+const I18N = {
+  zh: {
+    title: '事件街 · 广场',
+    board: '← 事件街棋盘',
+    vendor: '摊主',
+    hintTalk: n => `按 <kbd>E</kbd> 和${n}说话`,
+    bubbleAsk: (tk, n, c) => `未来${n}天我压 <b>${tk}</b> 收涨，报 ${c}¢。敢不敢？`,
+    cornerChips: '代币', cornerBag: '按 B 开背包',
+    moodLbl: '此刻心态', myChipsLbl: '我的代币', plazaLoc: '· 事件街广场',
+    tab_bets: '对赌盘', tab_persona: '人设', tab_record: '战绩', tab_book: '持仓',
+    btab_me: '身份', btab_record: '战绩', btab_hold: '注单', btab_items: '技能', btab_skins: '皮肤',
+    personaErrs: '他会犯的错（写死在规则里，按概率触发。鼠标停上去看说明）',
+    personaPrompt: '他脑子里的自我认知', notSet: '（未设定）',
+    stEquity: '账户净值', stPnl: '累计盈亏', stWinRate: '平仓胜率', stTrades: '成交笔数',
+    stIdeaHit: '挂盘命中', stQuote: '他的报价',
+    recentClosed: '最近平掉的仓',
+    thCloseDate: '平仓日', thTicker: '标的', thPnl: '盈亏', thWhy: '离场原因', thThought: '当时的想法',
+    curveNote: (s, hi, lo, dd) =>
+      `虚线 ${s} 起点 · 最高 ${hi} · 最低 ${lo} · 期间最大回撤 ${dd}%。鼠标停在点上看那天的心态。`,
+    asOfCash: (d, c) => `截至 ${d} 收盘 · 现金 ${c}`,
+    thValue: '市值', thWeight: '占净值', thUpnl: '浮盈', thTpSl: '止盈/止损', thEntryReason: '建仓理由',
+    noStop: '不设',
+    tpslNote: '止盈止损是他建仓当天按概率抽的，不是固定值。抽到「不设」就是真的死扛 —— 这是散户专属的坏毛病。',
+    flatNote: '他现在空仓。',
+    modeLive: '实盘 · 等收盘揭晓', modeHist: '历史参考 · 近 5 天',
+    chipsLbl: '代币', simPnlLbl: '模拟盈亏',
+    leadLive: '赌未来 1 / 3 / 5 天的收盘，相对现在是涨还是跌。早盘、夜盘各出一版。答案等美股收盘才公布。',
+    leadHist: d => `这是他 ${d} 挂出的题，收盘价已经走完，用来练手。<b>模拟盈亏不计入代币、不影响称号和背包。</b>`,
+    buffArmed: n => `已激活 <b>${n}</b>，下一注生效。`,
+    noIdeasLive: '他这一轮没挂盘。信念度不够就不硬凑。',
+    noIdeasHist: '他这天没挂盘。信念度不够就不硬凑。',
+    stakeLbl: '注码', clearPractice: '清空模拟记录', openBagBtn: '打开背包',
+    baseNote: '基准是前收，不是当天开盘 —— 隔夜跳空算进涨跌里。',
+    vigNote: v => `两边报价加起来大于 1（${v}% 抽水）。`,
+    vigZero: '抽水为零，两边报价严格加总到 1.00。',
+    calibLead: '这条线怎么来的 · 按期限分开校准',
+    thBin: '格子', thN: '历史挂过', thWins: '实际对了', thRealized: '实测命中', thPriceNow: '现在报价',
+    calibNote: '报价 = (该格历史命中数 + 40 × 先验) / (该格历史盘数 + 40)。'
+      + '1 / 3 / 5 日盘分开算 —— 期限不同，涨的基准率就不同。'
+      + '定价只用揭晓之前已结算的盘，今天的实盘不给自己定价。',
+    gapNote: (n, q, h, g, over, sig) =>
+      `他过去 ${n} 个已揭晓的盘平均报价 ${q}¢，实际对了 ${h}%（${g} 个点的${over ? '高估' : '低估'}）。`
+      + (sig < 2
+          ? ` ${n} 个样本只到 ${sig.toFixed(1)} 个标准差，还分不清是本事还是运气。`
+          : `样本已到 ${sig.toFixed(1)} 个标准差，这个偏离不像是运气。`),
+    heSays: r => `他说：「${r}」`,
+    convictionLine: (c, n) => `信念度 ${c} · 这条线背后有 ${n} 个已结算的历史盘`
+      + (n < 25 ? '，样本还薄，线基本贴着基准率' : ''),
+    betYes: '跟随他 · 押涨', betNo: '跟他对赌 · 押跌',
+    quoteWin: (c, s, w) => `报价 ${c}¢ · 押 ${s} 赢 ${w}`,
+    sideFollow: '跟随', sideFade: '对赌',
+    placedPending: (side, st, n) => `已下 ${side} ${st} 代币。等 ${n} 日盘收盘揭晓。`,
+    resultHead: (tk, rd, rc, ed, ec, mv, out) =>
+      `${tk} ${rd} 收 ${rc} → ${ed} 收 ${ec}（${mv}）· 正确答案 <b>${out}</b>`,
+    resultYou: (side, st, prac, won, amt) =>
+      `你${side} ${st}，<b>这把${prac ? '模拟' : ''}${won ? '赢了 +' + amt : '输了 −' + amt}</b>`,
+    notCounted: ' · 不计入账户',
+    buffApplied: n => `（${n} 已生效）`,
+    histNotDue: '这题还没到期，去实盘等揭晓。历史页只练已经走完的盘。',
+    closedBook: '已封盘 Closed',
+    refundedCard: st => `这注等了超过 30 天没揭晓，本金 ${st} 已退回。`,
+    hzDays: n => n <= 1 ? '未来 1 天' : `未来 ${n} 天`,
+    hzDue: '已到期',
+    hzLeft: n => `还差 ${n} 个交易日`,
+    sessMorning: '早盘', sessFinal: '夜盘',
+    nickLbl: '昵称', renameBtn: '改名',
+    titlesLead: '称号 · 只能佩戴已解锁的',
+    wearing: '佩戴中', wear: '佩戴', lockedTxt: '未解锁',
+    titlesNote: '称号由下注记录实时判定，改不了也刷不出来 —— 能伪造的荣誉不值钱。',
+    stChips: '代币余额', stPeak: '历史峰值', stBets: '下注手数', stRate: '总胜率',
+    fvsLead: '跟随 vs 对赌 · 这两件事考的能力不一样',
+    thWay: '方式', thHands: '手数', thWon: '赢', thRate: '胜率',
+    rowFollow: '跟随他（押涨）', rowFade: '跟他对赌（押跌）',
+    vsNote: (n, p) => `${n}自己的挂盘命中率是 ${p}。`,
+    vsFew: n => `你才 ${n} 手，样本太少，还比不出高下 —— 至少下够 30 手再说。`,
+    vsAhead: (m, d) => `你目前 ${m}，压过他 ${d} 个点。`,
+    vsBehind: m => `你目前 ${m}，还没跑赢他。`,
+    holdLeadPending: '进行中的注单', holdLead: '已结算的注单',
+    thPostDate: '挂盘日', thVendor: '摊主', thQuestion: '题目', thQuote: '报价',
+    thStake: '注码', thResult: '结果', thStatus: '状态',
+    wonTxt: '赢', lostTxt: '输',
+    pendingTxt: '等揭晓', refundBtn: '退款', refundedTag: '已退款',
+    refundNote: '挂了超过 30 天还没揭晓的注可以点「退款」拿回本金 —— 防止旧盘永远找不到答案，变成筹码黑洞。',
+    noBets: n => `还没下过注。去广场找${n}。`,
+    holdNote1: '只统计实盘。历史模拟盘的对错不进这张表，也不进代币余额。',
+    holdNote2: '<b>跟随型仓位还没做。</b>目前跟随只是押他猜对，本质还是二元盘。'
+      + '按设想，跟随应该是向系统融资跟他的单、只付利息，届时会在这里显示真实持仓、'
+      + '浮动盈亏和资金成本 —— 那和赔率盘是两套结算，等数学定了再接。',
+    itemsLead: '道具',
+    itemsArmed: n => `· 当前已激活 <b>${n}</b>，下一注生效`,
+    useBtn: '使用', equipBtn: '装备', armedBtn: '已激活',
+    buyBtn: c => `买 ${c}`,
+    skinsLead: '换上就能在广场上看见，不是图标。',
+    skinWearing: '穿着中', skinWear: '换上',
+    skinBuy: c => `买 ${c} 代币`,
+    alertNoChips: '代币不够了。去背包里看看，或者押小一点。',
+    alertNoBets: '还没下过注。',
+  },
+  en: {
+    title: 'Event Street · Plaza',
+    board: '← Event Street Board',
+    vendor: 'the vendor',
+    hintTalk: n => `Press <kbd>E</kbd> to talk to ${n}`,
+    bubbleAsk: (tk, n, c) =>
+      `I say <b>${tk}</b> closes higher within ${n} day${n > 1 ? 's' : ''} — quoting ${c}¢. You in?`,
+    cornerChips: 'chips', cornerBag: 'B = bag',
+    moodLbl: 'Mood now', myChipsLbl: 'My chips', plazaLoc: '· Event Street Plaza',
+    tab_bets: 'Bets', tab_persona: 'Persona', tab_record: 'Record', tab_book: 'Book',
+    btab_me: 'Identity', btab_record: 'Record', btab_hold: 'Bets', btab_items: 'Items', btab_skins: 'Skins',
+    personaErrs: 'Mistakes he is scripted to make (rule-based, fires by probability — hover for details)',
+    personaPrompt: 'How he sees himself', notSet: '(not set)',
+    stEquity: 'Equity', stPnl: 'Total P&L', stWinRate: 'Closed win rate', stTrades: 'Trades',
+    stIdeaHit: 'Idea hit rate', stQuote: 'His quote',
+    recentClosed: 'Recently closed positions',
+    thCloseDate: 'Closed', thTicker: 'Ticker', thPnl: 'P&L', thWhy: 'Exit reason', thThought: 'His thinking',
+    curveNote: (s, hi, lo, dd) =>
+      `Dashed line = ${s} start · high ${hi} · low ${lo} · max drawdown ${dd}%. Hover a dot for that day's mood.`,
+    asOfCash: (d, c) => `As of ${d} close · cash ${c}`,
+    thValue: 'Value', thWeight: '% of equity', thUpnl: 'Unrlzd', thTpSl: 'TP / SL', thEntryReason: 'Entry reason',
+    noStop: 'none',
+    tpslNote: 'TP/SL are drawn by probability on entry day, not fixed. Drawing "none" means he really will hold to the bitter end — a retail-only bad habit.',
+    flatNote: 'He is flat right now.',
+    modeLive: 'Live · settles at the close', modeHist: 'History · last 5 days',
+    chipsLbl: 'Chips', simPnlLbl: 'Practice P&L',
+    leadLive: 'Bet whether the close in 1 / 3 / 5 days ends above the current mark. Morning and final sessions each post a run. Answers arrive after the US close.',
+    leadHist: d => `Questions he posted on ${d}; those closes are already in — practice on them. <b>Practice P&L touches no chips, titles, or bag.</b>`,
+    buffArmed: n => `<b>${n}</b> armed — applies to your next bet.`,
+    noIdeasLive: 'No lines this round. Not enough conviction, no forced quotes.',
+    noIdeasHist: 'No lines that day. Not enough conviction, no forced quotes.',
+    stakeLbl: 'Stake', clearPractice: 'Clear practice log', openBagBtn: 'Open bag',
+    baseNote: 'Benchmark is the prior close, not today\'s open — overnight gaps count.',
+    vigNote: v => `The two quotes sum above 1 (${v}% vig).`,
+    vigZero: 'Zero vig — the two quotes sum to exactly 1.00.',
+    calibLead: 'Where this line comes from · calibrated per horizon',
+    thBin: 'Bin', thN: 'Posted', thWins: 'Correct', thRealized: 'Realized', thPriceNow: 'Quote now',
+    calibNote: 'Quote = (bin wins + 40 × prior) / (bin count + 40). '
+      + '1 / 3 / 5-day books are calibrated separately — base rates differ by horizon. '
+      + 'Pricing only uses bets settled before reveal; today\'s live board never prices itself.',
+    gapNote: (n, q, h, g, over, sig) =>
+      `Across ${n} revealed bets he quoted ${q}¢ on average and was right ${h}% of the time `
+      + `(${g} points of ${over ? 'over' : 'under'}confidence). `
+      + (sig < 2
+          ? `${n} samples only reach ${sig.toFixed(1)} standard deviations — can't yet tell skill from luck.`
+          : `The sample reaches ${sig.toFixed(1)} standard deviations — this gap doesn't look like luck.`),
+    heSays: r => `He says: "${r}"`,
+    convictionLine: (c, n) => `Conviction ${c} · ${n} settled bets behind this line`
+      + (n < 25 ? ' — thin sample, the line hugs the base rate' : ''),
+    betYes: 'Follow him · bet UP', betNo: 'Fade him · bet DOWN',
+    quoteWin: (c, s, w) => `${c}¢ · stake ${s} to win ${w}`,
+    sideFollow: 'Follow', sideFade: 'Fade',
+    placedPending: (side, st, n) => `Placed ${side} × ${st}. Settles at the ${n}-day close.`,
+    resultHead: (tk, rd, rc, ed, ec, mv, out) =>
+      `${tk} closed ${rc} on ${rd} → ${ec} on ${ed} (${mv}) · answer <b>${out}</b>`,
+    resultYou: (side, st, prac, won, amt) =>
+      `You bet ${side} × ${st} — <b>${prac ? 'practice ' : ''}${won ? 'won +' + amt : 'lost −' + amt}</b>`,
+    notCounted: ' · not counted',
+    buffApplied: n => `(${n} applied)`,
+    histNotDue: 'Not settled yet — wait for it on the live board. History mode only replays finished bets.',
+    closedBook: '已封盘 Closed',
+    refundedCard: st => `Waited 30+ days with no reveal — stake ${st} refunded.`,
+    hzDays: n => `next ${n} day${n > 1 ? 's' : ''}`,
+    hzDue: 'expired',
+    hzLeft: n => `${n} trading day${n > 1 ? 's' : ''} to go`,
+    sessMorning: 'morning', sessFinal: 'final',
+    nickLbl: 'Nickname', renameBtn: 'Rename',
+    titlesLead: 'Titles · wear only what you\'ve unlocked',
+    wearing: 'Wearing', wear: 'Wear', lockedTxt: 'Locked',
+    titlesNote: 'Titles are computed live from your betting record — no editing, no faking. Honors you can forge are worth nothing.',
+    stChips: 'Chip balance', stPeak: 'All-time peak', stBets: 'Bets placed', stRate: 'Win rate',
+    fvsLead: 'Follow vs fade · two very different skills',
+    thWay: 'Side', thHands: 'N', thWon: 'Won', thRate: 'Rate',
+    rowFollow: 'Follow him (bet up)', rowFade: 'Fade him (bet down)',
+    vsNote: (n, p) => `${n}'s own idea hit rate is ${p}. `,
+    vsFew: n => `Only ${n} bets — sample too small to compare. Come back after 30.`,
+    vsAhead: (m, d) => `You're at ${m}, ${d} points ahead of him.`,
+    vsBehind: m => `You're at ${m} — not beating him yet.`,
+    holdLeadPending: 'Open bets', holdLead: 'Settled bets',
+    thPostDate: 'Posted', thVendor: 'Vendor', thQuestion: 'Question', thQuote: 'Quote',
+    thStake: 'Stake', thResult: 'Result', thStatus: 'Status',
+    wonTxt: 'Won', lostTxt: 'Lost',
+    pendingTxt: 'pending', refundBtn: 'Refund', refundedTag: 'refunded',
+    refundNote: 'A bet stuck pending for 30+ days can be refunded for its stake — the last-resort valve so orphaned bets never become a chip black hole.',
+    noBets: n => `No bets yet. Find ${n} on the plaza.`,
+    holdNote1: 'Live bets only. Practice results never enter this table or your chip balance.',
+    holdNote2: '<b>Position-style following is not built yet.</b> "Follow" today just bets that he is right — still a binary book. '
+      + 'The plan is margin-financed copying of his actual position, interest-only; real holdings, floating P&L '
+      + 'and funding cost will show here once the math is settled.',
+    itemsLead: 'Items',
+    itemsArmed: n => `· <b>${n}</b> armed, applies to your next bet`,
+    useBtn: 'Use', equipBtn: 'Arm', armedBtn: 'Armed',
+    buyBtn: c => `Buy ${c}`,
+    skinsLead: 'Visible on the plaza the moment you wear it — not just an icon.',
+    skinWearing: 'Wearing', skinWear: 'Put on',
+    skinBuy: c => `Buy · ${c} chips`,
+    alertNoChips: 'Not enough chips. Check your bag, or stake smaller.',
+    alertNoBets: 'No bets yet.',
+  },
+};
+function T(key, ...a){
+  const d = I18N[lang] || I18N.zh;
+  const v = d[key] != null ? d[key] : I18N.zh[key];
+  return typeof v === 'function' ? v(...a) : (v != null ? v : key);
+}
+/* 数据字段选择器：en 且带 *_en 才切英文，否则回退原文。 */
+const fld = (o, k) => (lang === 'en' && o && o[k + '_en']) ? o[k + '_en'] : (o ? o[k] : '');
+const aName = a => a ? ((lang === 'en' && a.display_en) || a.name) : '';
+const aTraits = a => (lang === 'en' && a.traits_en) ? a.traits_en : a.traits;
+/* 本地游戏数据（称号/道具/皮肤）的双语选择器。 */
+const LN = o => (lang === 'en' && o.name_en) || o.name;
+const LD = o => (lang === 'en' && (o.desc_en || o.note_en)) || o.desc || o.note || '';
+
+function applyLang(){
+  document.title = T('title');
+  document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+  const put = (id, v, html) => {          // 缺 book.js 时这些节点已被整页替换，容错
+    const el = document.getElementById(id);
+    if (el){ if (html) el.innerHTML = v; else el.textContent = v; }
+  };
+  put('langBtn', lang === 'en' ? '中 / <b>EN</b>' : '<b>中</b> / EN', true);
+  put('homeLink', T('board'));
+  put('moodLbl', T('moodLbl'));
+  put('chipsLbl', T('myChipsLbl'));
+  put('plazaLoc', T('plazaLoc'));
+  put('hint', T('hintTalk', T('vendor')), true);
+  document.querySelectorAll('#dlg .tabs button').forEach(b => b.textContent = T('tab_' + b.dataset.tab));
+  document.querySelectorAll('#bag .tabs [data-btab]').forEach(b => b.textContent = T('btab_' + b.dataset.btab));
+}
+function setLang(next){
+  lang = next === 'en' ? 'en' : 'zh';
+  localStorage.setItem(LANG_KEY, lang);
+  applyLang();
+  if (!BOOKS) return;
+  refreshCorner();
+  fillBubble();
+  if (dlgOpen()) render();
+  if (bagOpen()) renderBag();
+}
+const langBtnEl = document.getElementById('langBtn');
+if (langBtnEl) langBtnEl.onclick = () => setLang(lang === 'zh' ? 'en' : 'zh');
+applyLang();
 
 /* ---------------- 像素精灵 ---------------- */
 const PAL = {
@@ -351,11 +622,16 @@ function sprite(map, x, y, flip, over, g = cx){
 
 /* 皮肤只换外套配色。代币能买到的东西必须一眼看得见，否则没人会买。 */
 const SKINS = {
-  green: { name: '绿卫衣', cost: 0,    c: '#6fbe60', note: '新人默认。看不出来你是谁。' },
-  red:   { name: '红马甲', cost: 300,  c: '#c4362f', note: '交易大厅的颜色。穿上像个老手。' },
-  blue:  { name: '蓝西装', cost: 800,  c: '#3f6fa8', note: '装得像卖方分析师。' },
-  purple:{ name: '紫夹克', cost: 1500, c: '#7b4fa8', note: '不解释。' },
-  gold:  { name: '金装',   cost: 4000, c: '#e0aa45', note: '赢麻了才穿得起。低调是不可能低调的。' },
+  green: { name: '绿卫衣', name_en: 'Green Hoodie', cost: 0,    c: '#6fbe60',
+           note: '新人默认。看不出来你是谁。', note_en: 'Rookie default. Nobody knows who you are.' },
+  red:   { name: '红马甲', name_en: 'Red Vest',     cost: 300,  c: '#c4362f',
+           note: '交易大厅的颜色。穿上像个老手。', note_en: 'Trading-floor red. Looks seasoned.' },
+  blue:  { name: '蓝西装', name_en: 'Blue Suit',    cost: 800,  c: '#3f6fa8',
+           note: '装得像卖方分析师。', note_en: 'Pass for a sell-side analyst.' },
+  purple:{ name: '紫夹克', name_en: 'Purple Jacket', cost: 1500, c: '#7b4fa8',
+           note: '不解释。', note_en: 'No comment.' },
+  gold:  { name: '金装',   name_en: 'Gold Fit',     cost: 4000, c: '#e0aa45',
+           note: '赢麻了才穿得起。低调是不可能低调的。', note_en: 'Only the truly up can afford it. Zero subtlety.' },
 };
 const skinPal = id => ({ c: (SKINS[id] || SKINS.green).c });
 
@@ -384,28 +660,39 @@ let stake = 100;
 
 /* 道具。效果都真的接在下注流程里，不是摆设。 */
 const ITEMS = {
-  rumor: { emoji: '🍸', name: '小道消息', cost: 150,
-           desc: '下一注若赢，赔付 ×1.25。输了照样没了。' },
-  calm:  { emoji: '🧊', name: '冷静一下', cost: 250,
-           desc: '撤销最近一注，退回本金。给冲动一个后悔的机会。' },
-  bold:  { emoji: '🎯', name: '加大力度', cost: 200,
-           desc: '解锁 500 注码档位一次。' },
+  rumor: { emoji: '🍸', name: '小道消息', name_en: 'Hot Tip', cost: 150,
+           desc: '下一注若赢，赔付 ×1.25。输了照样没了。',
+           desc_en: 'Next winning bet pays ×1.25. A loss still loses it all.' },
+  calm:  { emoji: '🧊', name: '冷静一下', name_en: 'Cool Down', cost: 250,
+           desc: '撤销最近一注，退回本金。给冲动一个后悔的机会。',
+           desc_en: 'Undo your latest bet and get the stake back. A second chance for impulse.' },
+  bold:  { emoji: '🎯', name: '加大力度', name_en: 'Go Big', cost: 200,
+           desc: '解锁 500 注码档位一次。',
+           desc_en: 'Unlocks the 500 stake tier, once.' },
 };
 
 /* 称号从真实战绩里算出来，不能自己填 —— 能被伪造的荣誉不值钱。 */
 const TITLES = [
-  { id: 'rookie', name: '无名散户', desc: '人人都是这么开始的。', test: () => true },
-  { id: 'fader',  name: '逆行者',   desc: '对赌 ≥ 8 手且胜率 ≥ 60%',
+  { id: 'rookie', name: '无名散户', name_en: 'Nameless Retail',
+    desc: '人人都是这么开始的。', desc_en: 'Everyone starts here.', test: () => true },
+  { id: 'fader',  name: '逆行者',   name_en: 'The Fader',
+    desc: '对赌 ≥ 8 手且胜率 ≥ 60%', desc_en: 'Fade ≥ 8 bets with a ≥ 60% win rate',
     test: s => s.no.n >= 8 && s.no.rate >= 0.6 },
-  { id: 'sheep',  name: '跟风王',   desc: '跟随 ≥ 8 手且胜率 ≥ 60%',
+  { id: 'sheep',  name: '跟风王',   name_en: 'Bandwagon King',
+    desc: '跟随 ≥ 8 手且胜率 ≥ 60%', desc_en: 'Follow ≥ 8 bets with a ≥ 60% win rate',
     test: s => s.yes.n >= 8 && s.yes.rate >= 0.6 },
-  { id: 'grinder',name: '老赌棍',   desc: '累计下注 ≥ 30 手',
+  { id: 'grinder',name: '老赌棍',   name_en: 'Old Gambler',
+    desc: '累计下注 ≥ 30 手', desc_en: 'Place ≥ 30 bets in total',
     test: s => s.all.n >= 30 },
-  { id: 'inverse',name: '反指之王', desc: '下注 ≥ 12 手且胜率 ≤ 35%。稳定地错也是一种本事。',
+  { id: 'inverse',name: '反指之王', name_en: 'Inverse Oracle',
+    desc: '下注 ≥ 12 手且胜率 ≤ 35%。稳定地错也是一种本事。',
+    desc_en: '≥ 12 bets with a ≤ 35% win rate. Being reliably wrong is a skill too.',
     test: s => s.all.n >= 12 && s.all.rate <= 0.35 },
-  { id: 'rich',   name: '见好就收', desc: '代币峰值 ≥ 3000',
+  { id: 'rich',   name: '见好就收', name_en: 'Quit While Ahead',
+    desc: '代币峰值 ≥ 3000', desc_en: 'Chip peak ≥ 3000',
     test: () => P.peak >= 3000 },
-  { id: 'broke',  name: '一分不剩', desc: '把代币输光过',
+  { id: 'broke',  name: '一分不剩', name_en: 'Busted',
+    desc: '把代币输光过', desc_en: 'Went completely broke at least once',
     test: () => P.chips <= 0 },
 ];
 
@@ -425,7 +712,7 @@ function playerStats(){
   };
 }
 const earnedTitles = () => { const s = playerStats(); return TITLES.filter(t => t.test(s)); };
-const titleName = () => (TITLES.find(t => t.id === P.title) || TITLES[0]).name;
+const titleName = () => LN(TITLES.find(t => t.id === P.title) || TITLES[0]);
 
 /* ---------------- 场景 ---------------- */
 const SLOTS = [
@@ -457,7 +744,10 @@ addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;      // 改名时别把字吃掉
   const k = e.key.toLowerCase();
   keys[k] = true;
-  if (k === 'e' && nearNpc() && !bagOpen()) talkTo(nearNpc());
+  if (k === 'e'){
+    if (dlgOpen()) closeDlg();                       // 对话中 E = 关闭，别原地重开
+    else if (nearNpc() && !bagOpen()) talkTo(nearNpc());
+  }
   if (k === 'b') bagOpen() ? closeBag() : openBag();
   if (e.key === 'Escape'){ closeDlg(); closeBag(); }
 });
@@ -538,20 +828,22 @@ function fillBubble(){
   const n = nearNpc() || cast()[0];
   const idea = n && liveIdeasOf(n.book)[0];
   if (!idea){ bubbleEl.style.display = 'none'; return; }
-  const hz = idea.horizon > 1 ? `未来${idea.horizon}天` : '未来1天';
   bubbleEl.style.display = '';
   bubbleEl.innerHTML =
-    `${hz}我压 <b>${idea.ticker}</b> 收涨，报 ${Math.round(idea.price * 100)}¢。敢不敢？`;
+    T('bubbleAsk', esc(idea.ticker), idea.horizon || 1, Math.round(idea.price * 100));
 }
 
 let last = 0;
 function loop(t){
   const dt = Math.min(40, t - last); last = t;
+  const busy = dlgOpen() || bagOpen();
   let dx = 0, dy = 0;
-  if (keys.a || keys.arrowleft) dx -= 1;
-  if (keys.d || keys.arrowright) dx += 1;
-  if (keys.w || keys.arrowup) dy -= 1;
-  if (keys.s || keys.arrowdown) dy += 1;
+  if (!busy){                       // 面板打开时忽略移动键，人别在背后乱走
+    if (keys.a || keys.arrowleft) dx -= 1;
+    if (keys.d || keys.arrowright) dx += 1;
+    if (keys.w || keys.arrowup) dy -= 1;
+    if (keys.s || keys.arrowdown) dy += 1;
+  }
   if (dx || dy){
     const n = Math.hypot(dx, dy) || 1, sp = dt * 0.055;
     hero.x = Math.max(28, Math.min(286, hero.x + dx / n * sp));
@@ -571,22 +863,22 @@ function loop(t){
   drawMarker(t);
 
   const who = nearNpc();
-  const busy = dlgOpen() || bagOpen();
   const hint = document.getElementById('hint');
   hint.classList.toggle('on', !!who && !busy);
   if (who){
-    const name = (who.book.agent && who.book.agent.name) || '摊主';
-    hint.innerHTML = `按 <kbd>E</kbd> 和${name}说话`;
+    const name = esc(aName(who.book.agent)) || T('vendor');
+    hint.innerHTML = T('hintTalk', name);
   }
   bubbleEl.style.opacity = busy ? 0 : 1;
-  if (who){ B = who.book; fillBubble(); placeBubble(); }
+  /* 面板打开时不许换 B —— 正看着的摊主不能被走近的另一个偷换掉。 */
+  if (who && !busy){ B = who.book; fillBubble(); placeBubble(); }
   requestAnimationFrame(loop);
 }
 const cornerEl = document.getElementById('corner');
 cornerEl.onclick = () => openBag();   // 延迟解析：openBag 定义在文件后半段
 function refreshCorner(){
-  cornerEl.innerHTML = `${P.nick} · ${titleName()}<br>`
-    + `<b>${P.chips}</b> 代币 <span>按 B 开背包</span>`;
+  cornerEl.innerHTML = `${esc(P.nick)} · ${esc(titleName())}<br>`
+    + `<b>${P.chips}</b> ${T('cornerChips')} <span>${T('cornerBag')}</span>`;
 }
 
 if (BOOKS){ settleLiveBets(); fit(); fillBubble(); refreshCorner(); requestAnimationFrame(loop); }
@@ -603,13 +895,14 @@ cv.addEventListener('click', e => {
    ================================================================ */
 const $ = id => document.getElementById(id);
 const dlgOpen = () => $('dlg').classList.contains('on');
-const closeDlg = () => $('dlg').classList.remove('on');
+const closeDlg = () => { $('dlg').classList.remove('on'); dlgB = null; };
 const pct = x => (x == null ? '—' : (x * 100).toFixed(1) + '%');
 const sgn = x => (x == null ? '—' : (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%');
 const money = x => Math.round(x).toLocaleString('en-US');
 const cls = x => (x >= 0 ? 'up' : 'down');   // 红涨绿跌
 
 function openDlg(){
+  dlgB = B;                       // 快照。之后面板全读 dlgB，帧循环换 B 与我无关。
   $('dlg').classList.add('on');
   showDlgTab('bets');
   render();
@@ -626,64 +919,67 @@ function showDlgTab(name){
 $('dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeDlg(); });
 
 function render(){
-  const a = B.agent, s = B.stats;
+  const bk = dlgBook();
+  const a = bk.agent, s = bk.stats;
   $('face').textContent = a.emoji || '🙂';
-  $('npcName').textContent = a.name;
+  $('npcName').textContent = aName(a);
   $('npcSub').textContent = `${a.family} · ${a.persona} · ${a.tagline}`;
   $('npcMood').textContent = s.mood || '—';
 
   /* ---- 人设 ---- */
   $('tab-persona').innerHTML = `
     <dl class="kv">
-      ${Object.entries(a.traits).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}
+      ${Object.entries(aTraits(a)).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}
     </dl>
-    <p class="lead">他会犯的错（写死在规则里，按概率触发。鼠标停上去看说明）</p>
+    <p class="lead">${T('personaErrs')}</p>
     <div>${a.behaviors.map(b =>
-      `<span class="tag" title="${b.note}">${b.name}</span>`).join('')}</div>
-    <p class="lead">他脑子里的自我认知</p>
-    <div class="quote">${a.prompt || '（未设定）'}</div>`;
+      `<span class="tag" title="${esc(b.note)}">${esc(b.name)}</span>`).join('')}</div>
+    <p class="lead">${T('personaPrompt')}</p>
+    <div class="quote">${esc(a.prompt) || T('notSet')}</div>`;
 
   /* ---- 战绩 ---- */
-  const c = B.equity_curve, start = s.start_equity;
+  const c = bk.equity_curve, start = s.start_equity;
   $('tab-record').innerHTML = `
     <div class="stats">
-      ${stat('账户净值', money(s.equity))}
-      ${stat('累计盈亏', sgn(s.pnl_pct), cls(s.pnl))}
-      ${stat('平仓胜率', pct(s.win_rate))}
-      ${stat('成交笔数', s.n_trades)}
-      ${stat('挂盘命中', pct(s.idea_hit_rate))}
-      ${stat('他的报价', s.idea_quoted == null ? '—' : (s.idea_quoted * 100).toFixed(0) + '¢')}
+      ${stat(T('stEquity'), money(s.equity))}
+      ${stat(T('stPnl'), sgn(s.pnl_pct), cls(s.pnl))}
+      ${stat(T('stWinRate'), pct(s.win_rate))}
+      ${stat(T('stTrades'), s.n_trades)}
+      ${stat(T('stIdeaHit'), pct(s.idea_hit_rate))}
+      ${stat(T('stQuote'), s.idea_quoted == null ? '—' : (s.idea_quoted * 100).toFixed(0) + '¢')}
     </div>
     ${curve(c, start)}
-    <p class="lead">最近平掉的仓</p>
+    <p class="lead">${T('recentClosed')}</p>
     <table><thead><tr>
-      <th>平仓日</th><th>标的</th><th>盈亏</th><th>离场原因</th><th>当时的想法</th>
+      <th>${T('thCloseDate')}</th><th>${T('thTicker')}</th><th>${T('thPnl')}</th>
+      <th>${T('thWhy')}</th><th>${T('thThought')}</th>
     </tr></thead><tbody>
-      ${B.closed.slice().reverse().slice(0, 12).map(t => `<tr>
-        <td>${t.date.slice(5)}</td><td>${t.ticker}</td>
+      ${bk.closed.slice().reverse().slice(0, 12).map(t => `<tr>
+        <td>${esc(t.date.slice(5))}</td><td>${esc(t.ticker)}</td>
         <td class="${cls(t.pnl)}">${sgn(t.pnl_pct)}</td>
-        <td class="txt">${t.why}</td><td class="reason">${t.reason}</td></tr>`).join('')}
+        <td class="txt">${esc(t.why)}</td><td class="reason">${esc(t.reason)}</td></tr>`).join('')}
     </tbody></table>`;
 
   /* ---- 持仓 ---- */
-  const held = B.positions;
+  const held = bk.positions;
   $('tab-book').innerHTML = held.length ? `
     <p class="lead" style="margin-top:0">
-      截至 ${B.generated_for} 收盘 · 现金 ${money(s.equity - held.reduce((m, p) => m + p.value, 0))}
+      ${T('asOfCash', esc(bk.generated_for), money(s.equity - held.reduce((m, p) => m + p.value, 0)))}
     </p>
     <table><thead><tr>
-      <th>标的</th><th>市值</th><th>占净值</th><th>浮盈</th><th>止盈/止损</th><th>建仓理由</th>
+      <th>${T('thTicker')}</th><th>${T('thValue')}</th><th>${T('thWeight')}</th>
+      <th>${T('thUpnl')}</th><th>${T('thTpSl')}</th><th>${T('thEntryReason')}</th>
     </tr></thead><tbody>
       ${held.map(p => `<tr>
-        <td>${p.ticker}</td><td>${money(p.value)}</td>
+        <td>${esc(p.ticker)}</td><td>${money(p.value)}</td>
         <td>${pct(p.value / s.equity)}</td>
         <td class="${cls(p.pnl_pct)}">${sgn(p.pnl_pct)}</td>
         <td>${pct(p.take_profit)} / ${p.stop_loss == null
-              ? '<span class="up">不设</span>' : pct(p.stop_loss)}</td>
-        <td class="reason">${p.reason}</td></tr>`).join('')}
+              ? `<span class="up">${T('noStop')}</span>` : pct(p.stop_loss)}</td>
+        <td class="reason">${esc(p.reason)}</td></tr>`).join('')}
     </tbody></table>
-    <p class="note">止盈止损是他建仓当天按概率抽的，不是固定值。抽到「不设」就是真的死扛 —— 这是散户专属的坏毛病。</p>`
-    : '<p>他现在空仓。</p>';
+    <p class="note">${T('tpslNote')}</p>`
+    : `<p>${T('flatNote')}</p>`;
 
   /* ---- 对赌盘 ---- */
   renderBets();
@@ -710,12 +1006,10 @@ function curve(c, start){
       <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="3"
                 vector-effect="non-scaling-stroke"/>
       ${c.map((p, i) => `<rect x="${X(i) - 3}" y="${Y(p.equity) - 3}" width="6" height="6"
-            fill="${col}"><title>${p.date} ${money(p.equity)} · ${p.mood}</title></rect>`).join('')}
+            fill="${col}"><title>${esc(p.date)} ${money(p.equity)} · ${esc(p.mood)}</title></rect>`).join('')}
     </svg>
     <p class="note">
-      虚线 ${money(start)} 起点 · 最高 ${money(Math.max(...vals))} ·
-      最低 ${money(Math.min(...vals))} · 期间最大回撤 ${(dd * 100).toFixed(1)}%。
-      鼠标停在点上看那天的心态。
+      ${T('curveNote', money(start), money(Math.max(...vals)), money(Math.min(...vals)), (dd * 100).toFixed(1))}
     </p>`;
 }
 
@@ -745,28 +1039,39 @@ function liveIdeasOf(book){
     });
 }
 function liveIdeas(){
-  return liveIdeasOf(B);
+  return liveIdeasOf(dlgBook());
 }
 function histDays(){
-  return ((B && B.history) || []).map(d => d.date);
+  const bk = dlgBook();
+  return ((bk && bk.history) || []).map(d => d.date);
 }
 function histIdeas(){
-  const days = B && B.history || [];
+  const bk = dlgBook();
+  const days = bk && bk.history || [];
   const d = histDay || (days.length ? days[days.length - 1].date : null);
   const row = days.find(x => x.date === d);
   return (row && row.ideas) || [];
 }
+/* 找 idea 本体（展示用）。live 原始列表 + 近 5 天 history + agent 级完整 ideas 兜底 ——
+   老注单的题不在 history[-5:] 里也能找回来。 */
 function findIdea(id){
   for (const book of (BOOKS || [])){
-    const hit = liveIdeasOf(book).concat((book.history || []).flatMap(d => d.ideas))
+    const hit = ((book.live && book.live.ideas) || [])
+      .concat((book.history || []).flatMap(d => d.ideas || []))
+      .concat(book.ideas || [])
       .find(i => i.id === id);
     if (hit) return hit;
   }
   return null;
 }
+/* 结算判定源：顶层 ledger 优先（新 book.js），查不到再退回扫 idea。 */
+function resolutionOf(id){
+  return LEDGER.get(id) || findIdea(id);
+}
 
 function vig(){
-  return (B && B.stats && B.stats.vig) || 0;
+  const bk = dlgBook();
+  return (bk && bk.stats && bk.stats.vig) || 0;
 }
 function quote(i){
   const p = i.price != null ? i.price : 0.53;
@@ -776,42 +1081,43 @@ function quote(i){
 
 function renderBets(){
   const el = $('tab-bets');
-  const live = B.live || {};
   const days = histDays();
   if (!histDay && days.length) histDay = days[days.length - 1];
   const ideas = betMode === 'live' ? liveIdeas() : histIdeas();
   const sim = practicePnl();
+  /* buff 消耗掉后 500 档随之收回：选中值不在档位里就落回最高常规档。 */
+  const stakes = [50, 100, 200].concat(P.buff === 'bold' && betMode === 'live' ? [500] : []);
+  if (!stakes.includes(stake)) stake = 200;
 
   el.innerHTML = `
     <div class="modes">
-      <button data-mode="live" aria-pressed="${betMode === 'live'}">实盘 · 等收盘揭晓</button>
-      <button data-mode="history" aria-pressed="${betMode === 'history'}">历史参考 · 近 5 天</button>
+      <button data-mode="live" aria-pressed="${betMode === 'live'}">${T('modeLive')}</button>
+      <button data-mode="history" aria-pressed="${betMode === 'history'}">${T('modeHist')}</button>
       <div class="wallet">${betMode === 'live'
-        ? `代币<b> ${P.chips}</b>`
-        : `模拟盈亏<b class="${cls(sim)}"> ${sim >= 0 ? '+' : ''}${sim}</b>`}</div>
+        ? `${T('chipsLbl')}<b> ${P.chips}</b>`
+        : `${T('simPnlLbl')}<b class="${cls(sim)}"> ${sim >= 0 ? '+' : ''}${sim}</b>`}</div>
     </div>
     ${betMode === 'history' && days.length ? `
       <div class="days">
-        ${days.map(d => `<button data-day="${d}" aria-pressed="${d === histDay}">${d.slice(5)}</button>`).join('')}
+        ${days.map(d => `<button data-day="${esc(d)}" aria-pressed="${d === histDay}">${esc(d.slice(5))}</button>`).join('')}
       </div>` : ''}
     <p class="lead" style="margin-top:0">${betMode === 'live'
-      ? `赌未来 1 / 3 / 5 天的收盘，相对现在是涨还是跌。早盘、夜盘各出一版。答案等美股收盘才公布。`
-      : `这是他 ${histDay || ''} 挂出的题，收盘价已经走完，用来练手。<b>模拟盈亏不计入代币、不影响称号和背包。</b>`}</p>
-    ${P.buff && betMode === 'live' ? `<p class="note" style="margin-top:0">已激活 <b>${ITEMS[P.buff].emoji} ${ITEMS[P.buff].name}</b>，下一注生效。</p>` : ''}
+      ? T('leadLive') : T('leadHist', esc(histDay || ''))}</p>
+    ${P.buff && betMode === 'live' ? `<p class="note" style="margin-top:0">${T('buffArmed',
+        ITEMS[P.buff].emoji + ' ' + LN(ITEMS[P.buff]))}</p>` : ''}
     ${ideas.length ? ideas.map(i => betCard(i, betMode === 'live')).join('')
-                   : `<p>他${betMode === 'live' ? '这一轮' : '这天'}没挂盘。信念度不够就不硬凑。</p>`}
-    <div class="stakes" style="margin-top:4px">注码
-      ${[50, 100, 200].concat(P.buff === 'bold' && betMode === 'live' ? [500] : []).map(v =>
+                   : `<p>${betMode === 'live' ? T('noIdeasLive') : T('noIdeasHist')}</p>`}
+    <div class="stakes" style="margin-top:4px">${T('stakeLbl')}
+      ${stakes.map(v =>
         `<button data-stake="${v}" aria-pressed="${v === stake}">${v}</button>`).join('')}
       ${betMode === 'history'
-        ? `<button onclick="resetPractice()" style="margin-left:auto">清空模拟记录</button>`
-        : `<button onclick="openBag()" style="margin-left:auto">打开背包</button>`}
+        ? `<button onclick="resetPractice()" style="margin-left:auto">${T('clearPractice')}</button>`
+        : `<button onclick="openBag()" style="margin-left:auto">${T('openBagBtn')}</button>`}
     </div>
     ${calibTable()}
     <p class="note">
-      基准是前收，不是当天开盘 —— 隔夜跳空算进涨跌里。<br>
-      ${vig() ? `两边报价加起来大于 1（${(vig() * 100).toFixed(0)}% 抽水）。`
-            : '抽水为零，两边报价严格加总到 1.00。'}<br>
+      ${T('baseNote')}<br>
+      ${vig() ? T('vigNote', (vig() * 100).toFixed(0)) : T('vigZero')}<br>
       ${gapNote()}
     </p>`;
 
@@ -828,45 +1134,45 @@ function renderBets(){
 function horizonTag(i){
   const n = i.horizon || 1;
   const left = Math.max(0, n - (i.elapsed || 0));
-  const when = n <= 1 ? '未来 1 天' : `未来 ${n} 天`;
-  if (i.status === 'resolved') return `${when} · 已到期`;
-  return n <= 1 ? when : `${when} · 还差 ${left} 个交易日`;
+  const when = T('hzDays', n);
+  if (i.status === 'resolved') return `${when} · ${T('hzDue')}`;
+  return n <= 1 ? when : `${when} · ${T('hzLeft', left)}`;
 }
 function sessionTag(i){
-  return i.session === 'morning' ? '早盘' : i.session === 'final' ? '夜盘' : '';
+  return i.session === 'morning' ? T('sessMorning') : i.session === 'final' ? T('sessFinal') : '';
 }
 
 function calibTable(){
-  const rows = B.calibration || [];
+  const rows = dlgBook().calibration || [];
   if (!rows.length) return '';
-  return `<p class="lead">这条线怎么来的 · 按期限分开校准</p>
+  return `<p class="lead">${T('calibLead')}</p>
     <table><thead><tr>
-      <th>格子</th><th>历史挂过</th><th>实际对了</th><th>实测命中</th><th>现在报价</th>
+      <th>${T('thBin')}</th><th>${T('thN')}</th><th>${T('thWins')}</th>
+      <th>${T('thRealized')}</th><th>${T('thPriceNow')}</th>
     </tr></thead><tbody>
       ${rows.map(r => `<tr>
-        <td class="txt">${r.label}</td><td>${r.n}</td><td>${r.wins}</td>
+        <td class="txt">${esc(r.label)}</td><td>${r.n}</td><td>${r.wins}</td>
         <td>${r.realized == null ? '—' : (r.realized * 100).toFixed(0) + '%'}</td>
         <td><b>${(r.price * 100).toFixed(0)}¢</b></td></tr>`).join('')}
     </tbody></table>
-    <p class="note" style="margin-top:6px">
-      报价 = (该格历史命中数 + 40 × 先验) / (该格历史盘数 + 40)。
-      1 / 3 / 5 日盘分开算 —— 期限不同，涨的基准率就不同。
-      定价只用揭晓之前已结算的盘，今天的实盘不给自己定价。
-    </p>`;
+    <p class="note" style="margin-top:6px">${T('calibNote')}</p>`;
 }
 
 function gapNote(){
-  const s = B.stats;
+  const s = dlgBook().stats;
   if (s.idea_quoted == null || s.idea_hit_rate == null) return '';
   const gap = s.idea_quoted - s.idea_hit_rate;
   const se = Math.sqrt(0.25 / s.idea_total);
   const sig = Math.abs(s.idea_hit_rate - 0.5) / se;
-  return `他过去 ${s.idea_total} 个已揭晓的盘平均报价 ${(s.idea_quoted * 100).toFixed(0)}¢，`
-    + `实际对了 ${(s.idea_hit_rate * 100).toFixed(0)}%（${Math.abs(gap * 100).toFixed(0)} 个点的`
-    + `${gap > 0 ? '高估' : '低估'}）。`
-    + (sig < 2
-        ? ` ${s.idea_total} 个样本只到 ${sig.toFixed(1)} 个标准差，还分不清是本事还是运气。`
-        : `样本已到 ${sig.toFixed(1)} 个标准差，这个偏离不像是运气。`);
+  return T('gapNote', s.idea_total, (s.idea_quoted * 100).toFixed(0),
+           (s.idea_hit_rate * 100).toFixed(0), Math.abs(gap * 100).toFixed(0), gap > 0, sig);
+}
+
+/** 封盘判定：bet_cutoff 存在且已过就封。旧数据没这个字段，永远返回 false。 */
+function isSealed(i){
+  if (!i || !i.bet_cutoff) return false;
+  const cut = Date.parse(i.bet_cutoff);
+  return !isNaN(cut) && Date.now() > cut;
 }
 
 function betCard(i, isLive){
@@ -875,37 +1181,41 @@ function betCard(i, isLive){
   const [pYes, pNo] = quote(i);
   const payout = p => (1 / p).toFixed(2);
   const resolved = i.status === 'resolved' && i.outcome;
-  const waiting = isLive && !resolved;
+  const sealed = isLive && !done && isSealed(i);
+  const sideTxt = s => s === 'YES' ? T('sideFollow') : T('sideFade');
   let res = '';
   if (done && done.pending){
-    res = `<div class="result">已下 ${done.side === 'YES' ? '跟随' : '对赌'} ${done.stake} 代币。等 ${i.horizon || 1} 日盘收盘揭晓。</div>`;
+    res = `<div class="result">${T('placedPending', sideTxt(done.side), done.stake, i.horizon || 1)}</div>`;
+  } else if (done && done.refunded){
+    res = `<div class="result">${T('refundedCard', done.stake)}</div>`;
   } else if (done && (done.ok === true || done.ok === false)){
     const won = done.ok;
     res = `<div class="result ${won ? 'win' : 'lose'}">
-      ${i.ticker} ${i.ref_date} 收 ${i.ref_close} → ${i.exit_date || ''} 收 ${i.exit_close || '—'}
-      （${sgn(i.move_pct)}）· 正确答案 <b>${i.outcome}</b><br>
-      你${done.side === 'YES' ? '跟随' : '对赌'} ${done.stake}，
-      <b>这把${done.practice ? '模拟' : ''} ${won ? '赢了 +' + (done.win - done.stake) : '输了 −' + done.stake}</b>
-      ${done.practice ? ' · 不计入账户' : ''}${done.buff
-        ? `（${ITEMS[done.buff].emoji} ${ITEMS[done.buff].name} 已生效）` : ''}。
+      ${T('resultHead', esc(i.ticker), esc(i.ref_date), esc(i.ref_close), esc(i.exit_date || ''),
+          esc(i.exit_close || '—'), sgn(i.move_pct), esc(i.outcome))}<br>
+      ${T('resultYou', sideTxt(done.side), done.stake, !!done.practice, won,
+          won ? done.win - done.stake : done.stake)}
+      ${done.practice ? T('notCounted') : ''}${done.buff
+        ? T('buffApplied', ITEMS[done.buff].emoji + ' ' + LN(ITEMS[done.buff])) : ''}。
     </div>`;
+  } else if (sealed){
+    res = `<div class="result">${T('closedBook')}</div>`;
   } else if (!isLive && !resolved){
-    res = `<div class="result">这题还没到期，去实盘等揭晓。历史页只练已经走完的盘。</div>`;
+    res = `<div class="result">${T('histNotDue')}</div>`;
   }
 
-  const locked = !!done || (!isLive && !resolved);
+  const locked = !!done || sealed || (!isLive && !resolved);
   return `<div class="bet">
-    <div class="q">${i.question}</div>
-    <div class="say">他说：「${i.reason}」 <span style="opacity:.7">（${i.mood}${sessionTag(i) ? ' · ' + sessionTag(i) : ''} · ${horizonTag(i)}）</span>
-      <br><span style="opacity:.7">信念度 ${(i.conviction * 100).toFixed(0)} · 这条线背后有
-      ${i.n_prior} 个已结算的历史盘${i.n_prior < 25 ? '，样本还薄，线基本贴着基准率' : ''}</span></div>
+    <div class="q">${esc(fld(i, 'question'))}</div>
+    <div class="say">${T('heSays', esc(fld(i, 'reason')))} <span style="opacity:.7">（${esc(fld(i, 'mood'))}${sessionTag(i) ? ' · ' + sessionTag(i) : ''} · ${horizonTag(i)}）</span>
+      <br><span style="opacity:.7">${T('convictionLine', (i.conviction * 100).toFixed(0), i.n_prior)}</span></div>
     <div class="odds">
-      <button data-bet="${i.id}" data-side="YES" ${locked ? 'disabled' : ''}>
-        跟随他 · 押涨<b>${payout(pYes)}×</b>
-        <i>报价 ${(pYes * 100).toFixed(0)}¢ · 押 ${stake} 赢 ${Math.round(stake / pYes - stake)}</i></button>
-      <button data-bet="${i.id}" data-side="NO" ${locked ? 'disabled' : ''}>
-        跟他对赌 · 押跌<b>${payout(pNo)}×</b>
-        <i>报价 ${(pNo * 100).toFixed(0)}¢ · 押 ${stake} 赢 ${Math.round(stake / pNo - stake)}</i></button>
+      <button data-bet="${esc(i.id)}" data-side="YES" ${locked ? 'disabled' : ''}>
+        ${T('betYes')}<b>${payout(pYes)}×</b>
+        <i>${T('quoteWin', (pYes * 100).toFixed(0), stake, Math.round(stake / pYes - stake))}</i></button>
+      <button data-bet="${esc(i.id)}" data-side="NO" ${locked ? 'disabled' : ''}>
+        ${T('betNo')}<b>${payout(pNo)}×</b>
+        <i>${T('quoteWin', (pNo * 100).toFixed(0), stake, Math.round(stake / pNo - stake))}</i></button>
     </div>
     ${res}</div>`;
 }
@@ -919,22 +1229,29 @@ function placeLive(id, side){
   if (P.bets[id]) return;
   const i = findIdea(id);
   if (!i) return;
-  if (P.chips < stake){ alert('代币不够了。去背包里看看，或者押小一点。'); return; }
+  if (isSealed(i)){ renderBets(); return; }        // 已封盘，拒单（旧数据没 cutoff，不受影响）
+  if (P.chips < stake){ alert(T('alertNoChips')); return; }
   const [pYes, pNo] = quote(i);
   const buff = P.buff;
+  const bk = dlgBook();
   let win = Math.round(stake / (side === 'YES' ? pYes : pNo));
   P.seq = (P.seq || 0) + 1;
+  /* 快照题面：就算这个 idea 以后从 book.js 里消失，背包也说得清这注押的是什么。 */
   const rec = { side, stake, win, buff, seq: P.seq, at: Date.now(),
                 ticker: i.ticker, date: i.date, price: i.price, horizon: i.horizon,
+                question: i.question, q_en: i.q_en || null,
+                agent: (bk && bk.agent && bk.agent.name) || null,
                 practice: false };
 
-  if (i.status !== 'resolved'){
+  const r = resolutionOf(id) || i;                 // 结算判定优先 ledger
+  if (r.status !== 'resolved' || !r.outcome){
     P.chips -= stake;
     rec.pending = true; rec.ok = null;
   } else {
-    if (buff === 'rumor' && side === i.outcome) win = Math.round(win * 1.25);
+    const out = outUp(r);
+    if (buff === 'rumor' && side === out) win = Math.round(win * 1.25);
     rec.win = win;
-    rec.ok = side === i.outcome;
+    rec.ok = side === out;
     rec.pending = false;
     P.chips += rec.ok ? win - stake : -stake;
     P.peak = Math.max(P.peak, P.chips);
@@ -952,10 +1269,13 @@ function placePractice(id, side){
   const i = findIdea(id);
   if (!i || i.status !== 'resolved' || !i.outcome) return;
   const [pYes, pNo] = quote(i);
+  const bk = dlgBook();
   const win = Math.round(stake / (side === 'YES' ? pYes : pNo));
   P.practice[id] = {
-    side, stake, win, ok: side === i.outcome, pending: false, practice: true,
-    ticker: i.ticker, date: i.date, price: i.price, horizon: i.horizon, at: Date.now(),
+    side, stake, win, ok: side === outUp(i), pending: false, practice: true,
+    ticker: i.ticker, date: i.date, price: i.price, horizon: i.horizon,
+    question: i.question, q_en: i.q_en || null,
+    agent: (bk && bk.agent && bk.agent.name) || null, at: Date.now(),
   };
   saveP();
   renderBets();
@@ -967,14 +1287,14 @@ function resetPractice(){
   renderBets();
 }
 
-/** 实盘揭晓后入账。book.js 更新了答案，打开页面就会把挂着的注结掉。 */
+/** 实盘揭晓后入账。判定优先走顶层 ledger（新 book.js），没有再回退扫 idea。 */
 function settleLiveBets(){
   let changed = false;
   for (const [id, rec] of Object.entries(P.bets || {})){
     if (!rec.pending) continue;
-    const i = findIdea(id);
-    if (!i || i.status !== 'resolved' || !i.outcome) continue;
-    rec.ok = rec.side === i.outcome;
+    const r = resolutionOf(id);
+    if (!r || r.status !== 'resolved' || !r.outcome) continue;
+    rec.ok = rec.side === outUp(r);   // ledger 是小写 yes/no，旧 idea 是大写，拉平再比
     rec.pending = false;
     let win = rec.win;
     if (rec.buff === 'rumor' && rec.ok) win = Math.round(win * 1.25);
@@ -984,6 +1304,19 @@ function settleLiveBets(){
     changed = true;
   }
   if (changed) saveP();
+}
+
+/** 最后兜底：>30 天还 pending（idea/ledger 都给不出答案）的注退回本金，防筹码黑洞。 */
+function refundBet(id){
+  const b = P.bets[id];
+  if (!b || !b.pending) return;
+  b.pending = false;
+  b.ok = null;
+  b.refunded = true;
+  P.chips += b.stake;
+  P.peak = Math.max(P.peak, P.chips);
+  saveP();
+  renderBag();
 }
 
 /* ================================================================
@@ -1014,101 +1347,126 @@ function renderBag(){
 
   /* ---- 身份 ---- */
   $('btab-me').innerHTML = `
-    <p class="lead" style="margin-top:0">昵称</p>
+    <p class="lead" style="margin-top:0">${T('nickLbl')}</p>
     <div class="nickrow">
-      <input id="nickInput" maxlength="12" value="${P.nick.replace(/"/g, '&quot;')}">
-      <button class="close" onclick="saveNick()">改名</button>
+      <input id="nickInput" maxlength="12" value="${esc(P.nick)}">
+      <button class="close" onclick="saveNick()">${T('renameBtn')}</button>
     </div>
-    <p class="lead">称号 · 只能佩戴已解锁的</p>
+    <p class="lead">${T('titlesLead')}</p>
     <div class="grid">
       ${TITLES.map(t => {
         const got = earned.some(e => e.id === t.id);
         const on = (P.title || 'rookie') === t.id;
         return `<div class="card ${got ? (on ? 'on' : '') : 'locked'}">
-          <div class="t">${t.name}${got ? '' : ' 🔒'}</div>
-          <div class="d">${t.desc}</div>
+          <div class="t">${LN(t)}${got ? '' : ' 🔒'}</div>
+          <div class="d">${LD(t)}</div>
           <button ${got && !on ? `onclick="equipTitle('${t.id}')"` : 'disabled'}>
-            ${on ? '佩戴中' : got ? '佩戴' : '未解锁'}</button>
+            ${on ? T('wearing') : got ? T('wear') : T('lockedTxt')}</button>
         </div>`;
       }).join('')}
     </div>
-    <p class="note">称号由下注记录实时判定，改不了也刷不出来 —— 能伪造的荣誉不值钱。</p>`;
+    <p class="note">${T('titlesNote')}</p>`;
 
   /* ---- 战绩 ---- */
   const cmp = B.stats.idea_hit_rate;
   $('btab-record').innerHTML = `
     <div class="stats">
-      ${stat('代币余额', P.chips, cls(P.chips - P.start))}
-      ${stat('累计盈亏', (s.all.pnl >= 0 ? '+' : '') + s.all.pnl, cls(s.all.pnl))}
-      ${stat('历史峰值', P.peak)}
-      ${stat('下注手数', s.all.n)}
-      ${stat('总胜率', pct(s.all.rate))}
+      ${stat(T('stChips'), P.chips, cls(P.chips - P.start))}
+      ${stat(T('stPnl'), (s.all.pnl >= 0 ? '+' : '') + s.all.pnl, cls(s.all.pnl))}
+      ${stat(T('stPeak'), P.peak)}
+      ${stat(T('stBets'), s.all.n)}
+      ${stat(T('stRate'), pct(s.all.rate))}
     </div>
-    <p class="lead" style="margin-top:0">跟随 vs 对赌 · 这两件事考的能力不一样</p>
+    <p class="lead" style="margin-top:0">${T('fvsLead')}</p>
     <table><thead><tr>
-      <th>方式</th><th>手数</th><th>赢</th><th>胜率</th><th>盈亏</th>
+      <th>${T('thWay')}</th><th>${T('thHands')}</th><th>${T('thWon')}</th>
+      <th>${T('thRate')}</th><th>${T('thPnl')}</th>
     </tr></thead><tbody>
-      <tr><td class="txt">跟随他（押涨）</td><td>${s.yes.n}</td><td>${s.yes.w}</td>
+      <tr><td class="txt">${T('rowFollow')}</td><td>${s.yes.n}</td><td>${s.yes.w}</td>
           <td>${pct(s.yes.rate)}</td>
           <td class="${cls(s.yes.pnl)}">${s.yes.pnl >= 0 ? '+' : ''}${s.yes.pnl}</td></tr>
-      <tr><td class="txt">跟他对赌（押跌）</td><td>${s.no.n}</td><td>${s.no.w}</td>
+      <tr><td class="txt">${T('rowFade')}</td><td>${s.no.n}</td><td>${s.no.w}</td>
           <td>${pct(s.no.rate)}</td>
           <td class="${cls(s.no.pnl)}">${s.no.pnl >= 0 ? '+' : ''}${s.no.pnl}</td></tr>
     </tbody></table>
     <p class="note">
-      热搜老哥自己的挂盘命中率是 ${pct(cmp)}。
+      ${T('vsNote', esc(aName(B.agent)), pct(cmp))}
       ${s.all.n < 10
-        ? `你才 ${s.all.n} 手，样本太少，还比不出高下 —— 至少下够 30 手再说。`
+        ? T('vsFew', s.all.n)
         : s.all.rate > cmp
-        ? `你目前 ${pct(s.all.rate)}，压过他 ${((s.all.rate - cmp) * 100).toFixed(0)} 个点。`
-        : `你目前 ${pct(s.all.rate)}，还没跑赢他。`}
+        ? T('vsAhead', pct(s.all.rate), ((s.all.rate - cmp) * 100).toFixed(0))
+        : T('vsBehind', pct(s.all.rate))}
     </p>`;
 
   /* ---- 注单 ---- */
+  /* 进行中（含已退款）的实盘注。题面读下注时的快照，idea 从 book.js 消失也显示得出来。 */
+  const STALE_MS = 30 * 86400 * 1000;
+  const openBets = Object.entries(P.bets || {})
+    .filter(([, r]) => !r.practice && (r.pending || r.refunded))
+    .sort((a, b) => (b[1].seq || 0) - (a[1].seq || 0));
+  const openRows = openBets.map(([id, b]) => {
+    const q = (lang === 'en' && b.q_en) || b.question || (findIdea(id) || {}).question || '—';
+    const stale = b.pending && (!b.at || Date.now() - b.at > STALE_MS);
+    return `<tr>
+      <td>${esc((b.date || '').slice(5))}</td><td>${esc(b.ticker || '—')}</td>
+      <td class="txt">${esc(b.agent || '—')}</td>
+      <td class="txt">${esc(q)}</td>
+      <td class="txt">${b.side === 'YES' ? T('sideFollow') : T('sideFade')}</td>
+      <td>${b.stake}</td>
+      <td class="txt">${b.refunded ? T('refundedTag')
+        : stale ? `<button data-refund="${esc(id)}">${T('refundBtn')}</button>`
+        : T('pendingTxt')}</td>
+    </tr>`;
+  }).join('');
+
   $('btab-hold').innerHTML = `
-    <p class="lead" style="margin-top:0">已结算的注单</p>
+    ${openBets.length ? `
+    <p class="lead" style="margin-top:0">${T('holdLeadPending')}</p>
+    <table><thead><tr>
+      <th>${T('thPostDate')}</th><th>${T('thTicker')}</th><th>${T('thVendor')}</th>
+      <th>${T('thQuestion')}</th><th>${T('thWay')}</th><th>${T('thStake')}</th><th>${T('thStatus')}</th>
+    </tr></thead><tbody>${openRows}</tbody></table>
+    <p class="note">${T('refundNote')}</p>` : ''}
+    <p class="lead" ${openBets.length ? '' : 'style="margin-top:0"'}>${T('holdLead')}</p>
     ${s.log.length ? `<table><thead><tr>
-      <th>挂盘日</th><th>标的</th><th>方式</th><th>报价</th><th>注码</th><th>结果</th><th>盈亏</th>
+      <th>${T('thPostDate')}</th><th>${T('thTicker')}</th><th>${T('thWay')}</th>
+      <th>${T('thQuote')}</th><th>${T('thStake')}</th><th>${T('thResult')}</th><th>${T('thPnl')}</th>
     </tr></thead><tbody>
       ${s.log.slice(0, 20).map(b => `<tr>
-        <td>${(b.date || '').slice(5)}</td><td>${b.ticker || '—'}</td>
-        <td class="txt">${b.side === 'YES' ? '跟随' : '对赌'}</td>
+        <td>${esc((b.date || '').slice(5))}</td><td>${esc(b.ticker || '—')}</td>
+        <td class="txt">${b.side === 'YES' ? T('sideFollow') : T('sideFade')}</td>
         <td>${b.price == null ? '—'
              : ((b.side === 'YES' ? b.price : 1 - b.price) * 100).toFixed(0) + '¢'}</td>
         <td>${b.stake}</td>
-        <td class="txt ${b.ok ? 'up' : 'down'}">${b.ok ? '赢' : '输'}</td>
+        <td class="txt ${b.ok ? 'up' : 'down'}">${b.ok ? T('wonTxt') : T('lostTxt')}</td>
         <td class="${b.ok ? 'up' : 'down'}">${b.ok ? '+' + (b.win - b.stake) : '−' + b.stake}</td>
       </tr>`).join('')}
-    </tbody></table>` : '<p>还没下过注。去广场找热搜老哥。</p>'}
-    <p class="note">
-      只统计实盘。历史模拟盘的对错不进这张表，也不进代币余额。
-    </p>
-    <p class="note">
-      <b>跟随型仓位还没做。</b>目前跟随只是押他猜对，本质还是二元盘。
-      按设想，跟随应该是向系统融资跟他的单、只付利息，届时会在这里显示真实持仓、
-      浮动盈亏和资金成本 —— 那和赔率盘是两套结算，等数学定了再接。
-    </p>`;
+    </tbody></table>` : `<p>${T('noBets', esc(aName(B.agent)))}</p>`}
+    <p class="note">${T('holdNote1')}</p>
+    <p class="note">${T('holdNote2')}</p>`;
+  $('btab-hold').querySelectorAll('[data-refund]').forEach(b =>
+    b.onclick = () => refundBet(b.dataset.refund));
 
   /* ---- 技能 ---- */
   $('btab-items').innerHTML = `
     <p class="lead" style="margin-top:0">
-      道具 ${P.buff ? `· 当前已激活 <b>${ITEMS[P.buff].emoji} ${ITEMS[P.buff].name}</b>，下一注生效` : ''}
+      ${T('itemsLead')} ${P.buff ? T('itemsArmed', ITEMS[P.buff].emoji + ' ' + LN(ITEMS[P.buff])) : ''}
     </p>
     <div class="grid">
       ${Object.entries(ITEMS).map(([k, it]) => {
         const n = P.items[k] || 0;
         const active = P.buff === k;
         return `<div class="card ${active ? 'on' : ''}">
-          <div class="t">${it.emoji} ${it.name} <span style="opacity:.6">×${n}</span></div>
-          <div class="d">${it.desc}</div>
+          <div class="t">${it.emoji} ${LN(it)} <span style="opacity:.6">×${n}</span></div>
+          <div class="d">${LD(it)}</div>
           <div style="display:flex;gap:8px">
             ${k === 'calm'
               ? `<button ${n > 0 && Object.keys(P.bets).length ? 'onclick="undoLastBet()"'
-                   : 'disabled'} style="flex:1">使用</button>`
+                   : 'disabled'} style="flex:1">${T('useBtn')}</button>`
               : `<button ${n > 0 && !active ? `onclick="useItem('${k}')"` : 'disabled'}
-                   style="flex:1">${active ? '已激活' : '装备'}</button>`}
+                   style="flex:1">${active ? T('armedBtn') : T('equipBtn')}</button>`}
             <button onclick="buyItem('${k}')" ${P.chips < it.cost ? 'disabled' : ''}
-              style="flex:1">买 ${it.cost}</button>
+              style="flex:1">${T('buyBtn', it.cost)}</button>
           </div>
         </div>`;
       }).join('')}
@@ -1116,19 +1474,19 @@ function renderBag(){
 
   /* ---- 皮肤 ---- */
   $('btab-skins').innerHTML = `
-    <p class="lead" style="margin-top:0">换上就能在广场上看见，不是图标。</p>
+    <p class="lead" style="margin-top:0">${T('skinsLead')}</p>
     <div class="grid">
       ${Object.entries(SKINS).map(([k, sk]) => {
         const got = P.skins.includes(k);
         const on = P.skin === k;
         return `<div class="card ${got ? (on ? 'on' : '') : 'locked'}">
           <div class="swatch" style="background:${sk.c}"></div>
-          <div class="t">${sk.name}</div>
-          <div class="d">${sk.note}</div>
+          <div class="t">${LN(sk)}</div>
+          <div class="d">${LD(sk)}</div>
           ${got ? `<button ${on ? 'disabled' : `onclick="equipSkin('${k}')"`}>
-                     ${on ? '穿着中' : '换上'}</button>`
+                     ${on ? T('skinWearing') : T('skinWear')}</button>`
                 : `<button ${P.chips < sk.cost ? 'disabled' : ''}
-                     onclick="buySkin('${k}')">买 ${sk.cost} 代币</button>`}
+                     onclick="buySkin('${k}')">${T('skinBuy', sk.cost)}</button>`}
         </div>`;
       }).join('')}
     </div>`;
@@ -1165,8 +1523,10 @@ function useItem(k){
 
 /** 冷静一下：撤销最近一注，退回本金。 */
 function undoLastBet(){
-  const log = Object.entries(P.bets).sort((a, b) => (b[1].seq || 0) - (a[1].seq || 0));
-  if (!log.length){ alert('还没下过注。'); return; }
+  /* 已退款的注本金早回来了，再冲销一次就是白送钱 —— 跳过。 */
+  const log = Object.entries(P.bets).filter(([, b]) => !b.refunded)
+    .sort((a, b) => (b[1].seq || 0) - (a[1].seq || 0));
+  if (!log.length){ alert(T('alertNoBets')); return; }
   const [id, b] = log[0];
   P.chips -= b.ok ? b.win - b.stake : -b.stake;   // 反向冲销
   delete P.bets[id];
