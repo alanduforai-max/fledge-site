@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>事件街 · 广场</title>
+<style>
+  /* 场景保持像素，文字一律走正常抗锯齿 ——
+     中文在 font-smoothing:none 下几乎不可读，像素味不值这个代价。 */
+  :root{
+    --ink:#2b2118; --ink2:#5c4a35; --cream:#f7eeda; --cream2:#e7d7b6;
+    --line:#3b2f22; --up:#bf3129; --down:#1f7a48; --gold:#e0aa45; --blue:#3f6fa8;
+    --ui:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+    --num:"Cascadia Mono",Consolas,ui-monospace,"SF Mono",monospace;
+    --px:0 0 0 3px var(--line);   /* 硬边框，代替圆角 */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#1b222d; color:var(--ink); font-family:var(--ui); font-size:15px;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  #stage{position:relative}
+  canvas{display:block; image-rendering:pixelated; background:#9fd8f2}
+
+  /* NPC 头顶的话 —— 用 DOM 而不是 canvas，免得被最近邻放大糊掉 */
+  #bubble{
+    position:absolute; max-width:58%; padding:9px 13px; background:var(--cream);
+    color:var(--ink); font-size:15px; line-height:1.5; letter-spacing:.3px;
+    box-shadow:var(--px); pointer-events:none; transition:opacity .2s;
+  }
+  #bubble::after{
+    content:""; position:absolute; right:16px; bottom:-11px;
+    width:12px; height:8px; background:var(--cream);
+    box-shadow:0 3px 0 0 var(--line), 3px 0 0 0 var(--line), -3px 0 0 0 var(--line);
+  }
+  #bubble b{color:var(--up)}
+
+  .hint{
+    position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
+    background:rgba(20,15,10,.88); color:#f7eeda; padding:8px 18px;
+    font-size:15px; letter-spacing:1px; white-space:nowrap; pointer-events:none;
+    box-shadow:0 0 0 3px rgba(20,15,10,.88);
+    transition:opacity .15s; opacity:0;
+  }
+  .hint.on{opacity:1}
+  .hint kbd{
+    font-family:var(--num); background:var(--gold); color:#2b2118;
+    padding:1px 7px; margin:0 3px; font-size:14px;
+  }
+  /* 左上角常驻的玩家条 */
+  .corner{
+    position:absolute; left:14px; top:14px; padding:8px 14px; cursor:pointer;
+    background:rgba(20,15,10,.86); color:#f7eeda; font-size:14px; line-height:1.5;
+    box-shadow:0 0 0 3px rgba(20,15,10,.86);
+  }
+  .corner:hover{background:rgba(20,15,10,.96)}
+  .corner b{color:var(--gold); font-family:var(--num); font-size:16px}
+  .corner span{opacity:.65; font-size:12.5px}
+  .home{
+    position:absolute; right:14px; top:14px; padding:8px 14px; z-index:5;
+    background:rgba(20,15,10,.86); color:#f7eeda; font-size:13px;
+    box-shadow:0 0 0 3px rgba(20,15,10,.86); text-decoration:none;
+  }
+  .home:hover{background:rgba(20,15,10,.96); color:var(--gold)}
+
+  /* ---------- 对话框 ---------- */
+  #dlg,#bag{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(12,10,8,.6); z-index:20; padding:20px;
+  }
+  #dlg.on,#bag.on{display:flex}
+  canvas.face{image-rendering:pixelated; padding:5px}
+
+  /* 背包：称号 / 道具 / 皮肤 */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px}
+  .card{
+    background:#fff; padding:13px 15px; box-shadow:inset 0 0 0 3px var(--line);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .card.locked{background:#efe6d2; color:var(--ink2)}
+  .card.on{background:#fff6dd; box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 8px var(--gold)}
+  .card .t{font-size:16px; font-weight:700}
+  .card .d{font-size:13px; color:var(--ink2); line-height:1.6; flex:1}
+  .card button{
+    padding:8px 10px; font-family:var(--ui); font-size:14px; cursor:pointer;
+    background:var(--cream2); border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .card button:hover:not(:disabled){background:var(--gold)}
+  .card button:disabled{opacity:.45; cursor:default}
+  .swatch{width:100%; height:52px; box-shadow:inset 0 0 0 3px var(--line)}
+  .nickrow{display:flex; gap:10px; align-items:center; margin:10px 0 4px}
+  .nickrow input{
+    flex:1; padding:10px 13px; font-family:var(--ui); font-size:16px; color:var(--ink);
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .panel{
+    width:min(960px,96vw); max-height:94vh; display:flex; flex-direction:column;
+    background:var(--cream); color:var(--ink);
+    box-shadow:0 0 0 3px var(--line), 0 0 0 7px var(--cream), 0 0 0 10px var(--line),
+               12px 12px 0 10px rgba(0,0,0,.32);
+  }
+  .head{display:flex; gap:14px; align-items:center; padding:16px 20px; border-bottom:3px solid var(--line)}
+  .face{
+    width:56px;height:56px;flex:none;display:grid;place-items:center;font-size:32px;
+    background:var(--cream2); box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .who h1{font-size:23px; letter-spacing:1px}
+  .who .sub{font-size:14px; color:var(--ink2); margin-top:5px; line-height:1.5}
+  .mood{margin-left:auto; text-align:right; font-size:13px; color:var(--ink2); flex:none}
+  .mood b{
+    display:block; margin-top:5px; font-size:17px; color:var(--ink);
+    background:var(--gold); padding:5px 12px; box-shadow:inset 0 0 0 3px var(--line);
+  }
+
+  .tabs{display:flex; border-bottom:3px solid var(--line); background:var(--cream2)}
+  .tabs button{
+    flex:1; padding:13px 4px; font-family:var(--ui); font-size:16px; letter-spacing:3px;
+    background:none; border:0; border-right:3px solid var(--line); cursor:pointer; color:var(--ink2);
+  }
+  .tabs button:last-child{border-right:0}
+  .tabs button:hover{background:#efe3c6}
+  .tabs button[aria-selected="true"]{background:var(--cream); color:var(--ink); font-weight:700}
+
+  .modes{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center}
+  .modes button{
+    padding:8px 16px; font-family:var(--ui); font-size:14px; cursor:pointer;
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line); color:var(--ink2);
+  }
+  .modes button[aria-pressed="true"]{background:var(--gold); color:var(--ink); font-weight:700}
+  .days{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px}
+  .days button{
+    padding:5px 11px; font-family:var(--num); font-size:13px; cursor:pointer;
+    background:#fff; border:0; box-shadow:inset 0 0 0 2px var(--line); color:var(--ink2);
+  }
+  .days button[aria-pressed="true"]{background:var(--blue); color:#fff}
+
+  .body{padding:20px 22px; overflow:auto; flex:1; font-size:15px; line-height:1.8}
+  .tab{display:none} .tab.on{display:block}
+
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:7px 20px; margin:12px 0}
+  .kv dt{color:var(--ink2)} .kv dd{font-weight:700; font-family:var(--num)}
+
+  .quote{
+    background:#fffaf0; padding:14px 16px; margin:10px 0; font-size:14px;
+    line-height:1.85; white-space:pre-wrap; box-shadow:inset 0 0 0 3px var(--line);
+    max-height:230px; overflow:auto; color:var(--ink);
+  }
+  .tag{
+    display:inline-block; margin:4px 7px 4px 0; padding:5px 12px; font-size:14px;
+    background:#fff; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .lead{color:var(--ink2); margin-top:18px; font-size:14px}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(124px,1fr)); gap:10px; margin-bottom:16px}
+  .stat{background:#fff; padding:11px 13px; box-shadow:inset 0 0 0 3px var(--line)}
+  .stat span{display:block; font-size:13px; color:var(--ink2); margin-bottom:2px}
+  .stat b{font-size:21px; font-family:var(--num); letter-spacing:-.5px}
+
+  table{width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums}
+  th,td{padding:8px 9px; text-align:right; border-bottom:2px solid var(--cream2)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--ink2); font-weight:400; font-size:13px; border-bottom:3px solid var(--line)}
+  td{font-family:var(--num)}
+  td.reason,td.txt{text-align:left; font-family:var(--ui)}
+  td.reason{color:var(--ink2); font-size:13px}
+  tbody tr:hover{background:#fffaf0}
+  .up{color:var(--up)} .down{color:var(--down)}
+
+  /* ---------- 对赌盘 ---------- */
+  .bet{background:#fff; padding:16px; margin-bottom:14px; box-shadow:inset 0 0 0 3px var(--line)}
+  .bet .q{font-size:17px; font-weight:700; margin-bottom:6px}
+  .bet .say{font-size:14px; color:var(--ink2); margin-bottom:13px; line-height:1.65}
+  .odds{display:flex; gap:10px; margin-bottom:8px}
+  .odds button{
+    flex:1; padding:13px 8px; font-family:var(--ui); font-size:14px; cursor:pointer;
+    background:var(--cream2); border:0; box-shadow:inset 0 0 0 3px var(--line); line-height:1.55;
+  }
+  .odds button:hover:not(:disabled){background:var(--gold)}
+  .odds button:disabled{opacity:.4; cursor:default}
+  .odds b{display:block; font-size:24px; font-family:var(--num); margin:3px 0}
+  .odds i{font-style:normal; font-size:13px; color:var(--ink2); font-family:var(--num)}
+  .stakes{display:flex; gap:8px; align-items:center; font-size:14px; color:var(--ink2)}
+  .stakes button{
+    padding:7px 16px; font-family:var(--num); font-size:14px; cursor:pointer; background:#fff;
+    border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .stakes button[aria-pressed="true"]{background:var(--blue); color:#fff}
+  .result{margin-top:12px; padding:11px 13px; font-size:14px; line-height:1.7;
+          box-shadow:inset 0 0 0 3px var(--line)}
+  .result.win{background:#dff0e2} .result.lose{background:#f9dcdc}
+
+  .wallet{margin-left:auto; font-size:14px; color:var(--ink2); text-align:right}
+  .wallet b{color:var(--ink); font-size:20px; font-family:var(--num)}
+  .note{font-size:13px; color:var(--ink2); margin-top:14px; line-height:1.8}
+  .close{
+    padding:9px 15px; font-family:var(--num); font-size:16px; cursor:pointer;
+    background:var(--cream2); border:0; box-shadow:inset 0 0 0 3px var(--line); flex:none;
+  }
+  .close:hover{background:var(--up); color:#fff}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="cv" width="320" height="180"></canvas>
+  <div id="bubble"></div>
+  <div class="hint" id="hint">按 <kbd>E</kbd> 和摊主说话</div>
+  <div class="corner" id="corner"></div>
+  <a class="home" href="index.html">← 事件街棋盘</a>
+</div>
+
+<div id="dlg" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <div class="face" id="face">🐂</div>
+      <div class="who">
+        <h1 id="npcName">—</h1>
+        <div class="sub" id="npcSub">—</div>
+      </div>
+      <div class="mood">此刻心态<b id="npcMood">—</b></div>
+      <button class="close" onclick="closeDlg()">✕</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="bets">对赌盘</button>
+      <button role="tab" aria-selected="false" data-tab="persona">人设</button>
+      <button role="tab" aria-selected="false" data-tab="record">战绩</button>
+      <button role="tab" aria-selected="false" data-tab="book">持仓</button>
+    </div>
+
+    <div class="body">
+      <div class="tab on" id="tab-bets"></div>
+      <div class="tab" id="tab-persona"></div>
+      <div class="tab" id="tab-record"></div>
+      <div class="tab" id="tab-book"></div>
+    </div>
+  </div>
+</div>
+
+<div id="bag" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <canvas class="face" id="myFace" width="18" height="18"></canvas>
+      <div class="who">
+        <h1><span id="myNick">—</span></h1>
+        <div class="sub"><span id="myTitle">—</span> · 事件街广场</div>
+      </div>
+      <div class="mood">我的代币<b id="myChips">—</b></div>
+      <button class="close" onclick="closeBag()">✕</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-btab="me">身份</button>
+      <button role="tab" aria-selected="false" data-btab="record">战绩</button>
+      <button role="tab" aria-selected="false" data-btab="hold">注单</button>
+      <button role="tab" aria-selected="false" data-btab="items">技能</button>
+      <button role="tab" aria-selected="false" data-btab="skins">皮肤</button>
+    </div>
+    <div class="body">
+      <div class="tab on" id="btab-me"></div>
+      <div class="tab" id="btab-record"></div>
+      <div class="tab" id="btab-hold"></div>
+      <div class="tab" id="btab-items"></div>
+      <div class="tab" id="btab-skins"></div>
+    </div>
+  </div>
+</div>
+
+<script src="book.js"></script>
+<script>
+/* ================================================================
+   事件街广场 —— 像素场景 + NPC 对话
+   数据全部来自 book.js（由 python -m agent.backfill 生成）
+   ================================================================ */
+const BOOKS = (window.BOOK && window.BOOK.agents && window.BOOK.agents.length)
+  ? window.BOOK.agents
+  : (window.BOOK ? [window.BOOK] : null);
+if (!BOOKS) document.body.innerHTML =
+  '<p style="color:#f6ecd6;font-family:monospace;padding:40px;line-height:2">'
+  + '缺少 book.js。先运行：<br><br>&nbsp;&nbsp;python -m agent.backfill --days 20</p>';
+let B = BOOKS && BOOKS[0];
+
+/* ---------------- 像素精灵 ---------------- */
+const PAL = {
+  '.':null, k:'#2b1d18', r:'#c4362f', R:'#8f2420', s:'#f0c8a0', S:'#d9a87c',
+  j:'#3f6fa8', J:'#2c5080', p:'#4a4a58', b:'#2b1d18', w:'#ffffff',
+  g:'#d9a441', c:'#6fbe60', t:'#8a6a44', T:'#5f4a30', y:'#f4e06a',
+};
+// 热搜老哥：红帽子、举着手机、汗
+const NPC = [
+  '.....kkkkkk.....',
+  '....krrrrrrk....',
+  '...rrrrrrrrrr...',
+  '...kkkkkkkkkk...',
+  '....kssssssk....',
+  '....ksksksk.....',
+  '....kssssssk....',
+  '.....kskksk.....',
+  '.....kssssk.....',
+  '......kkkk......',
+  '...jjjjjjjjjj...',
+  '..jjjjjjjjjjjj..',
+  '..jSjjjjjjjjSj..',
+  '..jSjjjjjjjjSj..',
+  '...jjjjjjjjjj...',
+  '...pppp..pppp...',
+  '...pppp..pppp...',
+  '...bbbb..bbbb...',
+];
+const HERO = [
+  '.....kkkkkk.....',
+  '....kttttttk....',
+  '....ktttttttk...',
+  '....kssssssk....',
+  '....ksksksk.....',
+  '....kssssssk....',
+  '.....ksssk......',
+  '......kkk.......',
+  '...cccccccccc...',
+  '..cccccccccccc..',
+  '..cSccccccccSc..',
+  '..cSccccccccSc..',
+  '...cccccccccc...',
+  '...pppp..pppp...',
+  '...pppp..pppp...',
+  '...bbbb..bbbb...',
+];
+
+const cv = document.getElementById('cv'), cx = cv.getContext('2d');
+cx.imageSmoothingEnabled = false;
+
+let SCALE = 4;
+function fit(){
+  SCALE = Math.max(2, Math.floor(Math.min(innerWidth / 320, (innerHeight - 24) / 180)));
+  cv.style.width = 320 * SCALE + 'px'; cv.style.height = 180 * SCALE + 'px';
+  placeBubble();
+}
+addEventListener('resize', fit);
+
+/** over：局部调色板覆盖，皮肤靠它换色而不用复制一份精灵图。 */
+function sprite(map, x, y, flip, over, g = cx){
+  for (let r = 0; r < map.length; r++)
+    for (let c = 0; c < map[r].length; c++){
+      const ch = map[r][c];
+      const col = (over && over[ch]) || PAL[ch];
+      if (!col) continue;
+      g.fillStyle = col;
+      g.fillRect(x + (flip ? map[r].length - 1 - c : c), y + r, 1, 1);
+    }
+}
+
+/* 皮肤只换外套配色。代币能买到的东西必须一眼看得见，否则没人会买。 */
+const SKINS = {
+  green: { name: '绿卫衣', cost: 0,    c: '#6fbe60', note: '新人默认。看不出来你是谁。' },
+  red:   { name: '红马甲', cost: 300,  c: '#c4362f', note: '交易大厅的颜色。穿上像个老手。' },
+  blue:  { name: '蓝西装', cost: 800,  c: '#3f6fa8', note: '装得像卖方分析师。' },
+  purple:{ name: '紫夹克', cost: 1500, c: '#7b4fa8', note: '不解释。' },
+  gold:  { name: '金装',   cost: 4000, c: '#e0aa45', note: '赢麻了才穿得起。低调是不可能低调的。' },
+};
+const skinPal = id => ({ c: (SKINS[id] || SKINS.green).c });
+
+/* ================================================================
+   玩家档案
+   放在场景之前：广场一启动就要读昵称、代币和皮肤。
+   ================================================================ */
+const SAVE = 'fledge.player.v1';
+const DEFAULT_P = {
+  nick: '路人甲', skin: 'green', title: null,
+  chips: 1000, peak: 1000, start: 1000,
+  bets: {},                       // ideaId → 注单（实盘）
+  practice: {},                   // 历史模拟注单，不碰真代币
+  seq: 0,                         // 下注序号。同一毫秒内的多注靠它排先后
+  items: { rumor: 1, calm: 1 },   // 道具库存
+  buff: null,                     // 已激活、待下一注生效
+  skins: ['green'],
+};
+function loadP(){
+  try { return { ...DEFAULT_P, ...(JSON.parse(localStorage.getItem(SAVE)) || {}) }; }
+  catch { return { ...DEFAULT_P }; }
+}
+const saveP = () => { localStorage.setItem(SAVE, JSON.stringify(P)); refreshCorner(); };
+let P = loadP();
+let stake = 100;
+
+/* 道具。效果都真的接在下注流程里，不是摆设。 */
+const ITEMS = {
+  rumor: { emoji: '🍸', name: '小道消息', cost: 150,
+           desc: '下一注若赢，赔付 ×1.25。输了照样没了。' },
+  calm:  { emoji: '🧊', name: '冷静一下', cost: 250,
+           desc: '撤销最近一注，退回本金。给冲动一个后悔的机会。' },
+  bold:  { emoji: '🎯', name: '加大力度', cost: 200,
+           desc: '解锁 500 注码档位一次。' },
+};
+
+/* 称号从真实战绩里算出来，不能自己填 —— 能被伪造的荣誉不值钱。 */
+const TITLES = [
+  { id: 'rookie', name: '无名散户', desc: '人人都是这么开始的。', test: () => true },
+  { id: 'fader',  name: '逆行者',   desc: '对赌 ≥ 8 手且胜率 ≥ 60%',
+    test: s => s.no.n >= 8 && s.no.rate >= 0.6 },
+  { id: 'sheep',  name: '跟风王',   desc: '跟随 ≥ 8 手且胜率 ≥ 60%',
+    test: s => s.yes.n >= 8 && s.yes.rate >= 0.6 },
+  { id: 'grinder',name: '老赌棍',   desc: '累计下注 ≥ 30 手',
+    test: s => s.all.n >= 30 },
+  { id: 'inverse',name: '反指之王', desc: '下注 ≥ 12 手且胜率 ≤ 35%。稳定地错也是一种本事。',
+    test: s => s.all.n >= 12 && s.all.rate <= 0.35 },
+  { id: 'rich',   name: '见好就收', desc: '代币峰值 ≥ 3000',
+    test: () => P.peak >= 3000 },
+  { id: 'broke',  name: '一分不剩', desc: '把代币输光过',
+    test: () => P.chips <= 0 },
+];
+
+/** 玩家战绩。跟随和对赌分开算 —— 这两件事考的能力完全不同。 */
+function playerStats(){
+  const log = Object.values(P.bets).filter(r => !r.practice && (r.ok === true || r.ok === false));
+  const agg = rows => {
+    const n = rows.length, w = rows.filter(r => r.ok).length;
+    return { n, w, rate: n ? w / n : null,
+             pnl: rows.reduce((m, r) => m + (r.ok ? r.win - r.stake : -r.stake), 0) };
+  };
+  return {
+    all: agg(log),
+    yes: agg(log.filter(r => r.side === 'YES')),
+    no:  agg(log.filter(r => r.side === 'NO')),
+    log: log.slice().sort((a, b) => (b.seq || 0) - (a.seq || 0)),
+  };
+}
+const earnedTitles = () => { const s = playerStats(); return TITLES.filter(t => t.test(s)); };
+const titleName = () => (TITLES.find(t => t.id === P.title) || TITLES[0]).name;
+
+/* ---------------- 场景 ---------------- */
+const SLOTS = [
+  { x: 72, y: 74, stallX: 44 },
+  { x: 224, y: 74, stallX: 196 },
+];
+function cast(){
+  return (BOOKS || []).map((book, i) => ({
+    book, ...(SLOTS[i] || { x: 148, y: 74, stallX: 120 }),
+    pal: i === 0 ? null : { r: '#3f6fa8', R: '#2c5080', j: '#c4362f', J: '#8f2420' },
+  }));
+}
+function nearestTo(x, y){
+  let best = null, bestD = 1e9;
+  for (const n of cast()){
+    const d = Math.hypot(x - n.x, y - n.y);
+    if (d < bestD){ bestD = d; best = n; }
+  }
+  return best;
+}
+function nearNpc(){
+  const n = nearestTo(hero.x, hero.y);
+  if (!n) return null;
+  return (Math.abs(hero.x - n.x) < 58 && hero.y - n.y < 78) ? n : null;
+}
+const hero = { x: 96, y: 126, f: false, step: 0 };
+const keys = {};
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;      // 改名时别把字吃掉
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (k === 'e' && nearNpc() && !bagOpen()) talkTo(nearNpc());
+  if (k === 'b') bagOpen() ? closeBag() : openBag();
+  if (e.key === 'Escape'){ closeDlg(); closeBag(); }
+});
+addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+function talkTo(n){
+  if (!n) return;
+  B = n.book;
+  histDay = null;
+  openDlg();
+}
+
+function drawStall(x){
+  const w = 68, awnY = 50, backY = 60, cntY = 92;
+  cx.fillStyle = '#7a5c3c'; cx.fillRect(x + 2, backY, w - 4, cntY - backY + 10);
+  cx.fillStyle = '#8a6a44'; cx.fillRect(x + 5, backY + 3, w - 10, 26);
+  cx.fillStyle = '#c4362f'; cx.fillRect(x - 4, awnY, w + 8, 10);
+  cx.fillStyle = '#f6ecd6';
+  for (let px = x - 4; px < x + w + 8; px += 10) cx.fillRect(px, awnY, 5, 10);
+  cx.fillStyle = '#3b2f22'; cx.fillRect(x - 4, awnY + 10, w + 8, 2);
+}
+function drawCounter(x){
+  const w = 68, cntY = 92;
+  cx.fillStyle = '#6b4f33'; cx.fillRect(x - 3, cntY, w + 6, 14);
+  cx.fillStyle = '#8a6a44'; cx.fillRect(x - 3, cntY, w + 6, 4);
+  cx.fillStyle = '#3b2f22'; cx.fillRect(x - 3, cntY + 13, w + 6, 2);
+  cx.fillStyle = '#f6ecd6'; cx.fillRect(x + 6, cntY + 5, 16, 7);
+  cx.fillStyle = '#a4906c';
+  for (let y = cntY + 7; y < cntY + 12; y += 2) cx.fillRect(x + 8, y, 12, 1);
+}
+
+function drawBack(){
+  cx.fillStyle = '#9fd8f2'; cx.fillRect(0, 0, 320, 62);          // 天
+  cx.fillStyle = '#7bc86c'; cx.fillRect(0, 62, 320, 118);        // 草
+  // 广场石板
+  cx.fillStyle = '#d9c49a'; cx.fillRect(24, 84, 272, 88);
+  cx.fillStyle = '#cbb488';
+  for (let y = 84; y < 172; y += 8)
+    for (let x = 24 + ((y / 8) % 2 ? 4 : 0); x < 296; x += 16) cx.fillRect(x, y, 8, 1);
+  cx.fillStyle = '#b8a074';
+  for (let x = 24; x < 296; x += 8) cx.fillRect(x, 84, 4, 1);
+
+  for (const tx of [16, 52, 268, 302]){
+    cx.fillStyle = '#5f4a30'; cx.fillRect(tx + 5, 54, 3, 14);
+    cx.fillStyle = '#4e9b46'; cx.fillRect(tx, 40, 13, 14);
+    cx.fillStyle = '#63b356'; cx.fillRect(tx + 2, 38, 9, 10);
+  }
+
+  for (const n of cast()) drawStall(n.stallX);
+}
+
+function drawFront(){
+  for (const n of cast()) drawCounter(n.stallX);
+}
+
+/* 任务感叹号：飘在他头顶、压在雨棚前面，才读得出「这个人有事找你」。 */
+function drawMarker(t){
+  const n = nearNpc();
+  if (!n) return;
+  const bob = Math.round(Math.sin(t / 320) * 2);
+  const x = n.x + 6, y = 58 + bob;
+  cx.fillStyle = '#2b1d18'; cx.fillRect(x - 2, y - 2, 8, 16);
+  cx.fillStyle = '#f4e06a'; cx.fillRect(x, y, 4, 9);
+  cx.fillRect(x, y + 10, 4, 2);
+}
+
+/* 气泡是 DOM 元素，跟着画布缩放定位 —— 这样文字始终是清晰的矢量渲染。 */
+const bubbleEl = document.getElementById('bubble');
+function placeBubble(){
+  const n = nearNpc() || cast()[0];
+  if (!n) return;
+  bubbleEl.style.right = (320 - n.x - 14) * SCALE + 'px';
+  bubbleEl.style.top = 8 * SCALE + 'px';
+  bubbleEl.style.fontSize = Math.max(15, Math.round(SCALE * 6.5)) + 'px';
+  bubbleEl.style.padding = `${SCALE * 3}px ${SCALE * 4}px`;
+}
+function fillBubble(){
+  const n = nearNpc() || cast()[0];
+  const idea = n && liveIdeasOf(n.book)[0];
+  if (!idea){ bubbleEl.style.display = 'none'; return; }
+  const hz = idea.horizon > 1 ? `未来${idea.horizon}天` : '未来1天';
+  bubbleEl.style.display = '';
+  bubbleEl.innerHTML =
+    `${hz}我压 <b>${idea.ticker}</b> 收涨，报 ${Math.round(idea.price * 100)}¢。敢不敢？`;
+}
+
+let last = 0;
+function loop(t){
+  const dt = Math.min(40, t - last); last = t;
+  let dx = 0, dy = 0;
+  if (keys.a || keys.arrowleft) dx -= 1;
+  if (keys.d || keys.arrowright) dx += 1;
+  if (keys.w || keys.arrowup) dy -= 1;
+  if (keys.s || keys.arrowdown) dy += 1;
+  if (dx || dy){
+    const n = Math.hypot(dx, dy) || 1, sp = dt * 0.055;
+    hero.x = Math.max(28, Math.min(286, hero.x + dx / n * sp));
+    hero.y = Math.max(112, Math.min(154, hero.y + dy / n * sp));
+    if (dx) hero.f = dx < 0;
+    hero.step += dt;
+  }
+
+  drawBack();
+  for (const n of cast())
+    sprite(NPC, n.x, n.y + (Math.sin(t / 500) > 0 ? 0 : 1), false, n.pal);
+  drawFront();
+  cx.fillStyle = 'rgba(0,0,0,.16)';
+  cx.fillRect(Math.round(hero.x) + 2, Math.round(hero.y) + 16, 12, 3);
+  const hop = (dx || dy) && Math.floor(hero.step / 140) % 2 ? 1 : 0;
+  sprite(HERO, Math.round(hero.x), Math.round(hero.y) - hop, hero.f, skinPal(P.skin));
+  drawMarker(t);
+
+  const who = nearNpc();
+  const busy = dlgOpen() || bagOpen();
+  const hint = document.getElementById('hint');
+  hint.classList.toggle('on', !!who && !busy);
+  if (who){
+    const name = (who.book.agent && who.book.agent.name) || '摊主';
+    hint.innerHTML = `按 <kbd>E</kbd> 和${name}说话`;
+  }
+  bubbleEl.style.opacity = busy ? 0 : 1;
+  if (who){ B = who.book; fillBubble(); placeBubble(); }
+  requestAnimationFrame(loop);
+}
+const cornerEl = document.getElementById('corner');
+cornerEl.onclick = () => openBag();   // 延迟解析：openBag 定义在文件后半段
+function refreshCorner(){
+  cornerEl.innerHTML = `${P.nick} · ${titleName()}<br>`
+    + `<b>${P.chips}</b> 代币 <span>按 B 开背包</span>`;
+}
+
+if (BOOKS){ settleLiveBets(); fit(); fillBubble(); refreshCorner(); requestAnimationFrame(loop); }
+cv.addEventListener('click', e => {
+  if (!BOOKS || bagOpen()) return;
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX - r.left) / SCALE;
+  const y = (e.clientY - r.top) / SCALE;
+  talkTo(nearestTo(x, y));
+});
+
+/* ================================================================
+   对话框
+   ================================================================ */
+const $ = id => document.getElementById(id);
+const dlgOpen = () => $('dlg').classList.contains('on');
+const closeDlg = () => $('dlg').classList.remove('on');
+const pct = x => (x == null ? '—' : (x * 100).toFixed(1) + '%');
+const sgn = x => (x == null ? '—' : (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%');
+const money = x => Math.round(x).toLocaleString('en-US');
+const cls = x => (x >= 0 ? 'up' : 'down');   // 红涨绿跌
+
+function openDlg(){
+  $('dlg').classList.add('on');
+  showDlgTab('bets');
+  render();
+}
+document.querySelectorAll('#dlg .tabs button').forEach(btn => {
+  btn.onclick = () => showDlgTab(btn.dataset.tab);
+});
+function showDlgTab(name){
+  document.querySelectorAll('#dlg .tabs button').forEach(b =>
+    b.setAttribute('aria-selected', b.dataset.tab === name));
+  document.querySelectorAll('#dlg .tab').forEach(t =>
+    t.classList.toggle('on', t.id === 'tab-' + name));
+}
+$('dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeDlg(); });
+
+function render(){
+  const a = B.agent, s = B.stats;
+  $('face').textContent = a.emoji || '🙂';
+  $('npcName').textContent = a.name;
+  $('npcSub').textContent = `${a.family} · ${a.persona} · ${a.tagline}`;
+  $('npcMood').textContent = s.mood || '—';
+
+  /* ---- 人设 ---- */
+  $('tab-persona').innerHTML = `
+    <dl class="kv">
+      ${Object.entries(a.traits).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}
+    </dl>
+    <p class="lead">他会犯的错（写死在规则里，按概率触发。鼠标停上去看说明）</p>
+    <div>${a.behaviors.map(b =>
+      `<span class="tag" title="${b.note}">${b.name}</span>`).join('')}</div>
+    <p class="lead">他脑子里的自我认知</p>
+    <div class="quote">${a.prompt || '（未设定）'}</div>`;
+
+  /* ---- 战绩 ---- */
+  const c = B.equity_curve, start = s.start_equity;
+  $('tab-record').innerHTML = `
+    <div class="stats">
+      ${stat('账户净值', money(s.equity))}
+      ${stat('累计盈亏', sgn(s.pnl_pct), cls(s.pnl))}
+      ${stat('平仓胜率', pct(s.win_rate))}
+      ${stat('成交笔数', s.n_trades)}
+      ${stat('挂盘命中', pct(s.idea_hit_rate))}
+      ${stat('他的报价', s.idea_quoted == null ? '—' : (s.idea_quoted * 100).toFixed(0) + '¢')}
+    </div>
+    ${curve(c, start)}
+    <p class="lead">最近平掉的仓</p>
+    <table><thead><tr>
+      <th>平仓日</th><th>标的</th><th>盈亏</th><th>离场原因</th><th>当时的想法</th>
+    </tr></thead><tbody>
+      ${B.closed.slice().reverse().slice(0, 12).map(t => `<tr>
+        <td>${t.date.slice(5)}</td><td>${t.ticker}</td>
+        <td class="${cls(t.pnl)}">${sgn(t.pnl_pct)}</td>
+        <td class="txt">${t.why}</td><td class="reason">${t.reason}</td></tr>`).join('')}
+    </tbody></table>`;
+
+  /* ---- 持仓 ---- */
+  const held = B.positions;
+  $('tab-book').innerHTML = held.length ? `
+    <p class="lead" style="margin-top:0">
+      截至 ${B.generated_for} 收盘 · 现金 ${money(s.equity - held.reduce((m, p) => m + p.value, 0))}
+    </p>
+    <table><thead><tr>
+      <th>标的</th><th>市值</th><th>占净值</th><th>浮盈</th><th>止盈/止损</th><th>建仓理由</th>
+    </tr></thead><tbody>
+      ${held.map(p => `<tr>
+        <td>${p.ticker}</td><td>${money(p.value)}</td>
+        <td>${pct(p.value / s.equity)}</td>
+        <td class="${cls(p.pnl_pct)}">${sgn(p.pnl_pct)}</td>
+        <td>${pct(p.take_profit)} / ${p.stop_loss == null
+              ? '<span class="up">不设</span>' : pct(p.stop_loss)}</td>
+        <td class="reason">${p.reason}</td></tr>`).join('')}
+    </tbody></table>
+    <p class="note">止盈止损是他建仓当天按概率抽的，不是固定值。抽到「不设」就是真的死扛 —— 这是散户专属的坏毛病。</p>`
+    : '<p>他现在空仓。</p>';
+
+  /* ---- 对赌盘 ---- */
+  renderBets();
+}
+
+const stat = (k, v, c = '') =>
+  `<div class="stat"><span>${k}</span><b class="${c}">${v}</b></div>`;
+
+function curve(c, start){
+  if (!c.length) return '';
+  const W = 700, H = 200, vals = c.map(p => p.equity);
+  const lo = Math.min(start, ...vals), hi = Math.max(start, ...vals);
+  const pad = (hi - lo) * 0.12 || 1;
+  const X = i => (i / Math.max(1, c.length - 1)) * W;
+  const Y = v => H - ((v - lo + pad) / (hi - lo + pad * 2)) * H;
+  const pts = c.map((p, i) => `${X(i).toFixed(1)},${Y(p.equity).toFixed(1)}`).join(' ');
+  const col = c[c.length - 1].equity >= start ? 'var(--up)' : 'var(--down)';
+  const dd = 1 - Math.min(...vals) / Math.max(start, ...vals);
+  // preserveAspectRatio=none：让曲线撑满宽度，否则 viewBox 比例不符会左右留白
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"
+            style="width:100%;height:200px;background:#fff;box-shadow:inset 0 0 0 3px var(--line)">
+      <line x1="0" y1="${Y(start)}" x2="${W}" y2="${Y(start)}"
+            stroke="#c9bda4" stroke-width="2" stroke-dasharray="7 6"/>
+      <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="3"
+                vector-effect="non-scaling-stroke"/>
+      ${c.map((p, i) => `<rect x="${X(i) - 3}" y="${Y(p.equity) - 3}" width="6" height="6"
+            fill="${col}"><title>${p.date} ${money(p.equity)} · ${p.mood}</title></rect>`).join('')}
+    </svg>
+    <p class="note">
+      虚线 ${money(start)} 起点 · 最高 ${money(Math.max(...vals))} ·
+      最低 ${money(Math.min(...vals))} · 期间最大回撤 ${(dd * 100).toFixed(1)}%。
+      鼠标停在点上看那天的心态。
+    </p>`;
+}
+
+/* ================================================================
+   下注 —— 实盘等收盘揭晓；历史近 5 天用来模拟对战
+   ================================================================ */
+let betMode = 'live';          // live | history
+let histDay = null;
+
+function practicePnl(){
+  return Object.values(P.practice || {}).reduce((m, r) => {
+    if (r.ok === true) return m + (r.win - r.stake);
+    if (r.ok === false) return m - r.stake;
+    return m;
+  }, 0);
+}
+function liveIdeasOf(book){
+  const live = book && book.live;
+  const asOf = live && live.as_of;
+  return ((live && live.ideas) || [])
+    .filter(i => !asOf || i.date === asOf)
+    .slice()
+    .sort((a, b) => {
+      const s = (a.session === 'final') - (b.session === 'final');
+      if (s) return s;
+      return (a.horizon || 1) - (b.horizon || 1);
+    });
+}
+function liveIdeas(){
+  return liveIdeasOf(B);
+}
+function histDays(){
+  return ((B && B.history) || []).map(d => d.date);
+}
+function histIdeas(){
+  const days = B && B.history || [];
+  const d = histDay || (days.length ? days[days.length - 1].date : null);
+  const row = days.find(x => x.date === d);
+  return (row && row.ideas) || [];
+}
+function findIdea(id){
+  for (const book of (BOOKS || [])){
+    const hit = liveIdeasOf(book).concat((book.history || []).flatMap(d => d.ideas))
+      .find(i => i.id === id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function vig(){
+  return (B && B.stats && B.stats.vig) || 0;
+}
+function quote(i){
+  const p = i.price != null ? i.price : 0.53;
+  const v = vig();
+  return [Math.min(.97, p + v), Math.min(.97, 1 - p + v)];
+}
+
+function renderBets(){
+  const el = $('tab-bets');
+  const live = B.live || {};
+  const days = histDays();
+  if (!histDay && days.length) histDay = days[days.length - 1];
+  const ideas = betMode === 'live' ? liveIdeas() : histIdeas();
+  const sim = practicePnl();
+
+  el.innerHTML = `
+    <div class="modes">
+      <button data-mode="live" aria-pressed="${betMode === 'live'}">实盘 · 等收盘揭晓</button>
+      <button data-mode="history" aria-pressed="${betMode === 'history'}">历史参考 · 近 5 天</button>
+      <div class="wallet">${betMode === 'live'
+        ? `代币<b> ${P.chips}</b>`
+        : `模拟盈亏<b class="${cls(sim)}"> ${sim >= 0 ? '+' : ''}${sim}</b>`}</div>
+    </div>
+    ${betMode === 'history' && days.length ? `
+      <div class="days">
+        ${days.map(d => `<button data-day="${d}" aria-pressed="${d === histDay}">${d.slice(5)}</button>`).join('')}
+      </div>` : ''}
+    <p class="lead" style="margin-top:0">${betMode === 'live'
+      ? `赌未来 1 / 3 / 5 天的收盘，相对现在是涨还是跌。早盘、夜盘各出一版。答案等美股收盘才公布。`
+      : `这是他 ${histDay || ''} 挂出的题，收盘价已经走完，用来练手。<b>模拟盈亏不计入代币、不影响称号和背包。</b>`}</p>
+    ${P.buff && betMode === 'live' ? `<p class="note" style="margin-top:0">已激活 <b>${ITEMS[P.buff].emoji} ${ITEMS[P.buff].name}</b>，下一注生效。</p>` : ''}
+    ${ideas.length ? ideas.map(i => betCard(i, betMode === 'live')).join('')
+                   : `<p>他${betMode === 'live' ? '这一轮' : '这天'}没挂盘。信念度不够就不硬凑。</p>`}
+    <div class="stakes" style="margin-top:4px">注码
+      ${[50, 100, 200].concat(P.buff === 'bold' && betMode === 'live' ? [500] : []).map(v =>
+        `<button data-stake="${v}" aria-pressed="${v === stake}">${v}</button>`).join('')}
+      ${betMode === 'history'
+        ? `<button onclick="resetPractice()" style="margin-left:auto">清空模拟记录</button>`
+        : `<button onclick="openBag()" style="margin-left:auto">打开背包</button>`}
+    </div>
+    ${calibTable()}
+    <p class="note">
+      基准是前收，不是当天开盘 —— 隔夜跳空算进涨跌里。<br>
+      ${vig() ? `两边报价加起来大于 1（${(vig() * 100).toFixed(0)}% 抽水）。`
+            : '抽水为零，两边报价严格加总到 1.00。'}<br>
+      ${gapNote()}
+    </p>`;
+
+  el.querySelectorAll('[data-mode]').forEach(b =>
+    b.onclick = () => { betMode = b.dataset.mode; renderBets(); });
+  el.querySelectorAll('[data-day]').forEach(b =>
+    b.onclick = () => { histDay = b.dataset.day; renderBets(); });
+  el.querySelectorAll('[data-stake]').forEach(b =>
+    b.onclick = () => { stake = +b.dataset.stake; renderBets(); });
+  el.querySelectorAll('[data-bet]').forEach(b =>
+    b.onclick = () => place(b.dataset.bet, b.dataset.side, betMode === 'live'));
+}
+
+function horizonTag(i){
+  const n = i.horizon || 1;
+  const left = Math.max(0, n - (i.elapsed || 0));
+  const when = n <= 1 ? '未来 1 天' : `未来 ${n} 天`;
+  if (i.status === 'resolved') return `${when} · 已到期`;
+  return n <= 1 ? when : `${when} · 还差 ${left} 个交易日`;
+}
+function sessionTag(i){
+  return i.session === 'morning' ? '早盘' : i.session === 'final' ? '夜盘' : '';
+}
+
+function calibTable(){
+  const rows = B.calibration || [];
+  if (!rows.length) return '';
+  return `<p class="lead">这条线怎么来的 · 按期限分开校准</p>
+    <table><thead><tr>
+      <th>格子</th><th>历史挂过</th><th>实际对了</th><th>实测命中</th><th>现在报价</th>
+    </tr></thead><tbody>
+      ${rows.map(r => `<tr>
+        <td class="txt">${r.label}</td><td>${r.n}</td><td>${r.wins}</td>
+        <td>${r.realized == null ? '—' : (r.realized * 100).toFixed(0) + '%'}</td>
+        <td><b>${(r.price * 100).toFixed(0)}¢</b></td></tr>`).join('')}
+    </tbody></table>
+    <p class="note" style="margin-top:6px">
+      报价 = (该格历史命中数 + 40 × 先验) / (该格历史盘数 + 40)。
+      1 / 3 / 5 日盘分开算 —— 期限不同，涨的基准率就不同。
+      定价只用揭晓之前已结算的盘，今天的实盘不给自己定价。
+    </p>`;
+}
+
+function gapNote(){
+  const s = B.stats;
+  if (s.idea_quoted == null || s.idea_hit_rate == null) return '';
+  const gap = s.idea_quoted - s.idea_hit_rate;
+  const se = Math.sqrt(0.25 / s.idea_total);
+  const sig = Math.abs(s.idea_hit_rate - 0.5) / se;
+  return `他过去 ${s.idea_total} 个已揭晓的盘平均报价 ${(s.idea_quoted * 100).toFixed(0)}¢，`
+    + `实际对了 ${(s.idea_hit_rate * 100).toFixed(0)}%（${Math.abs(gap * 100).toFixed(0)} 个点的`
+    + `${gap > 0 ? '高估' : '低估'}）。`
+    + (sig < 2
+        ? ` ${s.idea_total} 个样本只到 ${sig.toFixed(1)} 个标准差，还分不清是本事还是运气。`
+        : `样本已到 ${sig.toFixed(1)} 个标准差，这个偏离不像是运气。`);
+}
+
+function betCard(i, isLive){
+  const book = isLive ? P.bets : (P.practice || {});
+  const done = book[i.id];
+  const [pYes, pNo] = quote(i);
+  const payout = p => (1 / p).toFixed(2);
+  const resolved = i.status === 'resolved' && i.outcome;
+  const waiting = isLive && !resolved;
+  let res = '';
+  if (done && done.pending){
+    res = `<div class="result">已下 ${done.side === 'YES' ? '跟随' : '对赌'} ${done.stake} 代币。等 ${i.horizon || 1} 日盘收盘揭晓。</div>`;
+  } else if (done && (done.ok === true || done.ok === false)){
+    const won = done.ok;
+    res = `<div class="result ${won ? 'win' : 'lose'}">
+      ${i.ticker} ${i.ref_date} 收 ${i.ref_close} → ${i.exit_date || ''} 收 ${i.exit_close || '—'}
+      （${sgn(i.move_pct)}）· 正确答案 <b>${i.outcome}</b><br>
+      你${done.side === 'YES' ? '跟随' : '对赌'} ${done.stake}，
+      <b>这把${done.practice ? '模拟' : ''} ${won ? '赢了 +' + (done.win - done.stake) : '输了 −' + done.stake}</b>
+      ${done.practice ? ' · 不计入账户' : ''}${done.buff
+        ? `（${ITEMS[done.buff].emoji} ${ITEMS[done.buff].name} 已生效）` : ''}。
+    </div>`;
+  } else if (!isLive && !resolved){
+    res = `<div class="result">这题还没到期，去实盘等揭晓。历史页只练已经走完的盘。</div>`;
+  }
+
+  const locked = !!done || (!isLive && !resolved);
+  return `<div class="bet">
+    <div class="q">${i.question}</div>
+    <div class="say">他说：「${i.reason}」 <span style="opacity:.7">（${i.mood}${sessionTag(i) ? ' · ' + sessionTag(i) : ''} · ${horizonTag(i)}）</span>
+      <br><span style="opacity:.7">信念度 ${(i.conviction * 100).toFixed(0)} · 这条线背后有
+      ${i.n_prior} 个已结算的历史盘${i.n_prior < 25 ? '，样本还薄，线基本贴着基准率' : ''}</span></div>
+    <div class="odds">
+      <button data-bet="${i.id}" data-side="YES" ${locked ? 'disabled' : ''}>
+        跟随他 · 押涨<b>${payout(pYes)}×</b>
+        <i>报价 ${(pYes * 100).toFixed(0)}¢ · 押 ${stake} 赢 ${Math.round(stake / pYes - stake)}</i></button>
+      <button data-bet="${i.id}" data-side="NO" ${locked ? 'disabled' : ''}>
+        跟他对赌 · 押跌<b>${payout(pNo)}×</b>
+        <i>报价 ${(pNo * 100).toFixed(0)}¢ · 押 ${stake} 赢 ${Math.round(stake / pNo - stake)}</i></button>
+    </div>
+    ${res}</div>`;
+}
+
+function place(id, side, isLive){
+  if (isLive) placeLive(id, side);
+  else placePractice(id, side);
+}
+
+function placeLive(id, side){
+  if (P.bets[id]) return;
+  const i = findIdea(id);
+  if (!i) return;
+  if (P.chips < stake){ alert('代币不够了。去背包里看看，或者押小一点。'); return; }
+  const [pYes, pNo] = quote(i);
+  const buff = P.buff;
+  let win = Math.round(stake / (side === 'YES' ? pYes : pNo));
+  P.seq = (P.seq || 0) + 1;
+  const rec = { side, stake, win, buff, seq: P.seq, at: Date.now(),
+                ticker: i.ticker, date: i.date, price: i.price, horizon: i.horizon,
+                practice: false };
+
+  if (i.status !== 'resolved'){
+    P.chips -= stake;
+    rec.pending = true; rec.ok = null;
+  } else {
+    if (buff === 'rumor' && side === i.outcome) win = Math.round(win * 1.25);
+    rec.win = win;
+    rec.ok = side === i.outcome;
+    rec.pending = false;
+    P.chips += rec.ok ? win - stake : -stake;
+    P.peak = Math.max(P.peak, P.chips);
+  }
+  if (buff) P.buff = null;
+  P.bets[id] = rec;
+  saveP();
+  renderBets();
+}
+
+/** 历史盘：只记对错，绝不改 P.chips / P.peak / 称号。 */
+function placePractice(id, side){
+  P.practice = P.practice || {};
+  if (P.practice[id]) return;
+  const i = findIdea(id);
+  if (!i || i.status !== 'resolved' || !i.outcome) return;
+  const [pYes, pNo] = quote(i);
+  const win = Math.round(stake / (side === 'YES' ? pYes : pNo));
+  P.practice[id] = {
+    side, stake, win, ok: side === i.outcome, pending: false, practice: true,
+    ticker: i.ticker, date: i.date, price: i.price, horizon: i.horizon, at: Date.now(),
+  };
+  saveP();
+  renderBets();
+}
+
+function resetPractice(){
+  P.practice = {};
+  saveP();
+  renderBets();
+}
+
+/** 实盘揭晓后入账。book.js 更新了答案，打开页面就会把挂着的注结掉。 */
+function settleLiveBets(){
+  let changed = false;
+  for (const [id, rec] of Object.entries(P.bets || {})){
+    if (!rec.pending) continue;
+    const i = findIdea(id);
+    if (!i || i.status !== 'resolved' || !i.outcome) continue;
+    rec.ok = rec.side === i.outcome;
+    rec.pending = false;
+    let win = rec.win;
+    if (rec.buff === 'rumor' && rec.ok) win = Math.round(win * 1.25);
+    rec.win = win;
+    if (rec.ok) P.chips += win;       // 本金已扣，赢了把派彩加回来
+    P.peak = Math.max(P.peak, P.chips);
+    changed = true;
+  }
+  if (changed) saveP();
+}
+
+/* ================================================================
+   背包
+   ================================================================ */
+const openBag = () => { closeDlg(); $('bag').classList.add('on'); renderBag(); };
+const closeBag = () => $('bag').classList.remove('on');
+const bagOpen = () => $('bag').classList.contains('on');
+
+document.querySelectorAll('[data-btab]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('[data-btab]').forEach(b =>
+      b.setAttribute('aria-selected', b === btn));
+    document.querySelectorAll('#bag .tab').forEach(t =>
+      t.classList.toggle('on', t.id === 'btab-' + btn.dataset.btab));
+  };
+});
+$('bag').addEventListener('click', e => { if (e.target.id === 'bag') closeBag(); });
+
+function renderBag(){
+  const s = playerStats();
+  const earned = earnedTitles();
+
+  $('myNick').textContent = P.nick;
+  $('myTitle').textContent = titleName();
+  $('myChips').textContent = P.chips;
+  drawFace();
+
+  /* ---- 身份 ---- */
+  $('btab-me').innerHTML = `
+    <p class="lead" style="margin-top:0">昵称</p>
+    <div class="nickrow">
+      <input id="nickInput" maxlength="12" value="${P.nick.replace(/"/g, '&quot;')}">
+      <button class="close" onclick="saveNick()">改名</button>
+    </div>
+    <p class="lead">称号 · 只能佩戴已解锁的</p>
+    <div class="grid">
+      ${TITLES.map(t => {
+        const got = earned.some(e => e.id === t.id);
+        const on = (P.title || 'rookie') === t.id;
+        return `<div class="card ${got ? (on ? 'on' : '') : 'locked'}">
+          <div class="t">${t.name}${got ? '' : ' 🔒'}</div>
+          <div class="d">${t.desc}</div>
+          <button ${got && !on ? `onclick="equipTitle('${t.id}')"` : 'disabled'}>
+            ${on ? '佩戴中' : got ? '佩戴' : '未解锁'}</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <p class="note">称号由下注记录实时判定，改不了也刷不出来 —— 能伪造的荣誉不值钱。</p>`;
+
+  /* ---- 战绩 ---- */
+  const cmp = B.stats.idea_hit_rate;
+  $('btab-record').innerHTML = `
+    <div class="stats">
+      ${stat('代币余额', P.chips, cls(P.chips - P.start))}
+      ${stat('累计盈亏', (s.all.pnl >= 0 ? '+' : '') + s.all.pnl, cls(s.all.pnl))}
+      ${stat('历史峰值', P.peak)}
+      ${stat('下注手数', s.all.n)}
+      ${stat('总胜率', pct(s.all.rate))}
+    </div>
+    <p class="lead" style="margin-top:0">跟随 vs 对赌 · 这两件事考的能力不一样</p>
+    <table><thead><tr>
+      <th>方式</th><th>手数</th><th>赢</th><th>胜率</th><th>盈亏</th>
+    </tr></thead><tbody>
+      <tr><td class="txt">跟随他（押涨）</td><td>${s.yes.n}</td><td>${s.yes.w}</td>
+          <td>${pct(s.yes.rate)}</td>
+          <td class="${cls(s.yes.pnl)}">${s.yes.pnl >= 0 ? '+' : ''}${s.yes.pnl}</td></tr>
+      <tr><td class="txt">跟他对赌（押跌）</td><td>${s.no.n}</td><td>${s.no.w}</td>
+          <td>${pct(s.no.rate)}</td>
+          <td class="${cls(s.no.pnl)}">${s.no.pnl >= 0 ? '+' : ''}${s.no.pnl}</td></tr>
+    </tbody></table>
+    <p class="note">
+      热搜老哥自己的挂盘命中率是 ${pct(cmp)}。
+      ${s.all.n < 10
+        ? `你才 ${s.all.n} 手，样本太少，还比不出高下 —— 至少下够 30 手再说。`
+        : s.all.rate > cmp
+        ? `你目前 ${pct(s.all.rate)}，压过他 ${((s.all.rate - cmp) * 100).toFixed(0)} 个点。`
+        : `你目前 ${pct(s.all.rate)}，还没跑赢他。`}
+    </p>`;
+
+  /* ---- 注单 ---- */
+  $('btab-hold').innerHTML = `
+    <p class="lead" style="margin-top:0">已结算的注单</p>
+    ${s.log.length ? `<table><thead><tr>
+      <th>挂盘日</th><th>标的</th><th>方式</th><th>报价</th><th>注码</th><th>结果</th><th>盈亏</th>
+    </tr></thead><tbody>
+      ${s.log.slice(0, 20).map(b => `<tr>
+        <td>${(b.date || '').slice(5)}</td><td>${b.ticker || '—'}</td>
+        <td class="txt">${b.side === 'YES' ? '跟随' : '对赌'}</td>
+        <td>${b.price == null ? '—'
+             : ((b.side === 'YES' ? b.price : 1 - b.price) * 100).toFixed(0) + '¢'}</td>
+        <td>${b.stake}</td>
+        <td class="txt ${b.ok ? 'up' : 'down'}">${b.ok ? '赢' : '输'}</td>
+        <td class="${b.ok ? 'up' : 'down'}">${b.ok ? '+' + (b.win - b.stake) : '−' + b.stake}</td>
+      </tr>`).join('')}
+    </tbody></table>` : '<p>还没下过注。去广场找热搜老哥。</p>'}
+    <p class="note">
+      只统计实盘。历史模拟盘的对错不进这张表，也不进代币余额。
+    </p>
+    <p class="note">
+      <b>跟随型仓位还没做。</b>目前跟随只是押他猜对，本质还是二元盘。
+      按设想，跟随应该是向系统融资跟他的单、只付利息，届时会在这里显示真实持仓、
+      浮动盈亏和资金成本 —— 那和赔率盘是两套结算，等数学定了再接。
+    </p>`;
+
+  /* ---- 技能 ---- */
+  $('btab-items').innerHTML = `
+    <p class="lead" style="margin-top:0">
+      道具 ${P.buff ? `· 当前已激活 <b>${ITEMS[P.buff].emoji} ${ITEMS[P.buff].name}</b>，下一注生效` : ''}
+    </p>
+    <div class="grid">
+      ${Object.entries(ITEMS).map(([k, it]) => {
+        const n = P.items[k] || 0;
+        const active = P.buff === k;
+        return `<div class="card ${active ? 'on' : ''}">
+          <div class="t">${it.emoji} ${it.name} <span style="opacity:.6">×${n}</span></div>
+          <div class="d">${it.desc}</div>
+          <div style="display:flex;gap:8px">
+            ${k === 'calm'
+              ? `<button ${n > 0 && Object.keys(P.bets).length ? 'onclick="undoLastBet()"'
+                   : 'disabled'} style="flex:1">使用</button>`
+              : `<button ${n > 0 && !active ? `onclick="useItem('${k}')"` : 'disabled'}
+                   style="flex:1">${active ? '已激活' : '装备'}</button>`}
+            <button onclick="buyItem('${k}')" ${P.chips < it.cost ? 'disabled' : ''}
+              style="flex:1">买 ${it.cost}</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  /* ---- 皮肤 ---- */
+  $('btab-skins').innerHTML = `
+    <p class="lead" style="margin-top:0">换上就能在广场上看见，不是图标。</p>
+    <div class="grid">
+      ${Object.entries(SKINS).map(([k, sk]) => {
+        const got = P.skins.includes(k);
+        const on = P.skin === k;
+        return `<div class="card ${got ? (on ? 'on' : '') : 'locked'}">
+          <div class="swatch" style="background:${sk.c}"></div>
+          <div class="t">${sk.name}</div>
+          <div class="d">${sk.note}</div>
+          ${got ? `<button ${on ? 'disabled' : `onclick="equipSkin('${k}')"`}>
+                     ${on ? '穿着中' : '换上'}</button>`
+                : `<button ${P.chips < sk.cost ? 'disabled' : ''}
+                     onclick="buySkin('${k}')">买 ${sk.cost} 代币</button>`}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+/** 背包头像：把广场上那个精灵原样画出来，皮肤换了这里立刻变。 */
+function drawFace(){
+  const c = $('myFace'), g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.clearRect(0, 0, 18, 18);
+  sprite(HERO, 1, 1, false, skinPal(P.skin), g);
+}
+
+function saveNick(){
+  const v = $('nickInput').value.trim();
+  if (v){ P.nick = v.slice(0, 12); saveP(); renderBag(); }
+}
+function equipTitle(id){ P.title = id; saveP(); renderBag(); }
+function equipSkin(id){ P.skin = id; saveP(); renderBag(); }
+function buySkin(id){
+  const sk = SKINS[id];
+  if (P.chips < sk.cost) return;
+  P.chips -= sk.cost; P.skins.push(id); P.skin = id; saveP(); renderBag();
+}
+function buyItem(k){
+  const it = ITEMS[k];
+  if (P.chips < it.cost) return;
+  P.chips -= it.cost; P.items[k] = (P.items[k] || 0) + 1; saveP(); renderBag();
+}
+function useItem(k){
+  if ((P.items[k] || 0) <= 0) return;
+  P.items[k] -= 1; P.buff = k; saveP(); renderBag();
+}
+
+/** 冷静一下：撤销最近一注，退回本金。 */
+function undoLastBet(){
+  const log = Object.entries(P.bets).sort((a, b) => (b[1].seq || 0) - (a[1].seq || 0));
+  if (!log.length){ alert('还没下过注。'); return; }
+  const [id, b] = log[0];
+  P.chips -= b.ok ? b.win - b.stake : -b.stake;   // 反向冲销
+  delete P.bets[id];
+  P.items.calm = (P.items.calm || 0) - 1;
+  saveP(); renderBag(); renderBets();
+}
+</script>
+</body>
+</html>
