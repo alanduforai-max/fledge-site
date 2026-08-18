@@ -407,6 +407,10 @@ const I18N = {
     skinBuy: c => `买 ${c} 代币`,
     alertNoChips: '代币不够了。去背包里看看，或者押小一点。',
     alertNoBets: '还没下过注。',
+    devLead: '🧪 测试金手指（正式版会拆掉）',
+    devAdd: '+1000 代币', devAdd10k: '+10000', devReset: '重置存档',
+    devNote: '重置会清空代币、注单、称号、皮肤，回到初始状态。加钱只影响你本机的存档。',
+    devConfirm: '确定重置存档？代币/注单/称号/皮肤全部清零，回到初始状态。',
   },
   en: {
     title: 'Event Street · Plaza',
@@ -505,6 +509,10 @@ const I18N = {
     skinWearing: 'Wearing', skinWear: 'Put on',
     skinBuy: c => `Buy · ${c} chips`,
     alertNoChips: 'Not enough chips. Check your bag, or stake smaller.',
+    devLead: '🧪 Test cheats (removed in release)',
+    devAdd: '+1000 chips', devAdd10k: '+10000', devReset: 'Reset save',
+    devNote: 'Reset wipes chips, bets, titles and skins back to the initial state. Cheats only touch your local save.',
+    devConfirm: 'Reset save? Chips, bets, titles and skins all go back to the initial state.',
     alertNoBets: 'No bets yet.',
   },
 };
@@ -1365,7 +1373,14 @@ function renderBag(){
         </div>`;
       }).join('')}
     </div>
-    <p class="note">${T('titlesNote')}</p>`;
+    <p class="note">${T('titlesNote')}</p>
+    <p class="lead">${T('devLead')}</p>
+    <div class="nickrow">
+      <button class="close" onclick="devAddChips(1000)">${T('devAdd')}</button>
+      <button class="close" onclick="devAddChips(10000)">${T('devAdd10k')}</button>
+      <button class="close" onclick="devReset()">${T('devReset')}</button>
+    </div>
+    <p class="note">${T('devNote')}</p>`;
 
   /* ---- 战绩 ---- */
   const cmp = B.stats.idea_hit_rate;
@@ -1503,6 +1518,13 @@ function drawFace(){
 function saveNick(){
   const v = $('nickInput').value.trim();
   if (v){ P.nick = v.slice(0, 12); saveP(); renderBag(); }
+}
+/* 🧪 测试金手指：只动本机 localStorage 存档，正式版删掉这两个函数和 btab-me 里的按钮区即可 */
+function devAddChips(n){ P.chips += n; if (P.chips > (P.peak || 0)) P.peak = P.chips; saveP(); renderBag(); }
+function devReset(){
+  if (!confirm(T('devConfirm'))) return;
+  localStorage.removeItem(SAVE);
+  location.reload();
 }
 function equipTitle(id){ P.title = id; saveP(); renderBag(); }
 function equipSkin(id){ P.skin = id; saveP(); renderBag(); }
