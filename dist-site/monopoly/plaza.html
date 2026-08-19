@@ -36,6 +36,13 @@
   }
   #bubble b{color:var(--up)}
 
+  /* 教学村头顶的常驻门牌——不用走近就看得见，跟 hint/bubble 那套「靠近才显示」不是一回事 */
+  #roomLabel{
+    position:absolute; transform:translateX(-50%); white-space:nowrap; pointer-events:none;
+    background:rgba(20,15,10,.86); color:var(--gold); font-weight:700; letter-spacing:.5px;
+    padding:3px 9px; box-shadow:0 0 0 2px rgba(20,15,10,.86);
+  }
+
   .hint{
     position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
     background:rgba(20,15,10,.88); color:#f7eeda; padding:8px 18px;
@@ -50,9 +57,9 @@
   }
   /* 左上角常驻的玩家条 */
   .corner{
-    position:absolute; left:14px; top:14px; padding:8px 14px; cursor:pointer;
+    position:absolute; left:14px; bottom:14px; padding:8px 14px; cursor:pointer;
     background:rgba(20,15,10,.86); color:#f7eeda; font-size:14px; line-height:1.5;
-    box-shadow:0 0 0 3px rgba(20,15,10,.86);
+    box-shadow:0 0 0 3px rgba(20,15,10,.86); z-index:5;
   }
   .corner:hover{background:rgba(20,15,10,.96)}
   .corner b{color:var(--gold); font-family:var(--num); font-size:16px}
@@ -73,11 +80,11 @@
   .lang b{color:var(--gold)}
 
   /* ---------- 对话框 ---------- */
-  #dlg,#bag{
+  #dlg,#bag,#roomDlg{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(12,10,8,.6); z-index:20; padding:20px;
   }
-  #dlg.on,#bag.on{display:flex}
+  #dlg.on,#bag.on,#roomDlg.on{display:flex}
   canvas.face{image-rendering:pixelated; padding:5px}
 
   /* 背包：称号 / 道具 / 皮肤 */
@@ -198,6 +205,207 @@
           box-shadow:inset 0 0 0 3px var(--line)}
   .result.win{background:#dff0e2} .result.lose{background:#f9dcdc}
 
+  /* ---------- 8人局新手教学 ---------- */
+  /* 选项按钮存在感往下调，题目和 thesis 才是这张卡片该先看到的东西 */
+  .room-bet .q{font-size:18px; font-weight:700; margin-bottom:8px}
+  .room-bet .say{font-size:14.5px; line-height:1.7; margin-bottom:11px}
+  .room-odds{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:6px}
+  .room-odds button{
+    padding:7px 3px; font-family:var(--ui); font-size:11.5px; cursor:pointer;
+    background:var(--cream2); border:0; box-shadow:inset 0 0 0 2px var(--line); line-height:1.4;
+  }
+  .room-odds button:hover:not(:disabled){background:var(--gold)}
+  .room-odds button:disabled{opacity:.4; cursor:default}
+  .room-odds button.duel{background:#f3d9cf}
+  .room-odds button.duel:hover:not(:disabled){background:#e8b49f}
+  .room-odds b{display:block; font-size:12.5px; font-family:var(--num); margin-bottom:1px}
+  .room-detail-link{
+    display:block; margin:2px 0 10px; padding:0; font-family:var(--ui); font-size:12.5px;
+    background:none; border:0; color:var(--blue); text-decoration:underline; cursor:pointer;
+  }
+  .room-table{width:100%; margin:10px 0; font-size:13.5px}
+  .room-table td,.room-table th{padding:6px 8px}
+  .room-table tr.you{background:#fff6dd}
+  .room-banner{
+    text-align:center; padding:14px; margin-bottom:14px; font-size:17px; font-weight:700;
+    box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .room-banner.win{background:#f6d9c9; color:var(--up)}
+  .room-banner.lose{background:#dff0e2; color:var(--down)}
+  .face.bust{background:#f9dcdc}
+  .room-advance{
+    width:100%; padding:13px; margin-top:10px; font-family:var(--ui); font-size:15px;
+    font-weight:700; cursor:pointer; background:var(--gold); border:0;
+    box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .room-advance:hover:not(:disabled){background:#eec46a}
+  .room-advance:disabled{opacity:.4; cursor:default}
+
+  /* 参与度进度条——红跟蓝，不再靠一行字数多空 */
+  .room-crowd{margin:0 0 12px}
+  .room-crowd .bar{display:flex; height:9px; box-shadow:inset 0 0 0 2px var(--line); background:#fff; overflow:hidden}
+  .room-crowd .seg-red{background:var(--up)}
+  .room-crowd .seg-blue{background:var(--blue)}
+  .room-crowd .lbl{display:flex; justify-content:space-between; font-size:11px; color:var(--ink2); margin-top:3px}
+
+  /* 今日/历史 切页 */
+  .room-nav{display:flex; gap:8px; margin-bottom:14px}
+  .room-nav button{
+    padding:8px 18px; font-family:var(--ui); font-size:13px; cursor:pointer;
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line); color:var(--ink2);
+  }
+  .room-nav button[aria-pressed="true"]{background:var(--gold); color:var(--ink); font-weight:700}
+  .history-list{max-height:52vh; overflow-y:auto; padding-right:4px}
+  .room-back{
+    padding:7px 14px; margin-bottom:14px; font-family:var(--ui); font-size:13px; cursor:pointer;
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line); color:var(--ink2);
+  }
+  .room-back:hover{background:var(--cream2)}
+
+  /* 圆桌——庄家坐正中心，闲家沿边摆开，信息藏在人物后面，点一下才冒出来 */
+  .table-toolbar{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px}
+  .table-toolbar .lead{margin:0}
+  .table-layout{display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap}
+  .table-main{flex:1 1 320px; min-width:280px}
+  /* 右手边：今日题目简略版（点开才是完整版），取代原来杵在这儿的桌面记录 */
+  .table-side{flex:1 1 220px; min-width:200px; max-width:280px}
+  .table-side h3,.table-log-wrap h3{
+    font-size:11.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink2);
+    margin-bottom:8px; font-weight:400;
+  }
+  .brief-list{display:flex; flex-direction:column; gap:6px; margin-bottom:8px}
+  .brief-row{
+    padding:9px 11px; background:#fff; box-shadow:inset 0 0 0 3px var(--line);
+    cursor:pointer; font-size:13px;
+  }
+  .brief-row:hover{background:var(--cream2)}
+  .brief-row.active{background:#fff6dd; box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 6px var(--gold)}
+  .brief-row .dir{color:var(--up); font-weight:700; margin-right:5px}
+  .brief-row .done-tag{float:right; font-size:11px; color:var(--ink2)}
+
+  /* 桌面记录挪到最下面、缩小、靠 overflow 出滑动轴 */
+  .table-log-wrap{margin-top:16px}
+  .table-log{
+    max-height:130px; overflow-y:auto; background:#fff; box-shadow:inset 0 0 0 3px var(--line);
+    padding:8px 10px; font-size:10.5px;
+  }
+  .log-day{
+    font-family:var(--num); font-size:10.5px; color:var(--ink2); margin:8px 0 2px;
+    border-top:1px solid var(--cream2); padding-top:5px;
+  }
+  .log-day:first-child{margin-top:0; border-top:none; padding-top:0}
+  .log-row{padding:1px 0; line-height:1.5}
+  .log-row b{font-family:var(--num)}
+  .table-wrap{position:relative; width:100%; max-width:360px; aspect-ratio:1; margin:6px auto 14px}
+  .table-felt{
+    position:absolute; inset:9%; border-radius:50%; background:#17301f;
+    box-shadow:inset 0 0 0 3px #0d1f13, 0 0 0 4px var(--gold), 0 5px 0 0 rgba(0,0,0,.28);
+  }
+  .seat{
+    position:absolute; width:58px; margin-left:-29px; margin-top:-29px;
+    text-align:center; cursor:pointer; user-select:none;
+  }
+  .seat .av{
+    width:44px; height:44px; margin:0 auto; border-radius:50%; background:#fff;
+    box-shadow:inset 0 0 0 3px var(--line); display:grid; place-items:center; font-size:22px;
+  }
+  .seat.you .av{box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 6px var(--gold)}
+  .seat:hover .av,.seat.active .av{box-shadow:inset 0 0 0 3px var(--blue), 0 0 0 2px var(--blue)}
+  .seat .nm{
+    font-size:10.5px; margin-top:3px; color:#f7eeda; text-shadow:0 1px 2px rgba(0,0,0,.7);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .seat .cash{font-size:10px; font-family:var(--num); color:var(--gold); text-shadow:0 1px 2px rgba(0,0,0,.7)}
+  .seat.dealer{width:76px; margin-left:-38px; margin-top:-38px; left:50%; top:50%; z-index:2}
+  .seat.dealer .av{
+    width:60px; height:60px; font-size:30px; background:var(--cream2);
+    box-shadow:inset 0 0 0 3px var(--gold), 0 0 0 3px var(--line);
+  }
+  .seat.dealer:hover .av{box-shadow:inset 0 0 0 3px var(--gold), 0 0 0 3px var(--up)}
+  .seat.dealer .badge{
+    position:absolute; top:-3px; right:6px; background:var(--up); color:#fff;
+    font-size:10px; font-family:var(--num); font-weight:700; border-radius:50%;
+    width:17px; height:17px; display:grid; place-items:center; box-shadow:0 0 0 2px var(--cream);
+  }
+  .seat-info{
+    min-height:74px; max-height:280px; overflow-y:auto; background:#fff;
+    box-shadow:inset 0 0 0 3px var(--line); padding:11px 13px; margin-bottom:14px;
+    font-size:13px; line-height:1.6;
+  }
+  .seat-info .hd{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px}
+  .seat-info .hd b{font-size:15px}
+  .seat-info .pnl{font-family:var(--num); font-weight:700}
+  .seat-info .pick{display:inline-block; margin:2px 8px 2px 0; padding:2px 8px; background:var(--cream2); font-size:12px}
+  /* 庄家头像划过去弹出的两个入口，不是信息，是动作 */
+  .dealer-menu{display:flex; flex-direction:column; gap:6px; margin-top:6px}
+  .dealer-menu button{
+    padding:9px 13px; font-family:var(--ui); font-size:13.5px; cursor:pointer; text-align:left;
+    background:var(--cream2); border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .dealer-menu button:hover{background:var(--gold)}
+  /* day几做了什么，倒序列表，每行右边挂当天盈亏 */
+  .day-log{margin-top:4px}
+  .day-row{padding:5px 0; border-bottom:1px solid var(--cream2); font-size:12px; overflow:hidden}
+  .day-row:last-child{border-bottom:none}
+  .day-row b{margin-right:6px}
+  .day-row .pick{display:inline-block; margin:0 6px 2px 0; padding:1px 6px; background:var(--cream2); font-size:11px}
+  .room-back:hover{background:var(--cream2)}
+
+  /* 候机室 */
+  .lobby-dealer{display:flex; gap:14px; align-items:center; padding:14px; background:#fff;
+    box-shadow:inset 0 0 0 3px var(--line); margin-bottom:14px}
+  .lobby-dealer .avatar{
+    width:54px; height:54px; flex:none; display:grid; place-items:center; font-size:30px;
+    background:var(--cream2); box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .lobby-dealer .info h2{font-size:18px}
+  .lobby-dealer .info .theme{font-size:13px; color:var(--ink2); margin-top:4px}
+  .roster{display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:8px; margin-bottom:16px}
+  .roster .seat{background:#fff; box-shadow:inset 0 0 0 3px var(--line); padding:10px 4px; text-align:center}
+  .roster .seat.you{box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 6px var(--gold); background:#fff6dd}
+  .roster .seat .av{font-size:24px}
+  .roster .seat .nm{font-size:11.5px; margin-top:4px; color:var(--ink2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .chatlog{
+    background:#fff; box-shadow:inset 0 0 0 3px var(--line); padding:10px 12px;
+    height:130px; overflow-y:auto; font-size:13px; margin-bottom:8px;
+  }
+  .chatlog .line{margin-bottom:7px; line-height:1.55}
+  .chatlog .line b{color:#8a6a1f}
+  .chatrow{display:flex; gap:8px; margin-bottom:16px}
+  .chatrow input{
+    flex:1; padding:8px 11px; font-family:var(--ui); font-size:13px; background:#fff;
+    border:0; box-shadow:inset 0 0 0 3px var(--line); color:var(--ink);
+  }
+  .chatrow button{
+    padding:8px 16px; font-family:var(--ui); font-size:13px; cursor:pointer;
+    background:var(--cream2); border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .chatrow button:hover{background:var(--gold)}
+
+  /* 标的详情——简版 futu 风：现价 + 一段真实 K 线 + 关键统计 */
+  .price-hero{display:flex; align-items:baseline; gap:10px; margin-bottom:10px; flex-wrap:wrap}
+  .price-hero .px{font-family:var(--num); font-size:30px; font-weight:700; color:var(--ink)}
+  .price-hero .px.up{color:var(--up)} .price-hero .px.down{color:var(--down)}
+  .chart-wrap{
+    position:relative; background:#fff; box-shadow:inset 0 0 0 3px var(--line);
+    padding:8px; margin-bottom:8px; overflow-x:auto; cursor:grab; user-select:none;
+  }
+  .chart-wrap.grabbing{cursor:grabbing}
+  .chart-crosshair{position:absolute; top:8px; left:8px; pointer-events:none}
+  .chart-crosshair .ch-line{position:absolute; top:0; width:1px; background:#5c4a35; opacity:.55}
+  .chart-hint{font-size:11px; color:var(--ink2); margin:0 0 14px}
+  /* futu 截图那种密排小字统计格——比广场原有的 .stats/.stat 矮、字号小，
+     信息量换密度，不换字号（那套是给广场别处用的，不能动） */
+  .mini-stats{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr));
+    gap:1px; background:var(--line); box-shadow:0 0 0 1px var(--line);
+    margin-bottom:14px; font-size:11.5px;
+  }
+  .mini-stats > div{background:#fff; padding:7px 9px}
+  .mini-stats span{display:block; color:var(--ink2); font-size:10.5px; margin-bottom:2px}
+  .mini-stats b{font-family:var(--num); font-size:13px; font-weight:600}
+  .chart-wrap svg{display:block; width:100%; height:90px}
+
   .wallet{margin-left:auto; font-size:14px; color:var(--ink2); text-align:right}
   .wallet b{color:var(--ink); font-size:20px; font-family:var(--num)}
   .note{font-size:13px; color:var(--ink2); margin-top:14px; line-height:1.8}
@@ -213,6 +421,7 @@
 <div id="stage">
   <canvas id="cv" width="320" height="180"></canvas>
   <div id="bubble"></div>
+  <div id="roomLabel"></div>
   <div class="hint" id="hint">按 <kbd>E</kbd> 和摊主说话</div>
   <div class="corner" id="corner"></div>
   <a class="home" id="homeLink" href="index.html">← 事件街棋盘</a>
@@ -275,7 +484,23 @@
   </div>
 </div>
 
+<div id="roomDlg" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <div class="face" id="roomFace">🎩</div>
+      <div class="who">
+        <h1 id="roomDealerName">—</h1>
+        <div class="sub" id="roomDealerSub">8人局新手教学 · 1庄7闲</div>
+      </div>
+      <div class="mood"><span id="roomRoundLbl">回合</span><b id="roomRound">—</b></div>
+      <button class="close" onclick="closeRoom()">✕</button>
+    </div>
+    <div class="body" id="roomBody"></div>
+  </div>
+</div>
+
 <script src="book.js"></script>
+<script src="room.js"></script>
 <script>
 /* ================================================================
    事件街广场 —— 像素场景 + NPC 对话
@@ -316,7 +541,10 @@ const I18N = {
     board: '← 事件街棋盘',
     vendor: '摊主',
     hintTalk: n => `按 <kbd>E</kbd> 和${n}说话`,
+    hintRoom: '按 <kbd>E</kbd> 进新手教学局',
+    villageLabel: '8人局新手村',
     bubbleAsk: (tk, n, c) => `未来${n}天我压 <b>${tk}</b> 收涨，报 ${c}¢。敢不敢？`,
+    bubbleRoom: '<b>8人局</b>新手教学——1庄7闲，5天定胜负，进来看看？',
     cornerChips: '代币', cornerBag: '按 B 开背包',
     moodLbl: '此刻心态', myChipsLbl: '我的代币', plazaLoc: '· 事件街广场',
     tab_bets: '对赌盘', tab_persona: '人设', tab_record: '战绩', tab_book: '持仓',
@@ -417,8 +645,11 @@ const I18N = {
     board: '← Event Street Board',
     vendor: 'the vendor',
     hintTalk: n => `Press <kbd>E</kbd> to talk to ${n}`,
+    hintRoom: 'Press <kbd>E</kbd> for the 8-player tutorial table',
+    villageLabel: '8-Player Tutorial Village',
     bubbleAsk: (tk, n, c) =>
       `I say <b>${tk}</b> closes higher within ${n} day${n > 1 ? 's' : ''} — quoting ${c}¢. You in?`,
+    bubbleRoom: '<b>8-player table</b> tutorial — 1 dealer, 7 challengers, 5 days. Want in?',
     cornerChips: 'chips', cornerBag: 'B = bag',
     moodLbl: 'Mood now', myChipsLbl: 'My chips', plazaLoc: '· Event Street Plaza',
     tab_bets: 'Bets', tab_persona: 'Persona', tab_record: 'Record', tab_book: 'Book',
@@ -553,8 +784,10 @@ function setLang(next){
   if (!BOOKS) return;
   refreshCorner();
   fillBubble();
+  placeRoomLabel();
   if (dlgOpen()) render();
   if (bagOpen()) renderBag();
+  if (roomDlgOpen()) renderRoom();
 }
 const langBtnEl = document.getElementById('langBtn');
 if (langBtnEl) langBtnEl.onclick = () => setLang(lang === 'zh' ? 'en' : 'zh');
@@ -614,6 +847,7 @@ function fit(){
   SCALE = Math.max(2, Math.floor(Math.min(innerWidth / 320, (innerHeight - 24) / 180)));
   cv.style.width = 320 * SCALE + 'px'; cv.style.height = 180 * SCALE + 'px';
   placeBubble();
+  placeRoomLabel();
 }
 addEventListener('resize', fit);
 
@@ -661,6 +895,7 @@ const DEFAULT_P = {
   items: { rumor: 1, calm: 1 },   // 道具库存
   buff: null,                     // 已激活、待下一注生效
   skins: ['green'],
+  room: null,                     // 8人局新手教学的存档，跟代币经济完全分开算
 };
 function loadP(){
   try { return { ...DEFAULT_P, ...(JSON.parse(localStorage.getItem(SAVE)) || {}) }; }
@@ -737,9 +972,14 @@ const CAST = (BOOKS || []).map((book, i) => ({
   book, ...(SLOTS[i] || { x: 148, y: 74, stallX: 120 }),
   pal: i === 0 ? null : { r: '#3f6fa8', R: '#2c5080', j: '#c4362f', J: '#8f2420' },
 }));
+/* 8人局新手教学是一栋房子，不是庄家 NPC——走近互动开的是 #roomDlg 而不是
+   #dlg，也没有人物立绘，房子本身就是入口。占的是 CAST 落到第 3 个位置时
+   会用的兜底坐标；BOOKS 再添第三个庄家时两边会撞在一起，到时候得挪一个。 */
+const ROOM_SPOT = window.ROOM ? { x: 148, y: 74, stallX: 120, isRoom: true } : null;
+const INTERACTABLES = ROOM_SPOT ? [...CAST, ROOM_SPOT] : CAST;
 function nearestTo(x, y){
   let best = null, bestD = 1e9;
-  for (const n of CAST){
+  for (const n of INTERACTABLES){
     const d = Math.hypot(x - n.x, y - n.y);
     if (d < bestD){ bestD = d; best = n; }
   }
@@ -758,18 +998,20 @@ addEventListener('keydown', e => {
   keys[k] = true;
   if (k === 'e'){
     if (dlgOpen()) closeDlg();                       // 对话中 E = 关闭，别原地重开
+    else if (roomDlgOpen()) closeRoom();
     else if (!bagOpen()){
       const n = nearNpc();
       if (n) talkTo(n);
     }
   }
   if (k === 'b') bagOpen() ? closeBag() : openBag();
-  if (e.key === 'Escape'){ closeDlg(); closeBag(); }
+  if (e.key === 'Escape'){ closeDlg(); closeBag(); closeRoom(); }
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 function talkTo(n){
   if (!n) return;
+  if (n.isRoom){ openRoom(); return; }
   B = n.book;
   histDay = null;
   openDlg();
@@ -794,6 +1036,29 @@ function drawCounter(x){
   for (let y = cntY + 7; y < cntY + 12; y += 2) cx.fillRect(x + 8, y, 12, 1);
 }
 
+/* 教学村是一栋房子，不是摊位——一眼看出这是个要走进去的地方，
+   不是找人聊两句的摊。房顶阶梯金边呼应赌桌配色，跟两个庄家摊位区分开。 */
+function drawRoomHouse(x){
+  const w = 70;
+  cx.fillStyle = '#e0aa45'; cx.fillRect(x + 13, 28, w - 26, 6);
+  cx.fillStyle = '#c9922e'; cx.fillRect(x + 7, 34, w - 14, 6);
+  cx.fillStyle = '#a87d2e'; cx.fillRect(x - 1, 40, w + 2, 8);
+  cx.fillStyle = '#3b2f22'; cx.fillRect(x - 1, 47, w + 2, 2);
+
+  cx.fillStyle = '#17301f'; cx.fillRect(x, 49, w, 45);
+  cx.fillStyle = '#24422f'; cx.fillRect(x + 3, 52, w - 6, 6);
+
+  cx.fillStyle = '#9fd8f2'; cx.fillRect(x + 11, 59, 12, 10);
+  cx.fillStyle = '#9fd8f2'; cx.fillRect(x + w - 23, 59, 12, 10);
+  cx.fillStyle = '#3b2f22';
+  cx.fillRect(x + 11, 63, 12, 2); cx.fillRect(x + 16, 59, 2, 10);
+  cx.fillRect(x + w - 23, 63, 12, 2); cx.fillRect(x + w - 18, 59, 2, 10);
+
+  cx.fillStyle = '#5b1f1f'; cx.fillRect(x + w / 2 - 9, 71, 18, 23);
+  cx.fillStyle = '#3b2f22'; cx.fillRect(x + w / 2 - 9, 71, 18, 2);
+  cx.fillStyle = '#e0aa45'; cx.fillRect(x + w / 2 + 4, 80, 3, 3);
+}
+
 function drawBack(){
   cx.fillStyle = '#9fd8f2'; cx.fillRect(0, 0, 320, 62);          // 天
   cx.fillStyle = '#7bc86c'; cx.fillRect(0, 62, 320, 118);        // 草
@@ -812,6 +1077,7 @@ function drawBack(){
   }
 
   for (const n of CAST) drawStall(n.stallX);
+  if (ROOM_SPOT) drawRoomHouse(ROOM_SPOT.stallX);
 }
 
 function drawFront(){
@@ -857,6 +1123,13 @@ function fillBubble(near = nearNpc()){
   bubbleEl.innerHTML =
     T('bubbleAsk', esc(idea.ticker), idea.horizon || 1, Math.round(idea.price * 100));
 }
+function fillRoomBubble(){
+  const key = lang + ':room';
+  if (key === bubbleTxtKey) return;
+  bubbleTxtKey = key;
+  bubbleEl.style.display = '';
+  bubbleEl.innerHTML = T('bubbleRoom');
+}
 
 let last = 0;
 const hintEl = document.getElementById('hint');
@@ -865,7 +1138,7 @@ let hintOnLast = null;     // hint 上次的显隐
 let bubbleOpLast = null;   // 气泡上次的透明度
 function loop(t){
   const dt = Math.min(40, t - last); last = t;
-  const busy = dlgOpen() || bagOpen();
+  const busy = dlgOpen() || bagOpen() || roomDlgOpen();
   let dx = 0, dy = 0;
   if (!busy){                       // 面板打开时忽略移动键，人别在背后乱走
     if (keys.a || keys.arrowleft) dx -= 1;
@@ -896,16 +1169,22 @@ function loop(t){
   const hintOn = !!who && !busy;
   if (hintOn !== hintOnLast){ hintEl.classList.toggle('on', hintOn); hintOnLast = hintOn; }
   if (who){
-    const key = lang + ':' + CAST.indexOf(who);
+    const key = lang + ':' + (who.isRoom ? 'room' : CAST.indexOf(who));
     if (key !== hintTxtKey){          // 最近 NPC 或语言变了才重写
       hintTxtKey = key;
-      hintEl.innerHTML = T('hintTalk', esc(aName(who.book.agent)) || T('vendor'));
+      hintEl.innerHTML = who.isRoom
+        ? T('hintRoom')
+        : T('hintTalk', esc(aName(who.book.agent)) || T('vendor'));
     }
   }
   const op = busy ? '0' : '1';
   if (op !== bubbleOpLast){ bubbleEl.style.opacity = op; bubbleOpLast = op; }
-  /* 面板打开时不许换 B —— 正看着的摊主不能被走近的另一个偷换掉。 */
-  if (who && !busy){ B = who.book; fillBubble(who); placeBubble(who); }
+  /* 面板打开时不许换 B —— 正看着的摊主不能被走近的另一个偷换掉。教学摊没有 book，不动 B。
+     placeBubble 只用 n.x 定位，两边都能调；文案要分开，教学摊没有 idea 可读。 */
+  if (who && !busy){
+    if (who.isRoom) fillRoomBubble(); else { B = who.book; fillBubble(who); }
+    placeBubble(who);
+  }
   requestAnimationFrame(loop);
 }
 const cornerEl = document.getElementById('corner');
@@ -913,6 +1192,971 @@ cornerEl.onclick = () => openBag();   // 延迟解析：openBag 定义在文件�
 function refreshCorner(){
   cornerEl.innerHTML = `${esc(P.nick)} · ${esc(titleName())}<br>`
     + `<b>${P.chips}</b> ${T('cornerChips')} <span>${T('cornerBag')}</span>`;
+}
+
+/* ================================================================
+   8人局新手教学 —— 挂在广场里的一栋房子，走近按 E 进。
+   数据来自 room.js（python -m agent.room 离线生成）：庄家 + 6 个 NPC
+   闲家的整局已经跑完、结果已定。前端只做两件事——按天把盖子揭开，
+   把真人这一天的选择套进和后端完全同一套结算公式。庄家 / NPC 的决策
+   从不依赖真人这天下了什么注，所以能整局提前算好，前端只管揭晓节奏。
+   存档挂在 P.room 上，跟着 saveP() 走，和代币经济（P.chips）完全分账。
+
+   页面内部是个小状态机（roomView）：候机室 → 当天 / 历史 / 标的详情 → 结算。
+   候机室之后就不回去了——真人一旦「准备」，视同已经在桌上坐下。
+   ================================================================ */
+const RD = window.ROOM || null;
+
+const ROOM_I18N = {
+  zh: {
+    missing: '缺少 room.js。先运行：<br><br>&nbsp;&nbsp;python -m agent.room',
+    round: (n, total) => `第 ${n} / ${total} 天`,
+    lobbyTag: '候机室', historyTag: '历史', detailTag: '标的详情',
+    dealerBalance: '庄家余额', yourBalance: '你的余额',
+    follow: '跟', fade: '反', duel: '对赌', skip: '跳过',
+    stakeLbl: '押注',
+    saveAnswers: '保存答案', nextDay: '进入下一天 · 结算收益',
+    viewToday: '查看今日题目', viewPast: '查看过往题目',
+    noCurveYet: '还没有已结算的盈亏。', noDayLogYet: '还没有可看的记录。',
+    logTitle: '桌面记录', noLogYet: '还没有人下过注。',
+    todayTitle: '今日题目', longLabel: '做多',
+    notDecided: '这一天还有题目没下决定',
+    noIdeasToday: '庄家今天没有出题',
+    day5Note: '第 5 天不再出新题，只等前几天挂着的盘到期结算。',
+    winLabel: w => w ? '赢了 +' : '输了 ',
+    table: '8人桌战况', tHead: ['名次', '玩家', '收益率', '局终资产', '赛季积分'],
+    youRow: '你', answer: '答案',
+    winBanner: '🎉 倒庄成功', loseBanner: '庄家守住了这一局',
+    reasons: {
+      you_beat_dealer: '你对赌赢下庄家，把他打到破产线以下——倒庄成功。',
+      dealer_bankrupt: d => `第 ${d} 天，NPC 的对赌就已经把庄家干破产了。`,
+      you_bankrupt: '你自己先跌破了破产线，被移出对局。',
+      all_players_bankrupt: '6 个 NPC 闲家全部破产，对局提前结束。',
+      day5: '第 5 天到期，正常结算。',
+    },
+    resetBtn: '清空进度重新玩这一局',
+    dealerNet: '庄家净盈亏', in: '带入', end: '局终',
+    lockedSkip: '跳过了这题',
+    lockedPicked: (a, p) => `已选 ${a} · 报价 ${p}¢`,
+    notEnough: '你的余额不够这个下注的最低门槛了。',
+    longSide: '🔴 多', shortSide: '🔵 空', noBets: '还没有 NPC 玩家对这题下注。',
+    navHistory: '历史与答案', noHistoryYet: '还没有已揭晓的历史盘。',
+    noBetPlaced: '你没对这一题下注。',
+    viewDetail: '查看标的详情', back: '返回', backToTable: '返回牌桌',
+    tapDealer: '点庄家看今天的题目', hoverHint: '点一下闲家，看看他们的选择和战绩',
+    yourSeatHint: '这是你自己的位置。', todayPnl: '今日盈亏', notRevealedYet: '今天还没揭晓',
+    noPickToday: '今天没参与',
+    asOf: '截至', horizonLbl: '期限', daysUnit: ' 个交易日',
+    quoteLbl: '报价', noChart: '没有可用的价格数据。',
+    marketCapLbl: '市值', peLbl: '市盈率',
+    chgLbl: '当日涨跌', openLbl: '当日开盘', highLbl: '当日最高', lowLbl: '当日最低',
+    hi52Lbl: '52周最高', lo52Lbl: '52周最低',
+    themeLbl: '房间主题', lifetimeHit: '历史命中率', lifetimePnl: '历史收益率',
+    buyinLbl: '带入（庄/闲）', minStakeLbl: '最低下注（闲/对赌）',
+    rosterLbl: '在座的人', chatLbl: '候机室闲聊', chatPh: '说点什么……', send: '发送',
+    readyBtn: '准备 · 开始这一局',
+  },
+  en: {
+    missing: 'Missing room.js. Run first:<br><br>&nbsp;&nbsp;python -m agent.room',
+    round: (n, total) => `Day ${n} / ${total}`,
+    lobbyTag: 'Lobby', historyTag: 'History', detailTag: 'Ticker detail',
+    dealerBalance: 'Dealer balance', yourBalance: 'Your balance',
+    follow: 'Follow', fade: 'Fade', duel: 'Duel', skip: 'Skip',
+    stakeLbl: 'Stake',
+    saveAnswers: 'Save answers', nextDay: 'Enter next day · settle P&L',
+    viewToday: "View today's questions", viewPast: 'View past questions',
+    noCurveYet: 'No settled P&L yet.', noDayLogYet: 'No log to show yet.',
+    logTitle: 'Table log', noLogYet: 'No bets placed yet.',
+    todayTitle: "Today's questions", longLabel: 'Long',
+    notDecided: 'Still have undecided questions today',
+    noIdeasToday: 'The dealer posted nothing today',
+    day5Note: 'Day 5 posts nothing new — only earlier bets settle.',
+    winLabel: w => w ? 'Won +' : 'Lost ',
+    table: 'Table of 8', tHead: ['#', 'Player', 'Return', 'Final balance', 'Season pts'],
+    youRow: 'You', answer: 'Answer',
+    winBanner: '🎉 Dealer dethroned', loseBanner: 'The dealer held the table',
+    reasons: {
+      you_beat_dealer: 'Your duel win dragged the dealer below the bankruptcy line — dethroned.',
+      dealer_bankrupt: d => `NPC duels alone bankrupted the dealer by day ${d}.`,
+      you_bankrupt: 'You dropped below the bankruptcy line and were knocked out.',
+      all_players_bankrupt: 'All 6 NPC players went bankrupt — the round ended early.',
+      day5: 'Day 5 hit its deadline — normal settlement.',
+    },
+    resetBtn: 'Clear progress and replay this round',
+    dealerNet: 'Dealer net P&L', in: 'Buy-in', end: 'Final',
+    lockedSkip: 'Skipped this one',
+    lockedPicked: (a, p) => `Picked ${a} · quoting ${p}¢`,
+    notEnough: "That's below the minimum stake for this bet.",
+    longSide: '🔴 Long', shortSide: '🔵 Short', noBets: 'No NPC players have bet on this one yet.',
+    navHistory: 'History & answers', noHistoryYet: 'No revealed history yet.',
+    noBetPlaced: "You didn't bet on this one.",
+    viewDetail: 'View ticker detail', back: 'Back', backToTable: 'Back to the table',
+    tapDealer: "Tap the dealer for today's questions", hoverHint: "Click a player to see their picks and P&L",
+    yourSeatHint: "That's your own seat.", todayPnl: "Today's P&L", notRevealedYet: 'Not revealed yet',
+    noPickToday: 'Sat this one out',
+    asOf: 'as of', horizonLbl: 'Horizon', daysUnit: ' trading days',
+    quoteLbl: 'Quote', noChart: 'No price data available.',
+    marketCapLbl: 'Market cap', peLbl: 'P/E ratio',
+    chgLbl: 'Day change', openLbl: 'Day open', highLbl: 'Day high', lowLbl: 'Day low',
+    hi52Lbl: '52w high', lo52Lbl: '52w low',
+    themeLbl: 'Room theme', lifetimeHit: 'Lifetime hit rate', lifetimePnl: 'Lifetime return',
+    buyinLbl: 'Buy-in (dealer / player)', minStakeLbl: 'Min stake (player / duel)',
+    rosterLbl: 'At the table', chatLbl: 'Lobby chat', chatPh: 'Say something…', send: 'Send',
+    readyBtn: 'Ready · Start the round',
+  },
+};
+const RT = (key, ...a) => {
+  const d = ROOM_I18N[lang] || ROOM_I18N.zh;
+  const v = key.split('.').reduce((o, k) => (o || {})[k], d);
+  return typeof v === 'function' ? v(...a) : (v != null ? v : key);
+};
+
+/* 候机室的闲聊——纯装饰，不联网、不影响任何结算，只是让候机室看着有人味。 */
+const ROOM_CHAT_POOL = {
+  zh: ['等庄家开局。', '这主题看着有肉。', '老规矩，先扫一眼有没有反着买的机会。',
+      '准备了，随时冲。', '押注上限记得看一眼。', '这局挺刺激。', '数据我翻过了。',
+      '稳一点，先跟一把试试水。'],
+  en: ['Waiting on the dealer.', 'This theme looks juicy.', 'Scanning for a fade first, as usual.',
+      'Ready whenever.', 'Mind the stake caps.', "This one's spicy.", "I've done my homework.",
+      'Playing it safe — following first.'],
+};
+function seedRoomChat(){
+  const pool = ROOM_CHAT_POOL[lang] || ROOM_CHAT_POOL.zh;
+  return (RD.players || []).slice(0, 4).map((p, i) =>
+    ({ who: p.name, emoji: p.emoji, text: pool[i % pool.length] }));
+}
+function roomSendChat(S, text){
+  text = (text || '').trim().slice(0, 80);
+  if (!text || !RD.players.length) return;
+  const pool = ROOM_CHAT_POOL[lang] || ROOM_CHAT_POOL.zh;
+  S.chat.push({ who: RT('youRow'), emoji: '🧑', text, self: true });
+  const p = RD.players[Math.floor(Math.random() * RD.players.length)];
+  S.chat.push({ who: p.name, emoji: p.emoji, text: pool[Math.floor(Math.random() * pool.length)] });
+  if (S.chat.length > 40) S.chat = S.chat.slice(-40);
+  saveP();
+}
+
+function freshRoomState(){
+  return {
+    generatedFor: RD.generated_for,
+    ready: false,     // 候机室 → 准备好了才正式开局
+    chat: [],
+    cash: RD.config.player_initial_cash,
+    dayReached: 1,
+    revealed: {},
+    bets: {},
+    dealerDelta: 0,   // 你对赌给庄家造成的累计净影响
+    ended: null,
+  };
+}
+function roomState(){
+  if (!P.room || P.room.generatedFor !== RD.generated_for) P.room = freshRoomState();
+  return P.room;
+}
+
+let roomView = 'lobby';     // 'lobby' | 'table' | 'questions' | 'history' | 'detail'
+let roomDetailId = null;
+let roomDetailFrom = 'table';
+let roomActiveSeat = null;  // 圆桌上鼠标/点击选中的那个闲家，null = 没人选中
+let roomOpenIdeaId = null;  // 右侧简略题目列表里展开成完整版的那一条，null = 都收着
+
+const roomDlgOpen = () => !!$('roomDlg') && $('roomDlg').classList.contains('on');
+function openRoom(){
+  const dlg = $('roomDlg');
+  if (!dlg) return;
+  dlg.classList.add('on');
+  if (RD){ const S = roomState(); roomView = S.ended ? 'table' : (S.ready ? 'table' : 'lobby'); }
+  renderRoom();
+}
+function closeRoom(){ const dlg = $('roomDlg'); if (dlg) dlg.classList.remove('on'); }
+/* 顶层同步语句不能用 $ ——它是本文件后半段才 const 出来的（对话框那节），
+   这里是脚本执行到一半就跑的裸语句，提前引用会把 $ 之后的整段初始化全炸掉。
+   直接用 document.getElementById 绕开这个前向引用。 */
+{
+  const roomDlgEl = document.getElementById('roomDlg');
+  if (roomDlgEl) roomDlgEl.addEventListener('click', e => { if (e.target.id === 'roomDlg') closeRoom(); });
+}
+
+function placeRoomLabel(){
+  if (!ROOM_SPOT) return;
+  const el = document.getElementById('roomLabel');
+  if (!el) return;
+  el.style.left = (ROOM_SPOT.stallX + 35) * SCALE + 'px';
+  el.style.top = (16) * SCALE + 'px';
+  el.style.fontSize = Math.max(10, Math.round(SCALE * 2.6)) + 'px';
+  el.textContent = RD ? T('villageLabel') : '';
+}
+
+function roomDayOf(idx){ return RD.days.find(d => d.day_idx === idx); }
+function findRoomIdea(id){
+  for (const d of RD.days){ const hit = d.ideas.find(i => i.id === id); if (hit) return hit; }
+}
+function roomDayOfIdea(id){
+  return RD.days.find(d => d.ideas.some(i => i.id === id));
+}
+function roomLastRevealed(S){
+  const done = Object.keys(S.revealed).map(Number);
+  return done.length ? Math.max(...done) : 0;
+}
+function roomDealerCash(S){
+  const idx = roomLastRevealed(S);
+  const base = idx ? (roomDayOf(idx) || {}).dealer_cash_after : RD.dealer.start_cash;
+  return (base != null ? base : RD.dealer.start_cash) + S.dealerDelta;
+}
+const roomDealerBankruptLine = () => RD.dealer.start_cash * (1 - RD.config.bankrupt_pct);
+const roomYouBankruptLine = () => RD.config.player_initial_cash * (1 - RD.config.bankrupt_pct);
+function dealerLifetimeStats(){
+  const agents = (window.BOOK && window.BOOK.agents) || [];
+  const a = agents.find(x => x.agent && x.agent.id === RD.dealer.id);
+  return a ? a.stats : null;
+}
+
+/* 结算公式和 agent/room.py 的 _settle 同源：跟/反都是 stake/price 对系统结算，
+   对赌另在 roomReveal 里叠一层庄家过账——胜负判定不变，只是钱从哪儿来不同。 */
+function roomSettle(action, price, stake){
+  const sidePrice = action === '跟' ? price : Math.round((1 - price) * 10000) / 10000;
+  return { sidePrice, payout: stake / sidePrice };
+}
+
+function roomPlaceBet(S, idea, action){
+  if (action === 'skip'){ S.bets[idea.id] = { action: 'skip' }; saveP(); renderRoom(); return; }
+  const cap = action === '对赌' ? Math.min(RD.config.duel_cap, S.cash) : S.cash;
+  const floor = action === '对赌' ? RD.config.dealer_min_stake : RD.config.player_min_stake;
+  if (S.cash < floor){ alert(RT('notEnough')); return; }
+  const stake = Math.min(cap, Math.max(floor, Math.round(S.cash * 0.15)));
+  S.bets[idea.id] = { action, price: idea.price, stakeMax: cap, stakeFloor: floor, stake };
+  saveP(); renderRoom();
+}
+function roomSetStake(S, idea, v){
+  const b = S.bets[idea.id];
+  if (!b || b.action === 'skip') return;
+  b.stake = v; saveP(); renderRoom();
+}
+
+function roomReveal(S, dayIdx){
+  const day = roomDayOf(dayIdx);
+  (day.ideas || []).forEach(idea => {
+    const b = S.bets[idea.id];
+    if (!b || b.action === 'skip') return;
+    const { sidePrice, payout } = roomSettle(b.action, idea.price, b.stake);
+    const won = b.action === '跟' ? idea.outcome === 'YES' : idea.outcome === 'NO';
+    const delta = won ? payout - b.stake : -b.stake;
+    S.cash = Math.round((S.cash + delta) * 100) / 100;
+    b.result = { won, delta: Math.round(delta * 100) / 100 };
+
+    if (b.action === '对赌'){
+      const dealerDelta = won ? -delta : b.stake;   // 你赢庄家就亏，你输庄家就赚
+      S.dealerDelta = Math.round((S.dealerDelta + dealerDelta) * 100) / 100;
+      if (!S.ended && roomDealerCash(S) < roomDealerBankruptLine())
+        S.ended = { reason: 'you_beat_dealer', day: dayIdx };
+    }
+  });
+
+  S.revealed[dayIdx] = true;
+  if (!S.ended && S.cash < roomYouBankruptLine()) S.ended = { reason: 'you_bankrupt', day: dayIdx };
+  if (!S.ended && dayIdx >= RD.days.length)
+    S.ended = { reason: (RD.ended_early && RD.ended_early.reason) || 'day5', day: dayIdx };
+  if (!S.ended) S.dayReached = Math.min(RD.days.length, dayIdx + 1);
+  roomOpenIdeaId = null;    // 翻页了，右边展开的那条题目跟着昨天一起收起来
+  saveP(); renderRoom();
+}
+
+function roomAllDecided(day, S){ return (day.ideas || []).every(i => S.bets[i.id]); }
+
+/* 参与度进度条——红多蓝空，不再靠一行「多X空Y」的字。 */
+function roomCrowdBar(idea){
+  const c = idea.npc_bets || [];
+  if (!c.length) return `<p class="lead" style="margin:0 0 12px">${RT('noBets')}</p>`;
+  const y = c.filter(b => b.action === '跟').length;
+  const no = c.length - y;
+  return `<div class="room-crowd">
+    <div class="bar"><div class="seg-red" style="flex:${y}"></div><div class="seg-blue" style="flex:${no}"></div></div>
+    <div class="lbl"><span>${RT('longSide')} ${y}</span><span>${RT('shortSide')} ${no}</span></div>
+  </div>`;
+}
+
+/* 圆桌上每个闲家的信息都是「藏在人物后面」的——不算进已揭晓的天，
+   免得鼠标一划就把还没开盖的结果剧透了。跟对赌的 delta 同源公式，
+   room.py 的 npc_bets 里已经把 payout / dealer_delta 都算好了，
+   这里只是按玩家、按天重新汇总一遍。 */
+function npcBetDelta(bet){
+  if (!bet.result) return 0;
+  if (bet.action === '对赌') return -(bet.result.dealer_delta || 0);
+  return (bet.result.payout || 0) - bet.stake;
+}
+function npcRunningCash(pid, S){
+  let cash = RD.config.player_initial_cash;
+  for (const day of RD.days){
+    if (!S.revealed[day.day_idx]) break;
+    for (const idea of day.ideas)
+      for (const bet of (idea.npc_bets || []))
+        if (bet.player_id === pid) cash += npcBetDelta(bet);
+  }
+  return cash;
+}
+function npcDayDelta(pid, day){
+  let total = 0;
+  for (const idea of day.ideas)
+    for (const bet of (idea.npc_bets || []))
+      if (bet.player_id === pid) total += npcBetDelta(bet);
+  return total;
+}
+function npcTodayPicks(pid, day){
+  const out = [];
+  for (const idea of day.ideas){
+    const bet = (idea.npc_bets || []).find(b => b.player_id === pid);
+    if (bet) out.push({ idea, bet });
+  }
+  return out;
+}
+
+/* N 个座位沿一个圆均匀摆开，从正上方开始顺时针；庄家单独坐正中心，不占位。 */
+function layoutSeats(n, radiusPct){
+  const seats = [];
+  for (let i = 0; i < n; i++){
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    seats.push({ left: (50 + radiusPct * Math.cos(angle)).toFixed(2),
+                top: (50 + radiusPct * Math.sin(angle)).toFixed(2) });
+  }
+  return seats;
+}
+
+/* 权益曲线——跟标的详情页的 sparkline 是同一支笔，只是喂进去的是资产
+   而不是股价，起点固定是带入本金，只画已揭晓的天，不剧透还没开盖的。 */
+/* 盈亏柱状图——不画累计权益的曲线，直接画每天赚了/亏了多少钱，
+   数字标在柱子上，一眼看出哪天赢哪天输，赢多少输多少。 */
+function dayPnlBarChart(rows){
+  if (!rows.length) return `<p class="lead" style="margin:0">${RT('noCurveYet')}</p>`;
+  const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.delta)));
+  const W = 260, H = 78, gap = 8, pad = 4;
+  const barW = (W - pad * 2 - gap * (rows.length - 1)) / rows.length;
+  const midY = H / 2;
+  const half = H / 2 - 16;
+  const bars = rows.map((r, i) => {
+    const x = pad + i * (barW + gap);
+    const h = Math.max(1, (Math.abs(r.delta) / maxAbs) * half);
+    const up = r.delta >= 0;
+    const y = up ? midY - h : midY;
+    const color = up ? '#bf3129' : '#1f7a48';
+    const labelY = up ? y - 3 : y + h + 11;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${color}"/>
+      <text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" font-size="9.5" text-anchor="middle" fill="${color}">${up ? '+' : ''}${Math.round(r.delta)}</text>
+      <text x="${(x + barW / 2).toFixed(1)}" y="${(H - 2).toFixed(1)}" font-size="8.5" text-anchor="middle" fill="#8a7355">D${r.day.day_idx}</text>`;
+  }).join('');
+  return `<div class="chart-wrap" style="margin:6px 0 8px; padding:5px">
+    <svg viewBox="0 0 ${W} ${H}" role="img" style="height:78px">
+      <line x1="4" y1="${midY}" x2="${W - 4}" y2="${midY}" stroke="#cbb488" stroke-width="1"/>
+      ${bars}
+    </svg></div>`;
+}
+
+function npcDayBreakdown(pid, S){
+  const rows = [];
+  for (const day of RD.days){
+    if (!S.revealed[day.day_idx]) break;
+    rows.push({ day, picks: npcTodayPicks(pid, day), delta: npcDayDelta(pid, day) });
+  }
+  return rows;
+}
+function youDayBreakdown(S){
+  const rows = [];
+  for (const day of RD.days){
+    if (!S.revealed[day.day_idx]) break;
+    const picks = []; let delta = 0;
+    for (const idea of day.ideas){
+      const b = S.bets[idea.id];
+      if (b && b.action !== 'skip'){ picks.push({ idea, bet: b }); if (b.result) delta += b.result.delta; }
+    }
+    rows.push({ day, picks, delta });
+  }
+  return rows;
+}
+/* day几做了什么——按天倒着列，每天下面是那天的题+动作，右边挂当天盈亏。
+   只列已揭晓的天，今天要是还没揭晓，压根不进这个列表，免得看着像剧透。 */
+function dayBreakdownHtml(rows){
+  if (!rows.length) return `<p class="lead" style="margin:4px 0 0">${RT('noDayLogYet')}</p>`;
+  return `<div class="day-log">${rows.slice().reverse().map(({ day, picks, delta }) => `
+    <div class="day-row">
+      <b>Day ${day.day_idx}</b>
+      ${picks.length ? picks.map(({ idea, bet }) =>
+          `<span class="pick">${esc(idea.ticker)} ${esc(bet.action)} ${bet.stake}</span>`).join('')
+        : `<span class="pick">${RT('noPickToday')}</span>`}
+      <b class="${delta >= 0 ? 'up' : 'down'}" style="float:right">${delta >= 0 ? '+' : ''}${Math.round(delta)}</b>
+    </div>`).join('')}</div>`;
+}
+
+function seatInfoHtml(pid, S, day){
+  if (pid === 'dealer'){
+    return `<div class="hd"><b>${esc(RD.dealer.emoji || '🎩')} ${esc(RD.dealer.name)}</b></div>
+      <div class="dealer-menu">
+        <button data-rgo="questions">${RT('viewToday')}</button>
+        <button data-rgo="history">${RT('viewPast')}</button>
+      </div>`;
+  }
+  const isYou = pid === 'you';
+  const p = isYou ? null : RD.players.find(x => x.id === pid);
+  if (!isYou && !p) return '';
+  const name = isYou ? P.nick : p.name;
+  const emoji = isYou ? '🧑' : p.emoji;
+  const cash = isYou ? S.cash : npcRunningCash(pid, S);
+  const rows = isYou ? youDayBreakdown(S) : npcDayBreakdown(pid, S);
+  const todayRevealed = !!S.revealed[day.day_idx];
+  const todayPicks = isYou
+    ? day.ideas.map(i => ({ idea: i, bet: S.bets[i.id] })).filter(x => x.bet && x.bet.action !== 'skip')
+    : npcTodayPicks(pid, day);
+
+  return `<div class="hd"><b>${esc(emoji)} ${esc(name)}</b><span class="pnl">${money(cash)}</span></div>
+    ${!todayRevealed ? `<p class="lead" style="margin:0 0 4px">
+        ${todayPicks.length
+          ? todayPicks.map(({ idea, bet }) => `<span class="pick">${esc(idea.ticker)} ${esc(bet.action)}</span>`).join('')
+          : RT('noPickToday')}
+      </p>` : ''}
+    ${dayPnlBarChart(rows)}
+    ${dayBreakdownHtml(rows)}`;
+}
+function wireSeatInfoBox(){
+  const box = $('seatInfoBox');
+  if (!box) return;
+  box.querySelectorAll('[data-rgo]').forEach(b => b.onclick = () => { roomView = b.dataset.rgo; renderRoom(); });
+}
+
+function goRoomDetail(id){
+  roomDetailFrom = roomView;
+  roomDetailId = id;
+  roomView = 'detail';
+  renderRoom();
+}
+
+function roomIdeaCard(idea, S, opts){
+  const readonly = !!(opts && opts.readonly);
+  const b = S.bets[idea.id];
+  let body;
+  if (!b){
+    body = readonly
+      ? `<div class="result">${RT('noBetPlaced')}${idea.outcome
+          ? ` · ${RT('answer')} <b class="${idea.outcome === 'YES' ? 'up' : 'down'}">${esc(idea.outcome)}</b>` : ''}</div>`
+      : `<div class="room-odds">
+          <button data-rpick="${esc(idea.id)}" data-raction="跟"><b>${RT('follow')}</b>${(idea.price * 100).toFixed(0)}¢</button>
+          <button data-rpick="${esc(idea.id)}" data-raction="反"><b>${RT('fade')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
+          <button class="duel" data-rpick="${esc(idea.id)}" data-raction="对赌"
+            ${S.cash < RD.config.dealer_min_stake ? 'disabled' : ''}><b>${RT('duel')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
+          <button data-rpick="${esc(idea.id)}" data-raction="skip"><b>${RT('skip')}</b></button>
+        </div>`;
+  } else if (b.action === 'skip'){
+    body = `<div class="result">${RT('lockedSkip')}</div>`;
+  } else if (!b.result){
+    const price = b.action === '跟' ? idea.price : Math.round((1 - idea.price) * 100) / 100;
+    const label = RT(b.action === '跟' ? 'follow' : b.action === '反' ? 'fade' : 'duel');
+    const presets = b.action === '对赌'
+      ? [RD.config.dealer_min_stake, 1500, 2000].filter(v => v <= b.stakeMax)
+      : [200, 500, 1000, 2000].filter(v => v <= b.stakeMax);
+    body = `
+      <div class="result">${RT('lockedPicked', label, Math.round(price * 100))}</div>
+      <div class="stakes" style="margin-top:8px">${RT('stakeLbl')}
+        ${presets.map(v => `<button data-rstake="${esc(idea.id)}" data-v="${v}"
+          aria-pressed="${v === b.stake}">${v}</button>`).join('')}
+      </div>`;
+  } else {
+    const won = b.result.won;
+    body = `<div class="result ${won ? 'win' : 'lose'}">
+      ${esc(idea.ticker)} ${esc(idea.ref_date)} → ${esc(idea.exit_date || '')}
+      · ${RT('answer')} <b>${esc(idea.outcome)}</b><br>
+      ${esc(b.action)} ${b.stake} · <b>${RT('winLabel', won)}${Math.abs(b.result.delta)}</b>
+    </div>`;
+  }
+
+  return `<div class="bet room-bet">
+    <div class="q">${esc(idea.question)}</div>
+    <div class="say">${esc(idea.reason || '')} <span style="opacity:.7">（${esc(idea.mood || '')}）</span></div>
+    ${roomCrowdBar(idea)}
+    <button class="room-detail-link" data-rdetail="${esc(idea.id)}">${RT('viewDetail')} →</button>
+    ${body}
+  </div>`;
+}
+
+/* 简版 futu 风的标的详情——真实 K 线，没有花哨的技术指标库，纯手写 SVG 折线。 */
+/* K 线——真实开高低收，不是折线。ref_date 那根描蓝框（庄家挂盘那一刻），
+   exit_date 那根描金框（到期结算那一刻），一眼看出问题问的是哪一段。 */
+/* 一年左右的窗口，260 根蜡烛硬塞进固定宽度会糊成一条黑线，所以图按
+   每根蜡烛的最小像素宽度撑开实际宽度，外层横向滚动——跟 futu 一个思路：
+   宁可滚，不可糊。渲染完默认滚到最右边，那是 ref/exit 所在、最要紧的一段。 */
+let roomChartPx = 4;   // 当前每根蜡烛的像素宽度（缩放状态），每次打开新详情页重置
+
+/* 价格网格+重复标签——图很宽，标签只画一处一滚就看不见了，所以沿整个
+   宽度每隔一段重复画一次，不管停在哪儿视野里总有一个。 */
+function buildCandlesSvg(chart, refDate, exitDate, px){
+  const lo = Math.min(...chart.map(c => c.low)), hi = Math.max(...chart.map(c => c.high));
+  const span = Math.max(1e-6, hi - lo);
+  const n = chart.length;
+  const H = 132, pad = 4;
+  const W = Math.max(300, Math.round(n * px));
+  const slot = (W - pad * 2) / n;
+  const bodyW = Math.max(1, slot * 0.62);
+  const y = v => H - pad - ((v - lo) / span) * (H - pad * 2);
+
+  let grid = '';
+  const levels = 4;
+  for (let i = 0; i <= levels; i++){
+    const price = lo + (span * i) / levels;
+    const yy = y(price);
+    grid += `<line x1="0" y1="${yy.toFixed(1)}" x2="${W}" y2="${yy.toFixed(1)}" stroke="#e4dac0" stroke-width="1" stroke-dasharray="2,3"/>`;
+    for (let lx = 2; lx < W; lx += 280)
+      grid += `<text x="${lx + 2}" y="${(yy - 2).toFixed(1)}" font-size="8.5" fill="#8a7355">${price.toFixed(2)}</text>`;
+  }
+  const candles = chart.map((c, i) => {
+    const cx = pad + slot * (i + 0.5);
+    const up = c.close >= c.open;
+    const color = up ? '#bf3129' : '#1f7a48';
+    const bodyTop = y(Math.max(c.open, c.close));
+    const bodyBot = y(Math.min(c.open, c.close));
+    const mark = c.date === refDate ? '#3f6fa8' : (c.date === exitDate ? '#c9a227' : '');
+    return `<line x1="${cx.toFixed(1)}" y1="${y(c.high).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${y(c.low).toFixed(1)}"
+        stroke="${color}" stroke-width="1"/>
+      <rect x="${(cx - bodyW / 2).toFixed(1)}" y="${bodyTop.toFixed(1)}"
+        width="${bodyW.toFixed(1)}" height="${Math.max(1, bodyBot - bodyTop).toFixed(1)}" fill="${color}"
+        ${mark ? `stroke="${mark}" stroke-width="1.6"` : ''}/>`;
+  }).join('');
+  return { svg: `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" style="display:block">${grid}${candles}</svg>`,
+          W, H, pad, slot };
+}
+
+/* 图的交互全挂在这——划过看 OHLC（价格条替成 futu 那种「划到哪读到哪」），
+   滚轮缩放（锚定在鼠标下面那根蜡烛，不会跳来跳去），按住拖拽平移。
+   #roomBody 每次整体重渲染，监听器全挂在图自己的容器上，不碰 window/
+   document，面板关掉容器被卸载监听器就跟着没了，不用手动清。 */
+function mountChart(idea){
+  const chart = idea.chart;
+  const host = $('chartSvgHost'), scroller = $('chartScroll'), cross = $('chartCrosshair');
+  if (!host || !scroller || !chart || chart.length < 2) return;
+  roomChartPx = 4;
+  let geo = null;
+
+  const paint = () => {
+    const built = buildCandlesSvg(chart, idea.ref_date, idea.exit_date, roomChartPx);
+    host.innerHTML = built.svg;
+    geo = built;
+  };
+  paint();
+  scroller.scrollLeft = scroller.scrollWidth;   // 默认滚到最右边——ref/exit 那一小段才要紧
+
+  const heroDefault = () => {
+    const hero = $('roomBody').querySelector('.price-hero');
+    if (hero) hero.innerHTML = `<span class="px">${esc(idea.ref_close)}</span>
+      <span class="lead" style="margin:0">${RT('asOf')} ${esc(idea.ref_date)}</span>`;
+  };
+  const showCandle = c => {
+    cross.style.display = '';
+    cross.querySelector('.ch-line').style.left = (geo.pad + geo.slot * (chart.indexOf(c) + 0.5)) + 'px';
+    cross.querySelector('.ch-line').style.height = geo.H + 'px';
+    const hero = $('roomBody').querySelector('.price-hero');
+    const up = c.close >= c.open;
+    if (hero) hero.innerHTML = `<span class="px ${up ? 'up' : 'down'}">${c.close}</span>
+      <span class="lead" style="margin:0">${esc(c.date)} · O ${c.open} H ${c.high} L ${c.low} C ${c.close}
+      ${c.volume ? ' · V ' + Math.round(c.volume / 1000).toLocaleString('en-US') + 'K' : ''}</span>`;
+  };
+
+  let dragging = false, dragX = 0, dragScroll = 0;
+  scroller.addEventListener('mousedown', e => {
+    dragging = true; dragX = e.clientX; dragScroll = scroller.scrollLeft;
+    scroller.classList.add('grabbing');
+  });
+  scroller.addEventListener('mouseup', () => { dragging = false; scroller.classList.remove('grabbing'); });
+  scroller.addEventListener('mouseleave', () => {
+    dragging = false; scroller.classList.remove('grabbing');
+    cross.style.display = 'none'; heroDefault();
+  });
+  scroller.addEventListener('mousemove', e => {
+    if (dragging) scroller.scrollLeft = dragScroll - (e.clientX - dragX);
+    const rect = scroller.getBoundingClientRect();
+    const localX = scroller.scrollLeft + (e.clientX - rect.left);
+    const idx = Math.max(0, Math.min(chart.length - 1, Math.round((localX - geo.pad) / geo.slot - 0.5)));
+    showCandle(chart[idx]);
+  });
+  scroller.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = scroller.getBoundingClientRect();
+    const cursorX = e.clientX - rect.left;
+    const contentX = scroller.scrollLeft + cursorX;
+    const oldPx = roomChartPx;
+    roomChartPx = Math.max(2, Math.min(24, roomChartPx * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+    paint();
+    scroller.scrollLeft = contentX * (roomChartPx / oldPx) - cursorX;
+  }, { passive: false });
+}
+
+function fmtCap(n){
+  if (n == null) return '—';
+  if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  return '$' + money(n);
+}
+
+/* ref_date 那天自己的 K 线 + 52 周高低，都是从已经拉到的一年窗口里现算的，
+   不需要额外接口。信念度这里不放——庄家自己信不信不重要，标的本身的
+   基本面和走势才是。 */
+function renderDetail(S){
+  const idea = findRoomIdea(roomDetailId);
+  if (!idea){ roomView = 'table'; return renderRoom(); }
+  const ov = (RD.tickers || {})[idea.ticker] || {};
+  const chart = idea.chart || [];
+  const refBar = chart.find(c => c.date === idea.ref_date);
+  const refIdx = refBar ? chart.indexOf(refBar) : -1;
+  const prevBar = refIdx > 0 ? chart[refIdx - 1] : null;
+  const chg = refBar && prevBar ? refBar.close - prevBar.close : null;
+  const chgPct = chg != null && prevBar.close ? chg / prevBar.close : null;
+  const hi52 = chart.length ? Math.max(...chart.map(c => c.high)) : null;
+  const lo52 = chart.length ? Math.min(...chart.map(c => c.low)) : null;
+  const desc = (lang === 'zh' && ov.description_zh) ? ov.description_zh : ov.description;
+
+  $('roomFace').textContent = '📈';
+  $('roomFace').classList.remove('bust');
+  $('roomDealerName').textContent = idea.ticker;
+  $('roomRound').textContent = RT('detailTag');
+
+  $('roomBody').innerHTML = `
+    <button class="room-back" data-rback>← ${RT('back')}</button>
+    <div class="price-hero">
+      <span class="px">${esc(idea.ref_close)}</span>
+      <span class="lead" style="margin:0">${RT('asOf')} ${esc(idea.ref_date)}</span>
+    </div>
+    <div class="chart-wrap" id="chartScroll">
+      <div id="chartSvgHost"></div>
+      <div class="chart-crosshair" id="chartCrosshair" style="display:none"><div class="ch-line"></div></div>
+    </div>
+    <div class="mini-stats">
+      ${chg != null ? `<div><span>${RT('chgLbl')}</span><b class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${chg.toFixed(2)} (${sgn(chgPct)})</b></div>` : ''}
+      ${refBar ? `<div><span>${RT('openLbl')}</span><b>${refBar.open}</b></div>` : ''}
+      ${refBar ? `<div><span>${RT('highLbl')}</span><b>${refBar.high}</b></div>` : ''}
+      ${refBar ? `<div><span>${RT('lowLbl')}</span><b>${refBar.low}</b></div>` : ''}
+      ${hi52 != null ? `<div><span>${RT('hi52Lbl')}</span><b>${hi52.toFixed(2)}</b></div>` : ''}
+      ${lo52 != null ? `<div><span>${RT('lo52Lbl')}</span><b>${lo52.toFixed(2)}</b></div>` : ''}
+      <div><span>${RT('marketCapLbl')}</span><b>${fmtCap(ov.market_cap)}</b></div>
+      <div><span>${RT('peLbl')}</span><b>${ov.pe_ratio != null && ov.pe_ratio !== '' ? ov.pe_ratio : '—'}</b></div>
+      <div><span>${RT('quoteLbl')}</span><b>${(idea.price * 100).toFixed(0)}¢</b></div>
+      <div><span>${RT('horizonLbl')}</span><b>${idea.horizon}${RT('daysUnit')}</b></div>
+      ${idea.outcome ? `<div><span>${RT('answer')}</span>
+        <b class="${idea.outcome === 'YES' ? 'up' : 'down'}">${esc(idea.outcome)}</b></div>` : ''}
+    </div>
+    ${ov.sector ? `<p class="lead" style="margin-top:0">${esc(ov.sector)}${ov.industry ? ' · ' + esc(ov.industry) : ''}</p>` : ''}
+    ${desc ? `<div class="quote">${esc(desc)}</div>` : ''}
+    <p class="q" style="font-size:17px; margin-top:14px">${esc(idea.question)}</p>
+    <p class="say">${esc(idea.reason || '')}</p>`;
+
+  mountChart(idea);
+
+  $('roomBody').querySelectorAll('[data-rback]').forEach(b =>
+    b.onclick = () => { roomView = roomDetailFrom; renderRoom(); });
+}
+
+function renderLobby(S){
+  $('roomFace').textContent = RD.dealer.emoji || '🎩';
+  $('roomFace').classList.remove('bust');
+  $('roomDealerName').textContent = RD.dealer.name;
+  $('roomRound').textContent = RT('lobbyTag');
+
+  if (!S.chat || !S.chat.length) S.chat = seedRoomChat();
+  const stats = dealerLifetimeStats();
+  const theme = (lang === 'en' ? RD.dealer.theme_en : RD.dealer.theme) || RD.dealer.theme;
+
+  const seats = RD.players.map(p => `<div class="seat">
+      <div class="av">${esc(p.emoji)}</div><div class="nm">${esc(p.name)}</div></div>`).join('')
+    + `<div class="seat you"><div class="av">🧑</div><div class="nm">${esc(P.nick)}</div></div>`;
+
+  $('roomBody').innerHTML = `
+    <div class="lobby-dealer">
+      <div class="avatar">${esc(RD.dealer.emoji || '🎩')}</div>
+      <div class="info">
+        <h2>${esc(RD.dealer.name)}</h2>
+        <div class="theme">${RT('themeLbl')}：${esc(theme || '—')}</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>${RT('lifetimeHit')}</span>
+        <b>${stats && stats.idea_hit_rate != null ? Math.round(stats.idea_hit_rate * 100) + '%' : '—'}</b></div>
+      <div class="stat"><span>${RT('lifetimePnl')}</span>
+        <b class="${stats && stats.pnl_pct >= 0 ? 'up' : 'down'}">${stats ? sgn(stats.pnl_pct) : '—'}</b></div>
+      <div class="stat"><span>${RT('buyinLbl')}</span>
+        <b>${money(RD.dealer.start_cash)} / ${money(RD.config.player_initial_cash)}</b></div>
+      <div class="stat"><span>${RT('minStakeLbl')}</span>
+        <b>${RD.config.player_min_stake} / ${RD.config.dealer_min_stake}</b></div>
+    </div>
+    <p class="lead" style="margin-top:0">${RT('rosterLbl')}（${RD.players.length + 1} / 8）</p>
+    <div class="roster">${seats}</div>
+    <p class="lead" style="margin-top:0">${RT('chatLbl')}</p>
+    <div class="chatlog" id="roomChatLog">
+      ${S.chat.map(c => `<div class="line">${esc(c.emoji || '')} <b>${esc(c.who)}</b>：${esc(c.text)}</div>`).join('')}
+    </div>
+    <div class="chatrow">
+      <input type="text" id="roomChatInput" placeholder="${esc(RT('chatPh'))}" maxlength="60">
+      <button data-rsend>${esc(RT('send'))}</button>
+    </div>
+    <button class="room-advance" data-rready>${RT('readyBtn')}</button>`;
+
+  const log = $('roomChatLog');
+  if (log) log.scrollTop = log.scrollHeight;
+
+  $('roomBody').querySelectorAll('[data-rready]').forEach(b => b.onclick = () => {
+    S.ready = true; roomView = 'day'; saveP(); renderRoom();
+  });
+  const send = () => {
+    const inp = $('roomChatInput');
+    if (!inp || !inp.value.trim()) return;
+    roomSendChat(S, inp.value);
+    inp.value = '';
+    renderLobby(S);
+  };
+  $('roomBody').querySelectorAll('[data-rsend]').forEach(b => b.onclick = send);
+  const inputEl = $('roomChatInput');
+  if (inputEl) inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+}
+
+/* 圆桌——庄家坐正中心，闲家沿边摆开。信息不再写成一排排字，
+   藏在人物后面：鼠标划过/点一下才在下面的信息条里冒出来。
+   点庄家才翻开今天的题目——「查看题目」是庄家专属的动作，
+   闲家没有这个入口，他们的动作只能靠划过去看。 */
+/* 谁在哪天干了什么——桌子右手边那份小字记录的原料。按天分组，
+   同一天内按题目顺序列，「答案」字段只在那天已揭晓时才附上，
+   没揭晓的天只显示押了哪边，不剧透胜负。 */
+function tableActivityRows(S){
+  const rows = [];
+  for (const day of RD.days){
+    if (day.day_idx > S.dayReached) break;
+    const revealed = !!S.revealed[day.day_idx];
+    const entries = [];
+    for (const idea of day.ideas)
+      for (const bet of (idea.npc_bets || [])){
+        const p = RD.players.find(x => x.id === bet.player_id);
+        if (p) entries.push({ p, idea, bet, delta: revealed ? npcBetDelta(bet) : null });
+      }
+    if (entries.length) rows.push({ day, entries });
+  }
+  return rows.reverse();
+}
+function tableActivityHtml(S){
+  const rows = tableActivityRows(S);
+  if (!rows.length) return `<p class="lead" style="margin:0">${RT('noLogYet')}</p>`;
+  return rows.map(({ day, entries }) => `
+    <div class="log-day">Day ${day.day_idx}</div>
+    ${entries.map(({ p, idea, bet, delta }) => `
+      <div class="log-row">${esc(p.emoji)} ${esc(p.name)} ${esc(bet.action)} ${esc(idea.ticker)}
+        ${delta != null ? `<b class="${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '+' : ''}${Math.round(delta)}</b>` : ''}</div>
+    `).join('')}
+  `).join('');
+}
+
+/* 今日题目简略版——庄家挂的题永远是「看涨」（_publish 里 side 恒为 YES），
+   所以一律标「做多」，一行一个标的。点开才展开完整题干/thesis/四个按钮
+   （roomIdeaCard 原样复用），再点一下收回去。 */
+function todayBriefList(day, S){
+  if (!day.ideas.length) return `<p class="lead" style="margin:0">${RT('noIdeasToday')}</p>`;
+  return day.ideas.map(idea => {
+    const b = S.bets[idea.id];
+    const tag = !b ? '' : b.action === 'skip' ? RT('skip')
+      : RT(b.action === '跟' ? 'follow' : b.action === '反' ? 'fade' : 'duel');
+    return `<div class="brief-row ${roomOpenIdeaId === idea.id ? 'active' : ''}" data-ropen="${esc(idea.id)}">
+      <span class="dir">${RT('longLabel')}</span><b>${esc(idea.ticker)}</b>
+      ${tag ? `<span class="done-tag">${esc(tag)}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderTable(S){
+  const day = roomDayOf(S.dayReached);
+  const dCash = roomDealerCash(S);
+  const bust = dCash < roomDealerBankruptLine();
+
+  $('roomFace').textContent = RD.dealer.emoji || '🎩';
+  $('roomFace').classList.toggle('bust', bust);
+  $('roomDealerName').textContent = RD.dealer.name;
+  $('roomRound').textContent = RT('round', S.dayReached, RD.days.length);
+
+  /* 「你」固定坐最上方（座位 0，layoutSeats 从正上方顺时针）；NPC 从你右手边排开。 */
+  const seatOrder = [{ id: 'you', name: P.nick, emoji: '🧑' }, ...RD.players];
+  const pos = layoutSeats(seatOrder.length, 40);
+  const undecidedN = day.ideas.filter(i => !S.bets[i.id]).length;
+
+  const seatsHtml = seatOrder.map((p, i) => `
+    <div class="seat ${p.id === 'you' ? 'you' : ''} ${roomActiveSeat === p.id ? 'active' : ''}"
+      style="left:${pos[i].left}%; top:${pos[i].top}%" data-rseat="${esc(p.id)}">
+      <div class="av">${esc(p.emoji)}</div>
+      <div class="nm">${esc(p.id === 'you' ? RT('youRow') : p.name)}</div>
+      <div class="cash">${money(p.id === 'you' ? S.cash : npcRunningCash(p.id, S))}</div>
+    </div>`).join('');
+
+  const el = $('roomBody');
+  el.innerHTML = `
+    <div class="table-toolbar">
+      <p class="lead">${esc(day.date)} · ${day.ideas.length ? RT('tapDealer') : RT('noIdeasToday')}</p>
+      <button class="room-back" data-rback="history" style="margin:0">${RT('navHistory')}</button>
+    </div>
+    <div class="table-layout">
+      <div class="table-main">
+        <div class="table-wrap">
+          <div class="table-felt"></div>
+          <div class="seat dealer ${roomActiveSeat === 'dealer' ? 'active' : ''}" data-rseat="dealer">
+            <div class="av">${esc(RD.dealer.emoji || '🎩')}</div>
+            ${undecidedN ? `<div class="badge">${undecidedN}</div>` : ''}
+            <div class="cash ${bust ? 'down' : ''}">${money(dCash)}</div>
+          </div>
+          ${seatsHtml}
+        </div>
+        <div class="seat-info" id="seatInfoBox">
+          ${roomActiveSeat ? seatInfoHtml(roomActiveSeat, S, day) : `<p class="lead" style="margin:0">${RT('hoverHint')}</p>`}
+        </div>
+        <button class="room-advance" ${roomAllDecided(day, S) ? '' : 'disabled'} data-rnext>
+          ${roomAllDecided(day, S) ? RT('nextDay') : RT('notDecided')}
+        </button>
+      </div>
+      <div class="table-side">
+        <h3>${RT('todayTitle')}</h3>
+        <div class="brief-list">${todayBriefList(day, S)}</div>
+        <div id="todayDetailBox">${roomOpenIdeaId ? roomIdeaCard(findRoomIdea(roomOpenIdeaId), S) : ''}</div>
+      </div>
+    </div>
+    <div class="table-log-wrap">
+      <h3>${RT('logTitle')}</h3>
+      <div class="table-log">${tableActivityHtml(S)}</div>
+    </div>`;
+
+  el.querySelectorAll('[data-rback]').forEach(b => b.onclick = () => { roomView = b.dataset.rback; renderRoom(); });
+  el.querySelectorAll('[data-rnext]').forEach(b => b.onclick = () => roomReveal(S, day.day_idx));
+  wireSeatInfoBox();
+  /* 只认点击——鼠标划过不弹详情，省得随手一扫就把闲家的底牌看光了。 */
+  el.querySelectorAll('.seat[data-rseat]').forEach(seatEl => {
+    const pid = seatEl.dataset.rseat;
+    seatEl.addEventListener('click', () => {
+      roomActiveSeat = pid;
+      el.querySelectorAll('.seat').forEach(s => s.classList.toggle('active', s.dataset.rseat === pid));
+      const box = $('seatInfoBox');
+      if (box){ box.innerHTML = seatInfoHtml(pid, S, day); wireSeatInfoBox(); }
+    });
+  });
+  /* 简略版题目——点一下才展开完整版（题干+thesis+四个按钮），再点一下收起。 */
+  el.querySelectorAll('[data-ropen]').forEach(row => row.onclick = () => {
+    roomOpenIdeaId = roomOpenIdeaId === row.dataset.ropen ? null : row.dataset.ropen;
+    renderRoom();
+  });
+  el.querySelectorAll('[data-rpick]').forEach(btn =>
+    btn.onclick = () => roomPlaceBet(S, findRoomIdea(btn.dataset.rpick), btn.dataset.raction));
+  el.querySelectorAll('[data-rstake]').forEach(btn =>
+    btn.onclick = () => roomSetStake(S, findRoomIdea(btn.dataset.rstake), +btn.dataset.v));
+  el.querySelectorAll('[data-rdetail]').forEach(btn =>
+    btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
+}
+
+/* 「查看题目」翻开的那一页——庄家专属入口，翻完自动合回牌桌。 */
+function renderQuestions(S){
+  const day = roomDayOf(S.dayReached);
+  const dCash = roomDealerCash(S);
+  const bust = dCash < roomDealerBankruptLine();
+
+  $('roomFace').textContent = RD.dealer.emoji || '🎩';
+  $('roomFace').classList.toggle('bust', bust);
+  $('roomDealerName').textContent = RD.dealer.name;
+  $('roomRound').textContent = RT('round', S.dayReached, RD.days.length);
+
+  const el = $('roomBody');
+  el.innerHTML = `
+    <button class="room-back" data-rback>← ${RT('backToTable')}</button>
+    <p class="lead" style="margin-top:0">${esc(day.date)}${day.ideas.length ? '' : ' · ' + RT('noIdeasToday')}</p>
+    ${day.ideas.length ? day.ideas.map(i => roomIdeaCard(i, S)).join('')
+      : `<p class="lead">${RT('day5Note')}</p>`}
+    ${day.ideas.length ? `<button class="room-advance" data-rsave>${RT('saveAnswers')}</button>` : ''}`;
+
+  /* 保存答案只是把你拉回牌桌——真正的结算/翻页挪到牌桌上的「进入下一天」，
+     两步拆开是故意的：这里可以随便进出改主意，那边点了才真的算数。 */
+  el.querySelectorAll('[data-rback],[data-rsave]').forEach(b => b.onclick = () => { roomView = 'table'; renderRoom(); });
+  el.querySelectorAll('[data-rpick]').forEach(btn =>
+    btn.onclick = () => roomPlaceBet(S, findRoomIdea(btn.dataset.rpick), btn.dataset.raction));
+  el.querySelectorAll('[data-rstake]').forEach(btn =>
+    btn.onclick = () => roomSetStake(S, findRoomIdea(btn.dataset.rstake), +btn.dataset.v));
+  el.querySelectorAll('[data-rdetail]').forEach(btn =>
+    btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
+}
+
+function renderHistoryView(S){
+  $('roomFace').textContent = RD.dealer.emoji || '🎩';
+  $('roomFace').classList.remove('bust');
+  $('roomDealerName').textContent = RD.dealer.name;
+  $('roomRound').textContent = RT('historyTag');
+
+  const days = RD.days.filter(d => S.revealed[d.day_idx]);
+  const el = $('roomBody');
+  el.innerHTML = `
+    <button class="room-back" data-rback>← ${RT('backToTable')}</button>
+    <div class="history-list">
+    ${days.length ? days.map(d => `
+      <p class="lead" style="margin-top:16px">${esc(d.date)} · Day ${d.day_idx}</p>
+      ${d.ideas.length ? d.ideas.map(i => roomIdeaCard(i, S, { readonly: true })).join('')
+        : `<p class="lead">${RT('noIdeasToday')}</p>`}
+    `).join('') : `<p class="lead">${RT('noHistoryYet')}</p>`}
+    </div>`;
+
+  el.querySelectorAll('[data-rback]').forEach(b => b.onclick = () => { roomView = 'table'; renderRoom(); });
+  el.querySelectorAll('[data-rdetail]').forEach(btn =>
+    btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
+}
+
+function renderRoom(){
+  if (!RD){
+    $('roomDealerName').textContent = '—';
+    $('roomRound').textContent = '—';
+    $('roomBody').innerHTML = `<p>${RT('missing')}</p>`;
+    return;
+  }
+  const S = roomState();
+  if (S.ended) return renderRoomResults(S);
+  if (roomView === 'lobby') return renderLobby(S);
+  if (roomView === 'questions') return renderQuestions(S);
+  if (roomView === 'detail') return renderDetail(S);
+  if (roomView === 'history') return renderHistoryView(S);
+  return renderTable(S);
+}
+
+function renderRoomResults(S){
+  const dCash = roomDealerCash(S);
+  const bust = dCash < roomDealerBankruptLine();
+
+  $('roomFace').textContent = RD.dealer.emoji || '🎩';
+  $('roomFace').classList.toggle('bust', bust);
+  $('roomDealerName').textContent = RD.dealer.name;
+  $('roomRound').textContent = RT('round', RD.days.length, RD.days.length);
+
+  const board = RD.players.map(p => ({ name: p.name, emoji: p.emoji, cash: p.cash, ret: p.return_pct, you: false }));
+  board.push({ name: RT('youRow'), emoji: '🧑', cash: S.cash,
+    ret: (S.cash - RD.config.player_initial_cash) / RD.config.player_initial_cash, you: true });
+  board.sort((a, b) => b.ret - a.ret);
+  const pts = [10, 7, 5, 0, -1, -2, -4];
+  const th = RT('tHead');
+  const reasonText = S.ended.reason === 'dealer_bankrupt'
+    ? RT('reasons.dealer_bankrupt', S.ended.day)
+    : RT('reasons.' + S.ended.reason);
+
+  $('roomBody').innerHTML = `
+    <div class="room-banner ${bust ? 'win' : 'lose'}">${bust ? RT('winBanner') : RT('loseBanner')}</div>
+    <p class="lead" style="margin-top:0">${reasonText}</p>
+    <div class="stats">
+      <div class="stat"><span>${RT('in')}</span><b>${money(RD.dealer.start_cash)}</b></div>
+      <div class="stat"><span>${RT('end')}</span><b>${money(dCash)}</b></div>
+      <div class="stat"><span>${RT('dealerNet')}</span><b class="${dCash >= RD.dealer.start_cash ? 'up' : 'down'}">
+        ${dCash >= RD.dealer.start_cash ? '+' : ''}${money(dCash - RD.dealer.start_cash)}</b></div>
+    </div>
+    <p class="lead" style="margin-top:0">${RT('table')}</p>
+    <table class="room-table"><thead><tr>
+      <th>${esc(th[0])}</th><th>${esc(th[1])}</th><th>${esc(th[2])}</th><th>${esc(th[3])}</th><th>${esc(th[4])}</th>
+    </tr></thead><tbody>
+      ${board.map((p, i) => `<tr class="${p.you ? 'you' : ''}">
+        <td>${i + 1}</td><td>${p.emoji} ${esc(p.name)}</td>
+        <td class="${p.ret >= 0 ? 'up' : 'down'}">${sgn(p.ret)}</td>
+        <td>${money(p.cash)}</td>
+        <td class="${pts[i] > 0 ? 'up' : pts[i] < 0 ? 'down' : ''}">${pts[i] > 0 ? '+' : ''}${pts[i]}</td>
+      </tr>`).join('')}
+    </tbody></table>
+    <button class="room-advance" data-rreset>${RT('resetBtn')}</button>`;
+
+  $('roomBody').querySelectorAll('[data-rreset]').forEach(btn =>
+    btn.onclick = () => { P.room = freshRoomState(); roomView = 'lobby'; roomActiveSeat = null; saveP(); renderRoom(); });
 }
 
 if (BOOKS){ settleLiveBets(); fit(); fillBubble(); refreshCorner(); requestAnimationFrame(loop); }
@@ -1231,6 +2475,17 @@ function isSealed(i){
   return !isNaN(cut) && Date.now() > cut;
 }
 
+function crowdLine(i){
+  const c = i.crowd;
+  if (!c || !c.n) return '';
+  const who = (c.bettors || []).map(b =>
+    `${esc(b.emoji)}${b.side === 'YES' ? (lang === 'en' ? 'follow' : '跟') : (lang === 'en' ? 'fade' : '反')}`).join(' ');
+  const label = lang === 'en'
+    ? `🎲 ${c.n} NPC players bet · long ${c.yes} : short ${c.no}`
+    : `🎲 ${c.n} 个 NPC 玩家下了注 · 多 ${c.yes} : 空 ${c.no}`;
+  return `<div style="font-size:12px;opacity:.75;margin:2px 0 6px">${label}${who ? ' · ' + who : ''}</div>`;
+}
+
 function betCard(i, isLive){
   const book = isLive ? P.bets : (P.practice || {});
   const done = book[i.id];
@@ -1265,6 +2520,7 @@ function betCard(i, isLive){
     <div class="q">${esc(fld(i, 'question'))}</div>
     <div class="say">${T('heSays', esc(fld(i, 'reason')))} <span style="opacity:.7">（${esc(fld(i, 'mood'))}${sessionTag(i) ? ' · ' + sessionTag(i) : ''} · ${horizonTag(i)}）</span>
       <br><span style="opacity:.7">${T('convictionLine', (i.conviction * 100).toFixed(0), i.n_prior)}</span></div>
+    ${crowdLine(i)}
     <div class="odds">
       <button data-bet="${esc(i.id)}" data-side="YES" ${locked ? 'disabled' : ''}>
         ${T('betYes')}<b>${payout(pYes)}×</b>
@@ -1368,7 +2624,7 @@ function refundBet(id){
 /* ================================================================
    背包
    ================================================================ */
-const openBag = () => { closeDlg(); $('bag').classList.add('on'); renderBag(); };
+const openBag = () => { closeDlg(); closeRoom(); $('bag').classList.add('on'); renderBag(); };
 const closeBag = () => $('bag').classList.remove('on');
 const bagOpen = () => $('bag').classList.contains('on');
 
