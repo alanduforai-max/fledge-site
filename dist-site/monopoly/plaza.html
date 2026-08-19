@@ -201,6 +201,7 @@
     border:0; box-shadow:inset 0 0 0 3px var(--line);
   }
   .stakes button[aria-pressed="true"]{background:var(--blue); color:#fff}
+  .stakes button:disabled{opacity:.4; cursor:default}
   .result{margin-top:12px; padding:11px 13px; font-size:14px; line-height:1.7;
           box-shadow:inset 0 0 0 3px var(--line)}
   .result.win{background:#dff0e2} .result.lose{background:#f9dcdc}
@@ -414,6 +415,55 @@
     background:var(--cream2); border:0; box-shadow:inset 0 0 0 3px var(--line); flex:none;
   }
   .close:hover{background:var(--up); color:#fff}
+
+  /* ---------- 「?」规则卡 + 新手引导 ---------- */
+  #helpDlg{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(12,10,8,.6); z-index:30; padding:20px;
+  }
+  #helpDlg.on{display:flex}
+  #helpDlg .panel{width:min(720px,94vw)}
+  .rule-row{
+    background:#fff; box-shadow:inset 0 0 0 3px var(--line);
+    padding:11px 13px; margin-bottom:8px; font-size:13.5px; line-height:1.75;
+  }
+  .rule-row b{color:var(--up)}
+  .lang.help{top:100px; font-family:var(--num)}
+  #roomHelpBtn{font-family:var(--num)}
+  #roomHelpBtn:hover{background:var(--gold); color:var(--ink)}
+  /* coach-mark：全屏遮罩拦截点击，描边框靠一圈巨型 box-shadow 挖出聚光洞 */
+  #coachOverlay{position:fixed; inset:0; z-index:60; display:none}
+  #coachOverlay.on{display:block}
+  .coach-ring{
+    position:fixed; left:0; top:0; width:0; height:0; pointer-events:none;
+    box-shadow:0 0 0 9999px rgba(12,10,8,.62), 0 0 0 3px var(--gold);
+    transition:left .18s, top .18s, width .18s, height .18s;
+  }
+  .coach-card{
+    position:fixed; width:min(330px, calc(100vw - 24px));
+    background:var(--cream); color:var(--ink); padding:14px 16px;
+    box-shadow:0 0 0 3px var(--line), 8px 8px 0 3px rgba(0,0,0,.35);
+    font-size:13.5px; line-height:1.7;
+  }
+  .coach-card .stepn{font-family:var(--num); font-size:12px; color:var(--ink2); margin-bottom:4px}
+  .coach-card h4{font-size:16px; margin-bottom:6px; letter-spacing:.5px}
+  .coach-card .btns{display:flex; gap:8px; margin-top:12px; justify-content:flex-end}
+  .coach-card .btns button{
+    padding:8px 14px; font-family:var(--ui); font-size:13px; cursor:pointer;
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .coach-card .btns button:hover{background:var(--cream2)}
+  .coach-card .btns button.primary{background:var(--gold); font-weight:700}
+  .coach-card .btns button.primary:hover{background:#eec46a}
+
+  /* 房间存档失效等场景的轻提示——z-index 压过所有对话框（helpDlg 30 / coach 60） */
+  #roomToast{
+    position:fixed; left:50%; bottom:30px; transform:translate(-50%,12px); z-index:70;
+    background:rgba(20,15,10,.92); color:var(--cream); padding:10px 18px; font-size:13.5px;
+    letter-spacing:.4px; box-shadow:0 0 0 3px rgba(20,15,10,.92), inset 0 0 0 1px var(--gold);
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+  }
+  #roomToast.on{opacity:1; transform:translate(-50%,0)}
 </style>
 </head>
 <body>
@@ -426,6 +476,7 @@
   <div class="corner" id="corner"></div>
   <a class="home" id="homeLink" href="index.html">← 事件街棋盘</a>
   <button class="lang" id="langBtn" type="button"><b>中</b> / EN</button>
+  <button class="lang help" id="plazaHelpBtn" type="button" aria-label="怎么玩 / How to play"><b>?</b></button>
 </div>
 
 <div id="dlg" role="dialog" aria-modal="true">
@@ -493,10 +544,21 @@
         <div class="sub" id="roomDealerSub">8人局新手教学 · 1庄7闲</div>
       </div>
       <div class="mood"><span id="roomRoundLbl">回合</span><b id="roomRound">—</b></div>
+      <button class="close" id="roomHelpBtn" type="button" aria-label="规则 / Rules">?</button>
       <button class="close" onclick="closeRoom()">✕</button>
     </div>
     <div class="body" id="roomBody"></div>
   </div>
+</div>
+
+<div id="helpDlg" role="dialog" aria-modal="true">
+  <div class="panel" id="helpPanel"></div>
+</div>
+
+<!-- 新手引导遮罩：拦截一切点击，ring 的巨型 box-shadow 负责压暗 + 挖洞 -->
+<div id="coachOverlay" aria-hidden="true">
+  <div class="coach-ring" id="coachRing"></div>
+  <div class="coach-card" id="coachCard"></div>
 </div>
 
 <script src="book.js"></script>
@@ -639,6 +701,11 @@ const I18N = {
     devAdd: '+1000 代币', devAdd10k: '+10000', devReset: '重置存档',
     devNote: '重置会清空代币、注单、称号、皮肤，回到初始状态。加钱只影响你本机的存档。',
     devConfirm: '确定重置存档？代币/注单/称号/皮肤全部清零，回到初始状态。',
+    helpTitle: '广场怎么玩',
+    helpSub: '三件事就够上手',
+    help1: '走到摊位前按 <kbd>E</kbd>（或直接点摊主）。摊主挂的都是真实行情题：未来 1 / 3 / 5 天的收盘比现在高还是低，答案等美股收盘揭晓。',
+    help2: (c, s, w) => `报价用美分标：${c}¢ 意思是押 ${c} 才赢回 100，派彩 = 押注 ÷ 价格——比如这档押 ${s} 中了净赚 ${w}。按钮上已经把「押多少、赢多少」写好了。`,
+    help3: '按 <kbd>B</kbd> 打开背包：昵称、称号、注单、道具和皮肤都在里面。',
   },
   en: {
     title: 'Event Street · Plaza',
@@ -745,6 +812,11 @@ const I18N = {
     devNote: 'Reset wipes chips, bets, titles and skins back to the initial state. Cheats only touch your local save.',
     devConfirm: 'Reset save? Chips, bets, titles and skins all go back to the initial state.',
     alertNoBets: 'No bets yet.',
+    helpTitle: 'How the plaza works',
+    helpSub: 'Three things and you are set',
+    help1: 'Walk up to a stall and press <kbd>E</kbd> (or click the vendor). Vendors post real market questions: will the close in 1 / 3 / 5 days end above the current mark — answers arrive after the US close.',
+    help2: (c, s, w) => `Quotes are in cents: ${c}¢ means staking ${c} to win back 100 — payout = stake ÷ price. At that price a ${s} stake nets ${w} on a win. Every button already spells out stake and win.`,
+    help3: 'Press <kbd>B</kbd> for your bag — nickname, titles, bet slips, items and skins.',
   },
 };
 function T(key, ...a){
@@ -788,6 +860,8 @@ function setLang(next){
   if (dlgOpen()) render();
   if (bagOpen()) renderBag();
   if (roomDlgOpen()) renderRoom();
+  if (helpDlgOn()) renderHelp();
+  if (tutActive()) tutShow(tutIdx);   // 语言切了，当前步的卡片和高亮目标都要重挂
 }
 const langBtnEl = document.getElementById('langBtn');
 if (langBtnEl) langBtnEl.onclick = () => setLang(lang === 'zh' ? 'en' : 'zh');
@@ -997,7 +1071,8 @@ addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   keys[k] = true;
   if (k === 'e'){
-    if (dlgOpen()) closeDlg();                       // 对话中 E = 关闭，别原地重开
+    if (helpDlgOn()) closeHelp();                    // 帮助卡开着先关它，别把底下的房间也带走
+    else if (dlgOpen()) closeDlg();                  // 对话中 E = 关闭，别原地重开
     else if (roomDlgOpen()) closeRoom();
     else if (!bagOpen()){
       const n = nearNpc();
@@ -1005,7 +1080,10 @@ addEventListener('keydown', e => {
     }
   }
   if (k === 'b') bagOpen() ? closeBag() : openBag();
-  if (e.key === 'Escape'){ closeDlg(); closeBag(); closeRoom(); }
+  if (e.key === 'Escape'){
+    if (helpDlgOn()) closeHelp();                    // 分层关：先帮助卡，再其余面板
+    else { closeDlg(); closeBag(); closeRoom(); }
+  }
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
@@ -1235,6 +1313,7 @@ const ROOM_I18N = {
       day5: '第 5 天到期，正常结算。',
     },
     resetBtn: '清空进度重新玩这一局',
+    roomDataRefreshed: '房间数据已更新，本局已重置',
     dealerNet: '庄家净盈亏', in: '带入', end: '局终',
     lockedSkip: '跳过了这题',
     lockedPicked: (a, p) => `已选 ${a} · 报价 ${p}¢`,
@@ -1255,6 +1334,39 @@ const ROOM_I18N = {
     buyinLbl: '带入（庄/闲）', minStakeLbl: '最低下注（闲/对赌）',
     rosterLbl: '在座的人', chatLbl: '候机室闲聊', chatPh: '说点什么……', send: '发送',
     readyBtn: '准备 · 开始这一局',
+    /* —— 新手引导（coach-marks）。数字全部由调用方从 config/代码里算好传进来，不写死。 —— */
+    tutNext: '下一步', tutSkip: '跳过教程', tutDone: '完成',
+    tut1t: '这是牌桌',
+    tut1b: (e, n, th, days) => `正中间是庄家 ${e} ${n}（${th}）。他每天把自己对真实行情的判断挂出来当题，你和 6 个 NPC 闲家围桌下注，一共 ${days} 天。`,
+    tut2t: '题目怎么读',
+    tut2b: pc => `每道题 = 一只真实标的 + 庄家的理由。他挂的方向永远是看涨（做多）；「跟」上标的 ${pc}¢ 是他给「涨」开的价——越高代表他越笃定，跟着他赢的赔率也越薄。`,
+    tut3t: '跟 · Follow',
+    tut3b: (pc, s, w) => `跟庄家同方向押涨。价格 ${pc}¢：押 ${s}，涨了净赚 +${w}，跌了亏掉 ${s}。跟系统结算，赢的不是庄家口袋里的钱。`,
+    tut4t: '反 · Fade',
+    tut4b: (fc, s, w) => `押庄家反方向（跌）。价格反过来是 ${fc}¢：押 ${s}，跌了 +${w}，涨了 −${s}。同样跟系统结算。`,
+    tut5t: '对赌 · Duel',
+    tut5b: (mn, cp) => `和庄家单挑：判定跟「反」一样押他错，但输赢直接从庄家口袋进出——你赢多少他亏多少，你输的本金归他。最低 ${mn}、上限 ${cp}。这是你把庄家打穿破产线、当场倒庄的唯一武器。`,
+    tut6t: '跳过 · Sit out',
+    tut6b: '这题观望：不下注、不扣钱。但每道题都得在四个动作里选一个，全部表态后才能点「进入下一天」。',
+    tut7t: '你的资金',
+    tut7b: (pin, fs, ds, line) => `你带入 ${pin}。跟/反最低 ${fs}，对赌最低 ${ds}。余额跌破 ${line} 你就破产出局，这一局到此为止。`,
+    tut8t: '倒庄条件',
+    tut8b: (din, dline, days) => `庄家带入 ${din}，余额跌破 ${dline} 就倒庄——你和 NPC 的对赌都在掏他口袋。撑满 ${days} 天没被打穿，就按收益率排名收场。`,
+    tut9t: '随时重看规则',
+    tut9b: '点这个「?」随时翻规则卡：四个动作的公式、资金线、结算口径都在里面，还能重新播放这套引导。',
+    /* —— 「?」规则卡 —— */
+    rulesTitle: '规则卡',
+    rulesSub: '四动作 · 资金 · 结算口径',
+    rulesActions: '四个动作',
+    rulesMoney: '资金规则',
+    rulesReveal: '答案何时揭晓',
+    ruleFollow: (pc, s, w) => `<b>跟 · Follow</b> —— 押庄家的方向（涨）。赢 = 押注 ÷ 价格 − 押注。例：报 ${pc}¢ 押 ${s}：涨了 +${w}，跌了 −${s}。跟系统结算。`,
+    ruleFade: (fc, s, w) => `<b>反 · Fade</b> —— 押庄家反方向（跌）。价格 = 100¢ − 庄家报价 = ${fc}¢。例：押 ${s}：跌了 +${w}，涨了 −${s}。跟系统结算。`,
+    ruleDuel: (mn, cp, s, w) => `<b>对赌 · Duel</b> —— 判定和「反」相同，但对手是庄家本人：你赢 +${w} 他就 −${w}；你输 −${s} 他就 +${s}，钱直接从他口袋进出。注额 ${mn}–${cp}（不超过你手上的现金）。`,
+    ruleSkip: '<b>跳过 · Sit out</b> —— 本轮观望，不下注、不扣钱。每道题都要在四个动作里选一个，才能进入下一天。',
+    ruleMoney: (pin, din, fs, ds, cp, lp, yl, dl) => `你带入 ${pin}，庄家带入 ${din}。跟/反最低 ${fs}；对赌最低 ${ds}、上限 ${cp}。破产线 = 各自带入的 ${lp}%：你跌破 ${yl} 出局，庄家跌破 ${dl} 倒庄。选完动作还能在题卡上换注码档。`,
+    ruleReveal: (btn, days) => `每道题都拿真实行情判定：基准是庄家挂盘时的收盘价，对比「期限」个交易日后的收盘价，收高即涨（YES）。你点「${btn}」时，当天的注一次性揭晓入账。整局共 ${days} 天，最后一天只结算、不出新题。`,
+    replayTut: '重新播放新手引导',
   },
   en: {
     missing: 'Missing room.js. Run first:<br><br>&nbsp;&nbsp;python -m agent.room',
@@ -1283,6 +1395,7 @@ const ROOM_I18N = {
       day5: 'Day 5 hit its deadline — normal settlement.',
     },
     resetBtn: 'Clear progress and replay this round',
+    roomDataRefreshed: 'Room data was updated — this run has been reset.',
     dealerNet: 'Dealer net P&L', in: 'Buy-in', end: 'Final',
     lockedSkip: 'Skipped this one',
     lockedPicked: (a, p) => `Picked ${a} · quoting ${p}¢`,
@@ -1303,6 +1416,39 @@ const ROOM_I18N = {
     buyinLbl: 'Buy-in (dealer / player)', minStakeLbl: 'Min stake (player / duel)',
     rosterLbl: 'At the table', chatLbl: 'Lobby chat', chatPh: 'Say something…', send: 'Send',
     readyBtn: 'Ready · Start the round',
+    /* —— Tutorial coach-marks. Every number is computed from config by the caller. —— */
+    tutNext: 'Next', tutSkip: 'Skip tutorial', tutDone: 'Done',
+    tut1t: 'This is the table',
+    tut1b: (e, n, th, days) => `Dead center sits the dealer ${e} ${n} (${th}). Every day he turns his real market calls into questions; you and 6 NPC players bet around the table for ${days} days.`,
+    tut2t: 'Reading a question',
+    tut2b: pc => `Each question = one real ticker + the dealer's thesis. His side is always LONG (betting up); the ${pc}¢ on Follow is his price for "up" — the higher it is, the surer he is and the thinner your payout for following.`,
+    tut3t: 'Follow',
+    tut3b: (pc, s, w) => `Bet the dealer's way (up). Price ${pc}¢: stake ${s} nets +${w} on a rise, loses ${s} on a fall. Settled against the house — not the dealer's pocket.`,
+    tut4t: 'Fade',
+    tut4b: (fc, s, w) => `Bet against his direction (down). Your price flips to ${fc}¢: stake ${s} makes +${w} on a fall, −${s} on a rise. Also settled against the house.`,
+    tut5t: 'Duel',
+    tut5b: (mn, cp) => `Go head-to-head with the dealer: same win condition as Fade, but the money moves straight between your pocket and his — whatever you win, he loses, and a lost stake goes to him. Min ${mn}, cap ${cp}. It is your only weapon for driving him through the bankruptcy line and dethroning him.`,
+    tut6t: 'Sit out',
+    tut6b: 'Watch this one: no stake, nothing deducted. But every question needs one of the four choices before "Enter next day" unlocks.',
+    tut7t: 'Your bankroll',
+    tut7b: (pin, fs, ds, line) => `You buy in with ${pin}. Follow/Fade min ${fs}, Duel min ${ds}. Drop below ${line} and you bust out — the round ends right there.`,
+    tut8t: 'Dethroning the dealer',
+    tut8b: (din, dline, days) => `The dealer buys in with ${din}; below ${dline} he is dethroned — your duels and the NPCs' all drain his pocket. Survive all ${days} days undethroned, and the table settles by return ranking.`,
+    tut9t: 'Rules, any time',
+    tut9b: 'Tap this "?" whenever you like: the rule card holds the four action formulas, the money lines and the settlement rules — plus a button to replay this walkthrough.',
+    /* —— "?" rule card —— */
+    rulesTitle: 'Rule card',
+    rulesSub: 'Four actions · money · settlement',
+    rulesActions: 'The four actions',
+    rulesMoney: 'Money rules',
+    rulesReveal: 'When answers reveal',
+    ruleFollow: (pc, s, w) => `<b>Follow · 跟</b> — bet the dealer's side (up). Win = stake ÷ price − stake. E.g. at ${pc}¢, stake ${s}: up → +${w}, down → −${s}. Settled against the house.`,
+    ruleFade: (fc, s, w) => `<b>Fade · 反</b> — bet against him (down). Price = 100¢ − his quote = ${fc}¢. E.g. stake ${s}: down → +${w}, up → −${s}. Settled against the house.`,
+    ruleDuel: (mn, cp, s, w) => `<b>Duel · 对赌</b> — same win condition as Fade, but the dealer is the counterparty: you win +${w}, he loses ${w}; you lose −${s}, he pockets ${s}. Stake ${mn}–${cp} (never more than your cash).`,
+    ruleSkip: '<b>Sit out · 跳过</b> — watch the round: no stake, no cost. Every question still needs one of the four choices before the next day unlocks.',
+    ruleMoney: (pin, din, fs, ds, cp, lp, yl, dl) => `You buy in with ${pin}, the dealer with ${din}. Follow/Fade min ${fs}; Duel min ${ds}, cap ${cp}. Bankruptcy line = ${lp}% of each buy-in: you bust below ${yl}, the dealer is dethroned below ${dl}. After picking an action you can still switch stake tiers on the card.`,
+    ruleReveal: (btn, days) => `Every question is judged on real closes: the benchmark is the close when the dealer posted it, versus the close after the stated horizon in trading days — higher means YES. Clicking "${btn}" reveals and books all of that day's bets at once. The round runs ${days} days; the last day only settles, no new questions.`,
+    replayTut: 'Replay the tutorial',
   },
 };
 const RT = (key, ...a) => {
@@ -1336,9 +1482,17 @@ function roomSendChat(S, text){
   saveP();
 }
 
+/* 存档指纹：generated_for 相同但 Jack 同日重生成过 room.js（题目变/天数变短）时，
+   旧存档的 bets/dayReached 会悬空指向不存在的题和天。把计划天数、实际天数和
+   全部题目 id 一起揉进指纹，任何一处变了都当作新房间处理。 */
+function roomFingerprint(){
+  return [RD.generated_for, RD.days_planned, (RD.days || []).length,
+    (RD.days || []).map(d => d.ideas.map(i => i.id).join(',')).join('|')].join('#');
+}
 function freshRoomState(){
   return {
     generatedFor: RD.generated_for,
+    fp: roomFingerprint(),
     ready: false,     // 候机室 → 准备好了才正式开局
     chat: [],
     cash: RD.config.player_initial_cash,
@@ -1349,9 +1503,34 @@ function freshRoomState(){
     ended: null,
   };
 }
+/* 轻提示。textContent 赋值，文案永远不走 innerHTML；节点惰性创建，
+   缺 book.js 整页被替换的情形下也不会因为找不到容器而炸。 */
+let roomToastTimer = null;
+function roomToast(msg){
+  let el = document.getElementById('roomToast');
+  if (!el){ el = document.createElement('div'); el.id = 'roomToast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(roomToastTimer);
+  roomToastTimer = setTimeout(() => el.classList.remove('on'), 3200);
+}
 function roomState(){
-  if (!P.room || P.room.generatedFor !== RD.generated_for) P.room = freshRoomState();
+  if (!P.room || P.room.fp !== roomFingerprint()){
+    const hadOld = !!P.room;          // 全新玩家静默开局；旧档失效才提示
+    P.room = freshRoomState();        // 只重置 P.room，主存档（代币/皮肤/注单）不动
+    saveP();
+    if (hadOld) roomToast(RT('roomDataRefreshed'));
+  }
   return P.room;
+}
+/* 兜底：存档指着不存在的天（指纹侥幸没拦住 / 存档被手改）。不抛异常白屏，
+   走跟指纹失配同一条重置路——同样只动 P.room。 */
+function roomRecover(){
+  P.room = freshRoomState();
+  roomView = 'lobby'; roomActiveSeat = null; roomOpenIdeaId = null; roomDetailId = null;
+  saveP();
+  roomToast(RT('roomDataRefreshed'));
+  return renderRoom();
 }
 
 let roomView = 'lobby';     // 'lobby' | 'table' | 'questions' | 'history' | 'detail'
@@ -1367,8 +1546,13 @@ function openRoom(){
   dlg.classList.add('on');
   if (RD){ const S = roomState(); roomView = S.ended ? 'table' : (S.ready ? 'table' : 'lobby'); }
   renderRoom();
+  maybeStartRoomTut();     // 首次进房自动起分步引导（fledge.tut.room.v1），之后不再弹
 }
-function closeRoom(){ const dlg = $('roomDlg'); if (dlg) dlg.classList.remove('on'); }
+function closeRoom(){
+  if (tutActive()) tutEnd();   // 关门视同跳过：写 key，别把遮罩留在广场上
+  const dlg = $('roomDlg');
+  if (dlg) dlg.classList.remove('on');
+}
 /* 顶层同步语句不能用 $ ——它是本文件后半段才 const 出来的（对话框那节），
    这里是脚本执行到一半就跑的裸语句，提前引用会把 $ 之后的整段初始化全炸掉。
    直接用 document.getElementById 绕开这个前向引用。 */
@@ -1387,7 +1571,7 @@ function placeRoomLabel(){
   el.textContent = RD ? T('villageLabel') : '';
 }
 
-function roomDayOf(idx){ return RD.days.find(d => d.day_idx === idx); }
+function roomDayOf(idx){ return (RD.days || []).find(d => d.day_idx === idx); }
 function findRoomIdea(id){
   for (const d of RD.days){ const hit = d.ideas.find(i => i.id === id); if (hit) return hit; }
 }
@@ -1418,23 +1602,45 @@ function roomSettle(action, price, stake){
   return { sidePrice, payout: stake / sidePrice };
 }
 
+/* 注只在 roomReveal 才真扣钱，同一天几道题可以同时挂注——注金约束一律按
+   「现金 − 其它未结算注（非 skip）的已押合计」这个可用额来，保证总敞口 ≤ 现金，
+   全输也只是归零，不会出现负资产。改自己那笔时把自己从占用里剔掉（exceptId），
+   不然换注码档永远显得没钱。 */
+function roomCommittedStake(S, exceptId){
+  let total = 0;
+  for (const [id, b] of Object.entries(S.bets)){
+    if (id === exceptId || !b || b.action === 'skip' || b.result) continue;
+    total += b.stake || 0;
+  }
+  return total;
+}
+function roomAvailCash(S, exceptId){
+  return Math.max(0, Math.round((S.cash - roomCommittedStake(S, exceptId)) * 100) / 100);
+}
+function roomStakeCap(S, idea, action){
+  const avail = roomAvailCash(S, idea.id);
+  return action === '对赌' ? Math.min(RD.config.duel_cap, avail) : avail;
+}
+
 function roomPlaceBet(S, idea, action){
   if (action === 'skip'){ S.bets[idea.id] = { action: 'skip' }; saveP(); renderRoom(); return; }
-  const cap = action === '对赌' ? Math.min(RD.config.duel_cap, S.cash) : S.cash;
+  const cap = roomStakeCap(S, idea, action);   // 对赌 = min(duel_cap, 可用额)；跟/反 = 可用额
   const floor = action === '对赌' ? RD.config.dealer_min_stake : RD.config.player_min_stake;
-  if (S.cash < floor){ alert(RT('notEnough')); return; }
+  if (cap < floor){ alert(RT('notEnough')); return; }
   const stake = Math.min(cap, Math.max(floor, Math.round(S.cash * 0.15)));
   S.bets[idea.id] = { action, price: idea.price, stakeMax: cap, stakeFloor: floor, stake };
   saveP(); renderRoom();
 }
 function roomSetStake(S, idea, v){
   const b = S.bets[idea.id];
-  if (!b || b.action === 'skip') return;
+  if (!b || b.action === 'skip' || b.result) return;
+  if (v > roomStakeCap(S, idea, b.action)) return;   // 超出可用额：按钮已置灰，这里是兜底
   b.stake = v; saveP(); renderRoom();
 }
 
 function roomReveal(S, dayIdx){
   const day = roomDayOf(dayIdx);
+  if (!day) return roomRecover();
   (day.ideas || []).forEach(idea => {
     const b = S.bets[idea.id];
     if (!b || b.action === 'skip') return;
@@ -1453,6 +1659,12 @@ function roomReveal(S, dayIdx){
   });
 
   S.revealed[dayIdx] = true;
+  /* 终检：当天全部注单入账、revealed 置位之后再查一次破产线。上面对赌瞬间那次
+     即时判定用的基数是昨天的 dealer_cash_after，不含今天 NPC 对赌的伤害，只能
+     提前触发、不能兜底；这里 roomDealerCash 已经读到今天的 dealer_cash_after +
+     你的累计 dealerDelta，NPC 和你的合力打穿也能收住。 */
+  if (!S.ended && roomDealerCash(S) < roomDealerBankruptLine())
+    S.ended = { reason: S.dealerDelta < 0 ? 'you_beat_dealer' : 'dealer_bankrupt', day: dayIdx };
   if (!S.ended && S.cash < roomYouBankruptLine()) S.ended = { reason: 'you_bankrupt', day: dayIdx };
   if (!S.ended && dayIdx >= RD.days.length)
     S.ended = { reason: (RD.ended_early && RD.ended_early.reason) || 'day5', day: dayIdx };
@@ -1630,16 +1842,19 @@ function goRoomDetail(id){
 function roomIdeaCard(idea, S, opts){
   const readonly = !!(opts && opts.readonly);
   const b = S.bets[idea.id];
+  const avail = roomAvailCash(S, idea.id);   // 现金 − 当天其它未结算注的已押合计
   let body;
   if (!b){
     body = readonly
       ? `<div class="result">${RT('noBetPlaced')}${idea.outcome
           ? ` · ${RT('answer')} <b class="${idea.outcome === 'YES' ? 'up' : 'down'}">${esc(idea.outcome)}</b>` : ''}</div>`
       : `<div class="room-odds">
-          <button data-rpick="${esc(idea.id)}" data-raction="跟"><b>${RT('follow')}</b>${(idea.price * 100).toFixed(0)}¢</button>
-          <button data-rpick="${esc(idea.id)}" data-raction="反"><b>${RT('fade')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
+          <button data-rpick="${esc(idea.id)}" data-raction="跟"
+            ${avail < RD.config.player_min_stake ? 'disabled' : ''}><b>${RT('follow')}</b>${(idea.price * 100).toFixed(0)}¢</button>
+          <button data-rpick="${esc(idea.id)}" data-raction="反"
+            ${avail < RD.config.player_min_stake ? 'disabled' : ''}><b>${RT('fade')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
           <button class="duel" data-rpick="${esc(idea.id)}" data-raction="对赌"
-            ${S.cash < RD.config.dealer_min_stake ? 'disabled' : ''}><b>${RT('duel')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
+            ${avail < RD.config.dealer_min_stake ? 'disabled' : ''}><b>${RT('duel')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
           <button data-rpick="${esc(idea.id)}" data-raction="skip"><b>${RT('skip')}</b></button>
         </div>`;
   } else if (b.action === 'skip'){
@@ -1647,14 +1862,15 @@ function roomIdeaCard(idea, S, opts){
   } else if (!b.result){
     const price = b.action === '跟' ? idea.price : Math.round((1 - idea.price) * 100) / 100;
     const label = RT(b.action === '跟' ? 'follow' : b.action === '反' ? 'fade' : 'duel');
+    const cap = roomStakeCap(S, idea, b.action);   // 换档实时按可用额算，别信下注瞬间存的 stakeMax
     const presets = b.action === '对赌'
-      ? [RD.config.dealer_min_stake, 1500, 2000].filter(v => v <= b.stakeMax)
-      : [200, 500, 1000, 2000].filter(v => v <= b.stakeMax);
+      ? [RD.config.dealer_min_stake, 1500, 2000].filter(v => v <= RD.config.duel_cap)
+      : [200, 500, 1000, 2000];
     body = `
       <div class="result">${RT('lockedPicked', label, Math.round(price * 100))}</div>
       <div class="stakes" style="margin-top:8px">${RT('stakeLbl')}
         ${presets.map(v => `<button data-rstake="${esc(idea.id)}" data-v="${v}"
-          aria-pressed="${v === b.stake}">${v}</button>`).join('')}
+          ${v > cap ? 'disabled' : ''} aria-pressed="${v === b.stake}">${v}</button>`).join('')}
       </div>`;
   } else {
     const won = b.result.won;
@@ -1724,15 +1940,17 @@ function buildCandlesSvg(chart, refDate, exitDate, px){
    滚轮缩放（锚定在鼠标下面那根蜡烛，不会跳来跳去），按住拖拽平移。
    #roomBody 每次整体重渲染，监听器全挂在图自己的容器上，不碰 window/
    document，面板关掉容器被卸载监听器就跟着没了，不用手动清。 */
-function mountChart(idea){
-  const chart = idea.chart;
+function mountChart(idea, chartArg, revealed){
+  /* chartArg = renderDetail 按揭晓状态截好的窗口；未揭晓时不描 exit 金框——
+     那根蜡烛本来就被截掉了，日期也不该提前露出来。 */
+  const chart = chartArg || idea.chart;
   const host = $('chartSvgHost'), scroller = $('chartScroll'), cross = $('chartCrosshair');
   if (!host || !scroller || !chart || chart.length < 2) return;
   roomChartPx = 4;
   let geo = null;
 
   const paint = () => {
-    const built = buildCandlesSvg(chart, idea.ref_date, idea.exit_date, roomChartPx);
+    const built = buildCandlesSvg(chart, idea.ref_date, revealed ? idea.exit_date : null, roomChartPx);
     host.innerHTML = built.svg;
     geo = built;
   };
@@ -1799,7 +2017,14 @@ function renderDetail(S){
   const idea = findRoomIdea(roomDetailId);
   if (!idea){ roomView = 'table'; return renderRoom(); }
   const ov = (RD.tickers || {})[idea.ticker] || {};
-  const chart = idea.chart || [];
+  /* 防剧透：这道题所在的天还没揭晓时，K 线只画到 ref_date（含）为止，
+     「答案」那格整行不出现，exit 金框也不描。同一 ticker 会挂在好几天的
+     题里，所以一律按这一题自己的 ref_date 截，而不是按今天揭晓到哪儿。
+     52 周高低/当日涨跌全都从截过的窗口现算，未来的价格一个字不漏。 */
+  const ideaDay = roomDayOfIdea(idea.id);
+  const revealed = !!(ideaDay && S.revealed[ideaDay.day_idx]);
+  const chart = revealed ? (idea.chart || [])
+    : (idea.chart || []).filter(c => c.date <= idea.ref_date);
   const refBar = chart.find(c => c.date === idea.ref_date);
   const refIdx = refBar ? chart.indexOf(refBar) : -1;
   const prevBar = refIdx > 0 ? chart[refIdx - 1] : null;
@@ -1835,7 +2060,7 @@ function renderDetail(S){
       <div><span>${RT('peLbl')}</span><b>${ov.pe_ratio != null && ov.pe_ratio !== '' ? ov.pe_ratio : '—'}</b></div>
       <div><span>${RT('quoteLbl')}</span><b>${(idea.price * 100).toFixed(0)}¢</b></div>
       <div><span>${RT('horizonLbl')}</span><b>${idea.horizon}${RT('daysUnit')}</b></div>
-      ${idea.outcome ? `<div><span>${RT('answer')}</span>
+      ${revealed && idea.outcome ? `<div><span>${RT('answer')}</span>
         <b class="${idea.outcome === 'YES' ? 'up' : 'down'}">${esc(idea.outcome)}</b></div>` : ''}
     </div>
     ${ov.sector ? `<p class="lead" style="margin-top:0">${esc(ov.sector)}${ov.industry ? ' · ' + esc(ov.industry) : ''}</p>` : ''}
@@ -1843,7 +2068,7 @@ function renderDetail(S){
     <p class="q" style="font-size:17px; margin-top:14px">${esc(idea.question)}</p>
     <p class="say">${esc(idea.reason || '')}</p>`;
 
-  mountChart(idea);
+  mountChart(idea, chart, revealed);
 
   $('roomBody').querySelectorAll('[data-rback]').forEach(b =>
     b.onclick = () => { roomView = roomDetailFrom; renderRoom(); });
@@ -1963,6 +2188,7 @@ function todayBriefList(day, S){
 
 function renderTable(S){
   const day = roomDayOf(S.dayReached);
+  if (!day) return roomRecover();   // 存档指向不存在的天——按房间数据更新处理，别 TypeError 白屏
   const dCash = roomDealerCash(S);
   const bust = dCash < roomDealerBankruptLine();
 
@@ -2048,6 +2274,7 @@ function renderTable(S){
 /* 「查看题目」翻开的那一页——庄家专属入口，翻完自动合回牌桌。 */
 function renderQuestions(S){
   const day = roomDayOf(S.dayReached);
+  if (!day) return roomRecover();
   const dCash = roomDealerCash(S);
   const bust = dCash < roomDealerBankruptLine();
 
@@ -2147,7 +2374,7 @@ function renderRoomResults(S){
       <th>${esc(th[0])}</th><th>${esc(th[1])}</th><th>${esc(th[2])}</th><th>${esc(th[3])}</th><th>${esc(th[4])}</th>
     </tr></thead><tbody>
       ${board.map((p, i) => `<tr class="${p.you ? 'you' : ''}">
-        <td>${i + 1}</td><td>${p.emoji} ${esc(p.name)}</td>
+        <td>${i + 1}</td><td>${esc(p.emoji)} ${esc(p.name)}</td>
         <td class="${p.ret >= 0 ? 'up' : 'down'}">${sgn(p.ret)}</td>
         <td>${money(p.cash)}</td>
         <td class="${pts[i] > 0 ? 'up' : pts[i] < 0 ? 'down' : ''}">${pts[i] > 0 ? '+' : ''}${pts[i]}</td>
@@ -2841,6 +3068,214 @@ function undoLastBet(){
   delete P.bets[id];
   P.items.calm = (P.items.calm || 0) - 1;
   saveP(); renderBag(); renderBets();
+}
+
+/* ================================================================
+   新手引导（coach-marks）+「?」规则卡
+   纯展示层：不碰结算、不碰 P 的任何字段。教程状态单独存
+   fledge.tut.room.v1，跟玩家存档（fledge.player.v1）分开，
+   devReset 也不会误清它。文案全部走 I18N / ROOM_I18N，数字全部
+   从 RD.config 和 roomYou/DealerBankruptLine 现算，不写死。
+   ================================================================ */
+const TUT_KEY = 'fledge.tut.room.v1';
+let tutSteps = [], tutIdx = -1, tutPrevView = null;
+function tutActive(){ return tutIdx >= 0; }
+
+/* 教程和规则卡共用的一份数字：例子价取本局第一道题的真实报价（没有就 60¢），
+   注码/上限/破产线全部从 config 和结算同源的函数里现算。 */
+function roomTutNums(){
+  const cfg = RD.config;
+  let firstIdea = null;
+  for (const d of RD.days){ if (d.ideas && d.ideas.length){ firstIdea = d.ideas[0]; break; } }
+  const p = firstIdea && firstIdea.price != null ? firstIdea.price : 0.6;
+  const pC = Math.round(p * 100);
+  const fS = cfg.player_min_stake, dS = cfg.dealer_min_stake;
+  return {
+    pC, fadeC: 100 - pC, fS, dS, cap: cfg.duel_cap,
+    fW: Math.round(fS / p - fS),          // 跟：押最低注赢多少（stake/price − stake）
+    aW: Math.round(fS / (1 - p) - fS),    // 反：同一口径
+    dW: Math.round(dS / (1 - p) - dS),    // 对赌：按对赌最低注算
+    pin: cfg.player_initial_cash, dIn: RD.dealer.start_cash,
+    youLine: Math.round(roomYouBankruptLine()),
+    dealerLine: Math.round(roomDealerBankruptLine()),
+    linePct: Math.round((1 - cfg.bankrupt_pct) * 100),
+    days: RD.days.length,
+  };
+}
+
+/* 每一步：view = 需要的房间视图（null 不切），sel = 高亮目标选择器。
+   目标不存在（当天没题 / 局已结束）就自动跳过该步。文案是闭包，
+   每次展示现取 RT——中途切语言直接生效。 */
+function buildTutSteps(){
+  const N = roomTutNums();
+  const th = () => esc((lang === 'en' ? RD.dealer.theme_en : RD.dealer.theme) || RD.dealer.theme || '');
+  return [
+    { view: 'table', sel: '#roomBody .table-wrap',
+      t: () => RT('tut1t'),
+      b: () => RT('tut1b', esc(RD.dealer.emoji || '🎩'), esc(RD.dealer.name), th(), N.days) },
+    { view: 'questions', sel: '#roomBody .room-bet',
+      t: () => RT('tut2t'), b: () => RT('tut2b', N.pC) },
+    { view: 'questions', sel: '#roomBody .room-odds button[data-raction="跟"]',
+      t: () => RT('tut3t'), b: () => RT('tut3b', N.pC, N.fS, N.fW) },
+    { view: 'questions', sel: '#roomBody .room-odds button[data-raction="反"]',
+      t: () => RT('tut4t'), b: () => RT('tut4b', N.fadeC, N.fS, N.aW) },
+    { view: 'questions', sel: '#roomBody .room-odds button[data-raction="对赌"]',
+      t: () => RT('tut5t'), b: () => RT('tut5b', N.dS, N.cap) },
+    { view: 'questions', sel: '#roomBody .room-odds button[data-raction="skip"]',
+      t: () => RT('tut6t'), b: () => RT('tut6b') },
+    { view: 'table', sel: '#roomBody .seat.you',
+      t: () => RT('tut7t'), b: () => RT('tut7b', money(N.pin), N.fS, N.dS, money(N.youLine)) },
+    { view: 'table', sel: '#roomBody .seat.dealer',
+      t: () => RT('tut8t'), b: () => RT('tut8b', money(N.dIn), money(N.dealerLine), N.days) },
+    { view: null, sel: '#roomHelpBtn',
+      t: () => RT('tut9t'), b: () => RT('tut9b') },
+  ];
+}
+
+function maybeStartRoomTut(){
+  if (!RD || localStorage.getItem(TUT_KEY)) return;
+  startRoomTut();
+}
+function startRoomTut(){
+  if (!RD || !roomDlgOpen()) return;
+  tutPrevView = roomView;      // 结束后把玩家送回他本来在的视图
+  tutSteps = buildTutSteps();
+  $('coachOverlay').classList.add('on');
+  tutShow(0);
+}
+function tutShow(i){
+  if (!RD || !roomDlgOpen() || i >= tutSteps.length) return tutEnd();
+  const st = tutSteps[i];
+  tutIdx = i;
+  if (st.view && roomView !== st.view){ roomView = st.view; renderRoom(); }
+  const target = document.querySelector(st.sel);
+  if (!target) return tutShow(i + 1);      // 目标不存在，这一步自动跳过
+  try { target.scrollIntoView({ block: 'center' }); } catch (err) { /* 旧引擎不认参数也无妨 */ }
+  const card = $('coachCard');
+  const last = i === tutSteps.length - 1;
+  card.innerHTML = `
+    <div class="stepn">${i + 1} / ${tutSteps.length}</div>
+    <h4>${st.t()}</h4>
+    <div class="coach-b">${st.b()}</div>
+    <div class="btns">
+      <button type="button" id="coachSkip">${RT('tutSkip')}</button>
+      <button type="button" id="coachNext" class="primary">${last ? RT('tutDone') : RT('tutNext')}</button>
+    </div>`;
+  $('coachSkip').onclick = () => tutEnd();
+  $('coachNext').onclick = () => { if (tutActive()) tutShow(tutIdx + 1); };
+  tutPlace();
+}
+/* 描边框 + 说明卡定位。resize 时重算；教程期间遮罩拦截滚动来源，
+   位置只会因窗口变化而变。 */
+function tutPlace(){
+  if (!tutActive()) return;
+  const st = tutSteps[tutIdx];
+  const target = document.querySelector(st.sel);
+  if (!target) return;
+  const r = target.getBoundingClientRect();
+  const pad = 6;
+  const ring = $('coachRing'), card = $('coachCard');
+  ring.style.left = (r.left - pad) + 'px';
+  ring.style.top = (r.top - pad) + 'px';
+  ring.style.width = (r.width + pad * 2) + 'px';
+  ring.style.height = (r.height + pad * 2) + 'px';
+  const cw = card.offsetWidth, ch = card.offsetHeight;
+  let cl = Math.max(12, Math.min(r.left, innerWidth - cw - 12));
+  let ct = r.bottom + pad + 12;                          // 先试目标下方
+  if (ct + ch > innerHeight - 12) ct = r.top - pad - ch - 12;   // 塞不下就上方
+  if (ct < 12){                                          // 上下都不行：摆到旁边，纵向夹进可视区
+    ct = Math.max(12, Math.min(innerHeight - ch - 12, r.top));
+    cl = (r.right + pad + 12 + cw <= innerWidth) ? r.right + pad + 12
+       : Math.max(12, r.left - pad - cw - 12);
+  }
+  card.style.left = cl + 'px';
+  card.style.top = ct + 'px';
+}
+/* 跳过和完成一视同仁：写 key 之后不再自动弹（规则卡里可重播）。 */
+function tutEnd(){
+  if (!tutActive()) return;
+  localStorage.setItem(TUT_KEY, '1');
+  tutIdx = -1; tutSteps = [];
+  $('coachOverlay').classList.remove('on');
+  if (roomDlgOpen() && RD && tutPrevView){ roomView = tutPrevView; renderRoom(); }
+  tutPrevView = null;
+}
+addEventListener('resize', () => { if (tutActive()) tutPlace(); });
+
+/* ----------「?」帮助 / 规则卡 ---------- */
+let helpKind = 'plaza';
+function helpDlgOn(){ const el = document.getElementById('helpDlg'); return !!el && el.classList.contains('on'); }
+function openHelp(kind){ helpKind = kind; renderHelp(); $('helpDlg').classList.add('on'); }
+function closeHelp(){ const el = document.getElementById('helpDlg'); if (el) el.classList.remove('on'); }
+
+/* 广场版例子：取第一个摊主当前第一道题的真实报价（含抽水，跟按钮同口径），
+   没有 live 题就退回 60¢；注码用默认档 100。 */
+function plazaHelpNums(){
+  let c = 60;
+  const bk = BOOKS && BOOKS[0];
+  const i = bk && liveIdeasOf(bk)[0];
+  if (i && i.price != null){
+    const v = (bk.stats && bk.stats.vig) || 0;
+    c = Math.round(Math.min(0.97, i.price + v) * 100);
+  }
+  const s = 100;
+  return { c, s, w: Math.round(s / (c / 100) - s) };
+}
+
+function helpPlazaHtml(){
+  const ex = plazaHelpNums();
+  return `
+    <div class="head">
+      <div class="face">❓</div>
+      <div class="who"><h1>${T('helpTitle')}</h1><div class="sub">${T('helpSub')}</div></div>
+      <button class="close" onclick="closeHelp()">✕</button>
+    </div>
+    <div class="body">
+      <div class="rule-row">${T('help1')}</div>
+      <div class="rule-row">${T('help2', ex.c, ex.s, ex.w)}</div>
+      <div class="rule-row">${T('help3')}</div>
+    </div>`;
+}
+function helpRoomHtml(){
+  const N = roomTutNums();
+  return `
+    <div class="head">
+      <div class="face">❓</div>
+      <div class="who"><h1>${RT('rulesTitle')}</h1><div class="sub">${RT('rulesSub')}</div></div>
+      <button class="close" onclick="closeHelp()">✕</button>
+    </div>
+    <div class="body">
+      <p class="lead" style="margin-top:0">${RT('rulesActions')}</p>
+      <div class="rule-row">${RT('ruleFollow', N.pC, N.fS, N.fW)}</div>
+      <div class="rule-row">${RT('ruleFade', N.fadeC, N.fS, N.aW)}</div>
+      <div class="rule-row">${RT('ruleDuel', N.dS, N.cap, N.dS, N.dW)}</div>
+      <div class="rule-row">${RT('ruleSkip')}</div>
+      <p class="lead">${RT('rulesMoney')}</p>
+      <div class="rule-row">${RT('ruleMoney', money(N.pin), money(N.dIn), N.fS, N.dS, N.cap,
+        N.linePct, money(N.youLine), money(N.dealerLine))}</div>
+      <p class="lead">${RT('rulesReveal')}</p>
+      <div class="rule-row">${RT('ruleReveal', esc(RT('nextDay')), N.days)}</div>
+      <button class="room-advance" id="tutReplayBtn" style="margin-top:14px">${RT('replayTut')}</button>
+    </div>`;
+}
+function renderHelp(){
+  const panel = document.getElementById('helpPanel');
+  if (!panel) return;
+  panel.innerHTML = helpKind === 'room' && RD ? helpRoomHtml() : helpPlazaHtml();
+  const rp = document.getElementById('tutReplayBtn');
+  if (rp) rp.onclick = () => {
+    localStorage.removeItem(TUT_KEY);
+    closeHelp();
+    if (roomDlgOpen()) startRoomTut(); else openRoom();   // openRoom 自己会看 key 决定起引导
+  };
+}
+{ /* 顶层 wiring——此处 $ 已定义，但仍按缺 book.js 被整页替换的情形容错 */
+  const hd = document.getElementById('helpDlg');
+  if (hd) hd.addEventListener('click', e => { if (e.target.id === 'helpDlg') closeHelp(); });
+  const pb = document.getElementById('plazaHelpBtn');
+  if (pb) pb.onclick = () => openHelp('plaza');
+  const rb = document.getElementById('roomHelpBtn');
+  if (rb) rb.onclick = () => openHelp('room');
 }
 </script>
 </body>
