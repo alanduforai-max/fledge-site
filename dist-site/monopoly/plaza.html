@@ -79,12 +79,68 @@
   .lang:hover{background:rgba(20,15,10,.96)}
   .lang b{color:var(--gold)}
 
+  /* 广场入口——两张一眼看懂的文字卡片，盖住原来那套要走来走去找 NPC
+     的像素场景。场景代码留着没删（对话框还要靠它拿 book 数据），
+     只是不再是玩家进来第一眼看到的东西。 */
+  #plazaMenu{
+    position:absolute; inset:0; z-index:3; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:26px;
+    background:radial-gradient(ellipse at 50% 20%, #24422F, #17301F 70%);
+  }
+  #plazaMenu h1{
+    color:var(--gold); font-size:15px; letter-spacing:6px; text-transform:uppercase;
+    font-weight:400;
+  }
+  .menu-grid{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; padding:0 16px}
+  .menu-card{
+    width:150px; padding:22px 14px; background:var(--cream); text-align:center; cursor:pointer;
+    box-shadow:0 0 0 3px var(--line), 0 0 0 6px var(--cream), 0 0 0 9px var(--line),
+               8px 8px 0 6px rgba(0,0,0,.3);
+  }
+  .menu-card:hover{background:#fff6dd}
+  .menu-card .mc-icon{font-size:38px; margin-bottom:8px}
+  .menu-card .mc-title{font-size:16px; font-weight:700; letter-spacing:1px}
+  .menu-card .mc-sub{font-size:12px; color:var(--ink2); margin-top:5px; line-height:1.5}
+
+  /* 实战区域房间列表——cs 服务器列表/三国杀房间列表那个思路，一行一桌，
+     分类目按「自由市场 / 锦标赛限时 / 固定股票房」分组，组间加个小标题 */
+  .arena-cat-head{
+    font-size:12px; font-weight:700; letter-spacing:1.5px; color:var(--ink2);
+    margin:18px 2px 8px; padding-bottom:5px; box-shadow:inset 0 -2px 0 0 var(--line);
+  }
+  .arena-cat-head:first-child{margin-top:2px}
+  .arena-row{
+    display:flex; align-items:center; gap:14px; padding:14px 16px; margin-bottom:10px;
+    background:#fff; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .arena-row.soon{opacity:.55}
+  .arena-row .ar-icon{font-size:28px; flex:none; width:36px; text-align:center}
+  .arena-row .ar-info{flex:1; min-width:0}
+  .arena-row .ar-name{font-size:15px; font-weight:700}
+  .arena-row .ar-meta{font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.6}
+  /* 房间区分度：每桌一行 ticker/规格速览，CS 服务器列表那种 map|mode|players 味道 */
+  .arena-row .ar-tags{
+    font-family:var(--num); font-size:11.5px; color:#8a6d3b; margin-top:4px;
+    letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .arena-row .ar-tag{
+    font-family:var(--num); font-size:11px; padding:3px 9px; background:var(--cream2);
+    box-shadow:inset 0 0 0 2px var(--line); flex:none; white-space:nowrap;
+  }
+  .arena-row.soon .ar-tag{background:#e4dac0}
+  .arena-row button{
+    padding:9px 18px; font-family:var(--ui); font-size:13.5px; cursor:pointer;
+    background:var(--gold); border:0; box-shadow:inset 0 0 0 3px var(--line); flex:none;
+  }
+  .arena-row button:hover:not(:disabled){background:#eec46a}
+  .arena-row button:disabled{opacity:.5; cursor:default; background:var(--cream2)}
+
   /* ---------- 对话框 ---------- */
-  #dlg,#bag,#roomDlg{
+  #dlg,#bag,#roomDlg,#arenaDlg{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(12,10,8,.6); z-index:20; padding:20px;
   }
-  #dlg.on,#bag.on,#roomDlg.on{display:flex}
+  #dlg.on,#bag.on,#roomDlg.on,#arenaDlg.on{display:flex}
   canvas.face{image-rendering:pixelated; padding:5px}
 
   /* 背包：称号 / 道具 / 皮肤 */
@@ -220,6 +276,16 @@
   .room-odds button.duel{background:#f3d9cf}
   .room-odds button.duel:hover:not(:disabled){background:#e8b49f}
   .room-odds b{display:block; font-size:12.5px; font-family:var(--num); margin-bottom:1px}
+  /* 动作和注码同时露出、结算/锁定前随时可改——当前选中的那个动作按钮描一圈
+     金边，不再是「点了就锁死」，反悔点别的直接覆盖（钱流按先退后扣走）。 */
+  .room-odds button.sel{box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 5px var(--gold)}
+  .room-confirm{
+    width:100%; padding:9px; margin-top:8px; font-family:var(--ui); font-size:13px;
+    font-weight:700; cursor:pointer; background:var(--blue); color:#fff; border:0;
+    box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .room-confirm:hover:not(:disabled){opacity:.88}
+  .room-confirm:disabled{opacity:.45; cursor:default}
   .room-detail-link{
     display:block; margin:2px 0 10px; padding:0; font-family:var(--ui); font-size:12.5px;
     background:none; border:0; color:var(--blue); text-decoration:underline; cursor:pointer;
@@ -477,6 +543,22 @@
   <a class="home" id="homeLink" href="index.html">← 事件街棋盘</a>
   <button class="lang" id="langBtn" type="button"><b>中</b> / EN</button>
   <button class="lang help" id="plazaHelpBtn" type="button" aria-label="怎么玩 / How to play"><b>?</b></button>
+
+  <div id="plazaMenu">
+    <h1 id="plazaMenuTitle">事件街</h1>
+    <div class="menu-grid">
+      <div class="menu-card" id="menuVillage">
+        <div class="mc-icon">🏘️</div>
+        <div class="mc-title" id="menuVillageTitle">新手村</div>
+        <div class="mc-sub" id="menuVillageSub">先熟悉规则</div>
+      </div>
+      <div class="menu-card" id="menuArena">
+        <div class="mc-icon">⚔️</div>
+        <div class="mc-title" id="menuArenaTitle">实战区域</div>
+        <div class="mc-sub" id="menuArenaSub">挑一张桌子上场</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="dlg" role="dialog" aria-modal="true">
@@ -561,8 +643,23 @@
   <div class="coach-card" id="coachCard"></div>
 </div>
 
+<div id="arenaDlg" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <div class="face">⚔️</div>
+      <div class="who">
+        <h1 id="arenaTitle">实战区域</h1>
+        <div class="sub" id="arenaSub">选一张桌子，规则各不相同</div>
+      </div>
+      <button class="close" onclick="closeArena()">✕</button>
+    </div>
+    <div class="body" id="arenaBody"></div>
+  </div>
+</div>
+
 <script src="book.js"></script>
 <script src="room.js"></script>
+<script src="room_arena.js"></script>
 <script>
 /* ================================================================
    事件街广场 —— 像素场景 + NPC 对话
@@ -701,6 +798,21 @@ const I18N = {
     devAdd: '+1000 代币', devAdd10k: '+10000', devReset: '重置存档',
     devNote: '重置会清空代币、注单、称号、皮肤，回到初始状态。加钱只影响你本机的存档。',
     devConfirm: '确定重置存档？代币/注单/称号/皮肤全部清零，回到初始状态。',
+    plazaMenuTitle: '事件街', menuVillageTitle: '新手村', menuVillageSub: '先熟悉规则',
+    menuArenaTitle: '实战区域', menuArenaSub: '挑一张桌子上场',
+    arenaTitle: '实战区域', arenaSub: '选一张桌子，规则各不相同',
+    arenaJoinBtn: '进入', comingSoon: '开发中',
+    arenaCatFree: '自由市场类', arenaCatTournament: '锦标赛限时类', arenaCatFixed: '固定股票房',
+    arenaAgentTag: 'Agent庄家', arenaAgentMeta: '自由市场 · 随时进出，跟他对赌或跟单',
+    arenaTournamentTag: '锦标赛',
+    arenaRoomName: 'AI庄家 · 科技成长股初级场',
+    arenaRoomMeta: (days, n) => `固定 ${days} 天 · 1 庄 ${n} 闲 · 每题保存确定当场结算`,
+    arenaQqqName: '固定股票房 · QQQ',
+    arenaQqqMeta: '无限时长 · 多空双方真实资金池，参考 Polymarket，赌当天涨跌',
+    arenaQqqTags: 'QQQ | 永续 | 流动性池',
+    arenaHumanName: '真人庄家房',
+    arenaHumanMeta: '真人当庄，真人下注，需要联机对战，正在做',
+    arenaHumanTags: '真人庄家 | 自由市场 | 联机对战',
     helpTitle: '广场怎么玩',
     helpSub: '三件事就够上手',
     help1: '走到摊位前按 <kbd>E</kbd>（或直接点摊主）。摊主挂的都是真实行情题：未来 1 / 3 / 5 天的收盘比现在高还是低，答案等美股收盘揭晓。',
@@ -812,6 +924,21 @@ const I18N = {
     devNote: 'Reset wipes chips, bets, titles and skins back to the initial state. Cheats only touch your local save.',
     devConfirm: 'Reset save? Chips, bets, titles and skins all go back to the initial state.',
     alertNoBets: 'No bets yet.',
+    plazaMenuTitle: 'Event Street', menuVillageTitle: 'Tutorial Village', menuVillageSub: 'Learn the ropes',
+    menuArenaTitle: 'Live Arena', menuArenaSub: 'Pick a table and play',
+    arenaTitle: 'Live Arena', arenaSub: 'Every table runs different rules',
+    arenaJoinBtn: 'Join', comingSoon: 'Coming soon',
+    arenaCatFree: 'Free Market', arenaCatTournament: 'Tournament (Time-limited)', arenaCatFixed: 'Fixed-Stock Room',
+    arenaAgentTag: 'Agent dealer', arenaAgentMeta: 'Open market · drop in anytime, fade or follow him',
+    arenaTournamentTag: 'Tournament',
+    arenaRoomName: 'AI dealer · Tech growth stocks (beginner)',
+    arenaRoomMeta: (days, n) => `Fixed ${days} days · 1 dealer + ${n} players · per-question instant settle`,
+    arenaQqqName: 'Fixed-stock room · QQQ',
+    arenaQqqMeta: 'Unlimited duration · real long/short liquidity pool, Polymarket-style daily up/down',
+    arenaQqqTags: 'QQQ | Perpetual | Liquidity pool',
+    arenaHumanName: 'Human dealer room',
+    arenaHumanMeta: 'A real player deals, real players bet — needs live multiplayer, in progress',
+    arenaHumanTags: 'Human dealer | Open market | Multiplayer',
     helpTitle: 'How the plaza works',
     helpSub: 'Three things and you are set',
     help1: 'Walk up to a stall and press <kbd>E</kbd> (or click the vendor). Vendors post real market questions: will the close in 1 / 3 / 5 days end above the current mark — answers arrive after the US close.',
@@ -847,6 +974,13 @@ function applyLang(){
   put('hint', T('hintTalk', T('vendor')), true);
   document.querySelectorAll('#dlg .tabs button').forEach(b => b.textContent = T('tab_' + b.dataset.tab));
   document.querySelectorAll('#bag .tabs [data-btab]').forEach(b => b.textContent = T('btab_' + b.dataset.btab));
+  put('plazaMenuTitle', T('plazaMenuTitle'));
+  put('menuVillageTitle', T('menuVillageTitle'));
+  put('menuVillageSub', T('menuVillageSub'));
+  put('menuArenaTitle', T('menuArenaTitle'));
+  put('menuArenaSub', T('menuArenaSub'));
+  put('arenaTitle', T('arenaTitle'));
+  put('arenaSub', T('arenaSub'));
 }
 function setLang(next){
   lang = next === 'en' ? 'en' : 'zh';
@@ -860,6 +994,7 @@ function setLang(next){
   if (dlgOpen()) render();
   if (bagOpen()) renderBag();
   if (roomDlgOpen()) renderRoom();
+  if (arenaDlgOpen()) renderArena();
   if (helpDlgOn()) renderHelp();
   if (tutActive()) tutShow(tutIdx);   // 语言切了，当前步的卡片和高亮目标都要重挂
 }
@@ -970,6 +1105,7 @@ const DEFAULT_P = {
   buff: null,                     // 已激活、待下一注生效
   skins: ['green'],
   room: null,                     // 8人局教学局存档（v2 真代币口径：注金直接进出 P.chips）
+  roomArena: null,                // 实战区域锦标赛房的存档，独立一份，别跟新手村混
   roomGift1: false,               // 新手礼包只发一次，跟 P.room 的重置无关
 };
 function loadP(){
@@ -1075,6 +1211,7 @@ addEventListener('keydown', e => {
     if (helpDlgOn()) closeHelp();                    // 帮助卡开着先关它，别把底下的房间也带走
     else if (dlgOpen()) closeDlg();                  // 对话中 E = 关闭，别原地重开
     else if (roomDlgOpen()) closeRoom();
+    else if (arenaDlgOpen()) closeArena();
     else if (!bagOpen()){
       const n = nearNpc();
       if (n) talkTo(n);
@@ -1083,7 +1220,7 @@ addEventListener('keydown', e => {
   if (k === 'b') bagOpen() ? closeBag() : openBag();
   if (e.key === 'Escape'){
     if (helpDlgOn()) closeHelp();                    // 分层关：先帮助卡，再其余面板
-    else { closeDlg(); closeBag(); closeRoom(); }
+    else { closeDlg(); closeBag(); closeRoom(); closeArena(); }
   }
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -1207,7 +1344,7 @@ function fillRoomBubble(){
   if (key === bubbleTxtKey) return;
   bubbleTxtKey = key;
   bubbleEl.style.display = '';
-  bubbleEl.innerHTML = T('bubbleRoom', RDAYS.length);
+  bubbleEl.innerHTML = T('bubbleRoom', DAYS_VILLAGE.length);
 }
 
 let last = 0;
@@ -1217,7 +1354,7 @@ let hintOnLast = null;     // hint 上次的显隐
 let bubbleOpLast = null;   // 气泡上次的透明度
 function loop(t){
   const dt = Math.min(40, t - last); last = t;
-  const busy = dlgOpen() || bagOpen() || roomDlgOpen();
+  const busy = dlgOpen() || bagOpen() || roomDlgOpen() || arenaDlgOpen();
   let dx = 0, dy = 0;
   if (!busy){                       // 面板打开时忽略移动键，人别在背后乱走
     if (keys.a || keys.arrowleft) dx -= 1;
@@ -1268,6 +1405,12 @@ function loop(t){
 }
 const cornerEl = document.getElementById('corner');
 cornerEl.onclick = () => openBag();   // 延迟解析：openBag 定义在文件后半段
+/* 两张入口卡片一样是延迟解析——openRoom/openArena 都在文件后半段才定义，
+   点击回调只在真的点了以后才跑，那时候整份脚本早就跑完了，没有 TDZ 问题。 */
+const menuVillageEl = document.getElementById('menuVillage');
+if (menuVillageEl) menuVillageEl.onclick = () => openRoom();
+const menuArenaEl = document.getElementById('menuArena');
+if (menuArenaEl) menuArenaEl.onclick = () => openArena();
 function refreshCorner(){
   cornerEl.innerHTML = `${esc(P.nick)} · ${esc(titleName())}<br>`
     + `<b>${P.chips}</b> ${T('cornerChips')} <span>${T('cornerBag')}</span>`;
@@ -1279,35 +1422,60 @@ function refreshCorner(){
    闲家的整局已经跑完、结果已定。前端只做两件事——按天把盖子揭开，
    把真人这一天的选择套进和后端完全同一套结算公式。庄家 / NPC 的决策
    从不依赖真人这天下了什么注，所以能整局提前算好，前端只管揭晓节奏。
-   存档挂在 P.room 上，跟着 saveP() 走。
+   存档挂在 P.room / P.roomArena 上，跟着 saveP() 走。
 
-   v2「真代币教学局」：没有独立的房间带入资金——下注即从主存档 P.chips
+   v2「真代币口径」：没有独立的房间带入资金——下注即从主存档 P.chips
    扣款，揭晓按赔付入账（赢家拿本金+净赚）。跳过永远免费，所以玩家
-   没有破产线；代币不足 1 时只能跳过。赛程 = room.js 数据的前 3 天、
-   每天第 1 题（RDAYS）。庄家经济沿用 room.js，但所有金额统一 /ROOM_SCALE
-   缩到代币尺度（保留 1 位小数），倒庄机制照旧。
+   没有破产线；代币不足 1 时只能跳过。庄家经济沿用 room 数据，但所有
+   金额统一 /ROOM_SCALE 缩到代币尺度（保留 1 位小数），倒庄机制照旧。
+
+   新手村和实战区域「锦标赛」是两间不同的房——各自的题库（room.js /
+   room_arena.js）、各自的存档（P.room / P.roomArena），但共用下面这一整套
+   渲染/结算代码。做法是留一组可重新指向的活动指针：RD / RDAYS 永远指向
+   「当前打开的是哪间房」，roomMode 记着是哪间，openRoom() 一开门就全部
+   拨过去，剩下的函数照读 RD / RDAYS / curSave() 不用关心具体是哪间。
+   两间房的钱流公式完全一致；差别只在结算节奏——新手村「进入下一天」
+   批量揭晓，锦标赛每题「保存确定」当场结算 + 首个确认锁定当日全部选择。
 
    页面内部是个小状态机（roomView）：候机室 → 当天 / 历史 / 标的详情 → 结算。
    候机室之后就不回去了——真人一旦「准备」，视同已经在桌上坐下。
    ================================================================ */
-const RD = window.ROOM || null;
+const RD_VILLAGE = window.ROOM || null;
+const RD_ARENA = window.ROOM_ARENA || null;
 
 /* —— 教学局经济常量：全部单源，别在别处散写数字 —— */
-const ROOM_SCALE = 100;                       // room.js 金额 → 代币尺度的唯一换算比
+const ROOM_SCALE = 100;                       // room 数据金额 → 代币尺度的唯一换算比
 const r1 = x => Math.round(x * 10) / 10;      // 统一保留 1 位小数
-const RS = v => r1((v || 0) / ROOM_SCALE);    // room.js 金额 → 代币（1 位小数）
+const RS = v => r1((v || 0) / ROOM_SCALE);    // room 数据金额 → 代币（1 位小数）
 const rMoney = x => r1(x).toLocaleString('en-US', { maximumFractionDigits: 1 });
 const fmt1 = d => { const v = r1(d); return (v > 0 ? '+' : '') + v; };
-const ROOM_STAKE_TIERS = [1, 2, 5, 10];       // 跟/反注码档
+const ROOM_STAKE_TIERS = [1, 2, 5, 10];       // 跟/反注码档（两间房一致）
 const ROOM_GIFT = 100;                        // 新手礼包
-/* 对赌固定注额：从 config 现算（dealer_min_stake 缩放后，卡在 duel_cap 内），
-   当前数据下 = 10。cap 结构保留——真换数据也不会越界。 */
-const ROOM_DUEL_STAKE = RD
-  ? Math.min(RS(RD.config.dealer_min_stake), RS(RD.config.duel_cap)) : 10;
-/* 新手局赛程：前 3 天、每天第 1 题（deterministic 取 ideas[0]）。
-   数据不足 3 天就有几天算几天。房间模式一律读 RDAYS，不再碰 RD.days。 */
-const RDAYS = RD
-  ? RD.days.slice(0, 3).map(d => ({ ...d, ideas: (d.ideas || []).slice(0, 1) })) : [];
+/* 赛程：新手村 = 全部天数、每天第 1 题（deterministic 取 ideas[0]）；
+   锦标赛 = 全部天数、原密度。房间模式一律读 RDAYS，不再碰 RD.days。 */
+const roomPrepDays = (rd, perDay) => rd
+  ? rd.days.map(d => ({ ...d, ideas: perDay ? (d.ideas || []).slice(0, perDay) : (d.ideas || []) }))
+  : [];
+const DAYS_VILLAGE = roomPrepDays(RD_VILLAGE, 1);
+const DAYS_ARENA = roomPrepDays(RD_ARENA, 0);
+
+let RD = RD_VILLAGE;
+let RDAYS = DAYS_VILLAGE;
+let roomMode = 'village';   // 'village' | 'arena'
+function setRoomMode(mode){
+  roomMode = mode === 'arena' ? 'arena' : 'village';
+  RD = roomMode === 'arena' ? RD_ARENA : RD_VILLAGE;
+  RDAYS = roomMode === 'arena' ? DAYS_ARENA : DAYS_VILLAGE;
+}
+function curSaveKey(){ return roomMode === 'arena' ? 'roomArena' : 'room'; }
+function curSave(){ return P[curSaveKey()]; }
+function setCurSave(v){ P[curSaveKey()] = v; }
+
+/* 对赌固定注额：从当前房的 config 现算（dealer_min_stake 缩放后，卡在
+   duel_cap 内），当前数据下两间房都 = 10。cap 结构保留——真换数据也不会越界。 */
+function roomDuelStake(){
+  return RD ? Math.min(RS(RD.config.dealer_min_stake), RS(RD.config.duel_cap)) : 10;
+}
 /* 结算公式单源：净赚 = stake/价格 − stake，四舍五入到整数代币，赢家至少 +1
    （小注碰高价时不至于「赢了个寂寞」）。教程/规则卡的例子也从这里现算。 */
 function roomWinNet(stake, sidePrice){
@@ -1323,13 +1491,20 @@ const ROOM_I18N = {
     follow: '跟', fade: '反', duel: '对赌', skip: '跳过',
     stakeLbl: '押注',
     saveAnswers: '保存答案', nextDay: '进入下一天 · 结算收益',
+    confirmBet: '保存确定', nextDayArena: '进入下一天', notConfirmed: '还有题目没保存确定',
+    dayLockedNote: '本日已开始结算，选择已锁定',
+    confirmHint: '当天第一次「保存确定」会立刻结算该题，并同时锁定今天全部题目的选择（没下注的题视同跳过）。先把当天每道题都摆好，再按下第一个「保存确定」。',
+    confirmHintShort: '首个「保存确定」会锁定今天全部选择',
+    refundedNote: st => `本局已提前结束，这注没揭晓，本金 ${st} 已退回。`,
+    roomSubVillage: '8人局新手教学 · 1庄7闲',
+    roomSubArena: '锦标赛 · 1庄7闲 · 每题当场结算',
     viewToday: '查看今日题目', viewPast: '查看过往题目',
     noCurveYet: '还没有已结算的盈亏。', noDayLogYet: '还没有可看的记录。',
     logTitle: '桌面记录', noLogYet: '还没有人下过注。',
     todayTitle: '今日题目', longLabel: '做多',
     notDecided: '这一天还有题目没下决定',
     noIdeasToday: '庄家今天没有出题',
-    noNewNote: '今天没有新题，只等挂着的盘到期结算。',
+    noNewNote: '今天没有新题，直接进入下一天。',
     winLabel: w => w ? '赢了 +' : '输了 ',
     table: '8人桌战况', tHead: ['名次', '玩家', '收益率', '净盈亏', '赛季积分'],
     youRow: '你', answer: '答案',
@@ -1394,8 +1569,10 @@ const ROOM_I18N = {
     ruleFade: (fc, s, w) => `<b>反 · Fade</b> —— 押庄家反方向（跌）。价格 = 100¢ − 庄家报价 = ${fc}¢。例：押 ${s}：跌了 +${w}，涨了 −${s}。同样下注即扣、跟系统结算。`,
     ruleDuel: (d, w) => `<b>对赌 · Duel</b> —— 判定和「反」相同，但对手是庄家本人，输赢 1:1 打他口袋：你赢 +${w} 他就 −${w}；你输 −${d} 他就 +${d}。注额固定 ${d} 代币，代币不够 ${d} 时按钮置灰。`,
     ruleSkip: '<b>跳过 · Sit out</b> —— 本轮观望，不下注、不扣钱——跳过永远免费，代币不足 1 时这是唯一能点的动作。每道题都要在四个动作里选一个，才能进入下一天。',
-    ruleMoney: (tiers, d, din, lp, dl) => `这一局下注动的是你的真代币：下注即从余额扣，揭晓按赔付入账。跟/反注码档 ${tiers}（不超过当前余额），对赌固定 ${d}。你没有破产线——代币不够只是暂时只能跳过。庄家带入 ${din}，跌破 ${dl}（带入的 ${lp}%）就倒庄。锁定动作后还能在题卡上换注码档（按差额退补）。`,
-    ruleReveal: (btn, days) => `每道题都拿真实行情判定：基准是庄家挂盘时的收盘价，对比「期限」个交易日后的收盘价，收高即涨（YES）。你点「${btn}」时，当天的注一次性揭晓入账——赢的钱当场进你的代币余额。整局共 ${days} 天、每天 1 题。`,
+    ruleMoney: (tiers, d, din, lp, dl) => `这一局下注动的是你的真代币：下注即从余额扣，揭晓按赔付入账。跟/反注码档 ${tiers}（不超过当前余额），对赌固定 ${d}。你没有破产线——代币不够只是暂时只能跳过。庄家带入 ${din}，跌破 ${dl}（带入的 ${lp}%）就倒庄。`,
+    ruleChange: '动作和注码在结算/锁定前随时可改：每次改动都先把旧注全额退回代币余额，再按新选择重新扣款；跳过 = 只退不扣。',
+    ruleReveal: (btn, days) => `每道题都拿真实行情判定：基准是庄家挂盘时的收盘价，对比「期限」个交易日后的收盘价，收高即涨（YES）。你点「${btn}」时，当天的注一次性揭晓入账——赢的钱当场进你的代币余额。整局共 ${days} 天、每天至多 1 题。`,
+    ruleRevealArena: (btn, days) => `每道题都拿真实行情判定：基准是庄家挂盘时的收盘价，对比「期限」个交易日后的收盘价，收高即涨（YES）。每题点「${btn}」当场结算入账，赢的钱立刻进代币余额；<b>当天第一次确认的瞬间，当日全部题目的选择一并锁定</b>（没下注的题视同跳过）——先把当天所有题摆好，再按第一个「${btn}」。「进入下一天」只翻页，不再结算。整局共 ${days} 天。`,
     replayTut: '重新播放新手引导',
   },
   en: {
@@ -1406,13 +1583,20 @@ const ROOM_I18N = {
     follow: 'Follow', fade: 'Fade', duel: 'Duel', skip: 'Skip',
     stakeLbl: 'Stake',
     saveAnswers: 'Save answers', nextDay: 'Enter next day · settle P&L',
+    confirmBet: 'Confirm', nextDayArena: 'Enter next day', notConfirmed: 'Still have unconfirmed bets today',
+    dayLockedNote: 'Settlement has begun for today — choices are locked.',
+    confirmHint: "The first Confirm of the day settles that question instantly and locks ALL of today's choices (unbet questions count as skipped). Set every question first, then press your first Confirm.",
+    confirmHintShort: "Your first Confirm locks all of today's choices",
+    refundedNote: st => `The round ended early — this bet never revealed; stake ${st} refunded.`,
+    roomSubVillage: '8-player tutorial · 1 dealer, 7 players',
+    roomSubArena: 'Tournament · 1 dealer, 7 players · per-question settle',
     viewToday: "View today's questions", viewPast: 'View past questions',
     noCurveYet: 'No settled P&L yet.', noDayLogYet: 'No log to show yet.',
     logTitle: 'Table log', noLogYet: 'No bets placed yet.',
     todayTitle: "Today's questions", longLabel: 'Long',
     notDecided: 'Still have undecided questions today',
     noIdeasToday: 'The dealer posted nothing today',
-    noNewNote: 'Nothing new today — only earlier bets settle.',
+    noNewNote: 'Nothing new today — go straight to the next day.',
     winLabel: w => w ? 'Won +' : 'Lost ',
     table: 'Table of 8', tHead: ['#', 'Player', 'Return', 'Net P&L', 'Season pts'],
     youRow: 'You', answer: 'Answer',
@@ -1477,8 +1661,10 @@ const ROOM_I18N = {
     ruleFade: (fc, s, w) => `<b>Fade · 反</b> — bet against him (down). Price = 100¢ − his quote = ${fc}¢. E.g. stake ${s}: down → +${w}, up → −${s}. Same deduct-on-bet, settled against the house.`,
     ruleDuel: (d, w) => `<b>Duel · 对赌</b> — same win condition as Fade, but the dealer is the counterparty, money moves 1:1 with his pocket: you win +${w}, he loses ${w}; you lose −${d}, he pockets ${d}. Stake fixed at ${d} chips; the button greys out below ${d}.`,
     ruleSkip: '<b>Sit out · 跳过</b> — watch the round: no stake, no cost — always free, and below 1 chip it is the only action left. Every question still needs one of the four choices before the next day unlocks.',
-    ruleMoney: (tiers, d, din, lp, dl) => `This table plays with your real chips: bets deduct from your balance instantly, reveals pay back into it. Follow/Fade tiers ${tiers} (never more than your balance); Duel fixed at ${d}. You have no bankruptcy line — short of chips just means sitting out for now. The dealer buys in with ${din} and is dethroned below ${dl} (${lp}% of his buy-in). After locking an action you can still switch stake tiers (the difference is refunded/deducted).`,
-    ruleReveal: (btn, days) => `Every question is judged on real closes: the benchmark is the close when the dealer posted it, versus the close after the stated horizon in trading days — higher means YES. Clicking "${btn}" reveals and books all of that day's bets at once — winnings land in your chip balance on the spot. The round runs ${days} days, one question a day.`,
+    ruleMoney: (tiers, d, din, lp, dl) => `This table plays with your real chips: bets deduct from your balance instantly, reveals pay back into it. Follow/Fade tiers ${tiers} (never more than your balance); Duel fixed at ${d}. You have no bankruptcy line — short of chips just means sitting out for now. The dealer buys in with ${din} and is dethroned below ${dl} (${lp}% of his buy-in).`,
+    ruleChange: 'Actions and stakes can be changed freely before settlement/lock: every change first refunds the old stake to your chip balance in full, then deducts the new one; skip = refund only.',
+    ruleReveal: (btn, days) => `Every question is judged on real closes: the benchmark is the close when the dealer posted it, versus the close after the stated horizon in trading days — higher means YES. Clicking "${btn}" reveals and books all of that day's bets at once — winnings land in your chip balance on the spot. The round runs ${days} days, at most one question a day.`,
+    ruleRevealArena: (btn, days) => `Every question is judged on real closes: the benchmark is the close when the dealer posted it, versus the close after the stated horizon in trading days — higher means YES. Each question settles the moment you press "${btn}" and winnings land in your chip balance on the spot; <b>the first confirm of a day locks ALL of that day's choices</b> (unbet questions count as skipped) — set every question first, then press your first "${btn}". "Enter next day" only turns the page, nothing settles there. The round runs ${days} days.`,
     replayTut: 'Replay the tutorial',
   },
 };
@@ -1513,11 +1699,12 @@ function roomSendChat(S, text){
   saveP();
 }
 
-/* 存档指纹：generated_for 相同但 Jack 同日重生成过 room.js（题目变/天数变短）时，
-   旧存档的 bets/dayReached 会悬空指向不存在的题和天。把经济版本（v2）、实际
-   天数和全部题目 id 一起揉进指纹，任何一处变了都当作新房间处理。 */
+/* 存档指纹：generated_for 相同但同日重生成过 room 数据（题目变/天数变短）时，
+   旧存档的 bets/dayReached 会悬空指向不存在的题和天。把经济版本（v2）、房间
+   模式、实际天数和全部题目 id 一起揉进指纹，任何一处变了都当作新房间处理。
+   （旧的「v2 三天版」新手村存档也在这里被拦下——天数/题目集变了，指纹必失配。） */
 function roomFingerprint(){
-  return ['v2', RD.generated_for, RDAYS.length,
+  return ['v2', roomMode, RD.generated_for, RDAYS.length,
     RDAYS.map(d => d.ideas.map(i => i.id).join(',')).join('|')].join('#');
 }
 function freshRoomState(){
@@ -1535,13 +1722,18 @@ function freshRoomState(){
     ended: null,
   };
 }
-/* 重置一个 v2 存档前，把「已扣款但还没揭晓」的注金退回 P.chips——
-   真钱口径下扔掉存档不能顺手吞钱。v1 旧档是假钱局，没有可退的。 */
+/* 把一个 v2 存档里「已扣款但还没揭晓」的注金退回 P.chips，并在注上标记
+   refunded 防止二次退款。两个入口共用：①重置/作废存档前（真钱口径下扔掉
+   存档不能顺手吞钱；v1 旧档是假钱局，没有可退的）；②对局提前结束（倒庄）
+   时清扫同日还没「保存确定」的挂注。 */
 function roomRefundOpenStakes(old){
   if (!old || old.v !== 2 || !old.bets) return;
   let back = 0;
   for (const b of Object.values(old.bets))
-    if (b && b.action !== 'skip' && b.stake && !b.result) back += b.stake;
+    if (b && b.action !== 'skip' && b.stake && !b.result){
+      back += b.stake;
+      b.result = { refunded: true, won: null, delta: 0 };
+    }
   if (back){ P.chips += back; P.peak = Math.max(P.peak || 0, P.chips); }
 }
 /* 轻提示。textContent 赋值，文案永远不走 innerHTML；节点惰性创建，
@@ -1556,20 +1748,22 @@ function roomToast(msg){
   roomToastTimer = setTimeout(() => el.classList.remove('on'), 3200);
 }
 function roomState(){
-  if (!P.room || P.room.v !== 2 || P.room.fp !== roomFingerprint()){
-    const hadOld = !!P.room;          // 全新玩家静默开局；旧档失效才提示
-    roomRefundOpenStakes(P.room);     // v2 未结注金先回 chips；v1 假钱局作废不影响 chips
-    P.room = freshRoomState();        // 只重置 P.room，主存档（代币/皮肤/注单）不动
+  let S = curSave();
+  if (!S || S.v !== 2 || S.fp !== roomFingerprint()){
+    const hadOld = !!S;               // 全新玩家静默开局；旧档失效才提示
+    roomRefundOpenStakes(S);          // v2 未结注金先回 chips；v1 假钱局作废不影响 chips
+    S = freshRoomState();             // 只重置当前这间房的存档，主存档（代币/皮肤/注单）不动
+    setCurSave(S);
     saveP();
     if (hadOld) roomToast(RT('roomDataRefreshed'));
   }
-  return P.room;
+  return S;
 }
 /* 兜底：存档指着不存在的天（指纹侥幸没拦住 / 存档被手改）。不抛异常白屏，
-   走跟指纹失配同一条重置路——同样只动 P.room（未结注金照退）。 */
+   走跟指纹失配同一条重置路——同样只动当前这间房的存档（未结注金照退）。 */
 function roomRecover(){
-  roomRefundOpenStakes(P.room);
-  P.room = freshRoomState();
+  roomRefundOpenStakes(curSave());
+  setCurSave(freshRoomState());
   roomView = 'lobby'; roomActiveSeat = null; roomOpenIdeaId = null; roomDetailId = null;
   saveP();
   roomToast(RT('roomDataRefreshed'));
@@ -1583,9 +1777,10 @@ let roomActiveSeat = null;  // 圆桌上鼠标/点击选中的那个闲家，nul
 let roomOpenIdeaId = null;  // 右侧简略题目列表里展开成完整版的那一条，null = 都收着
 
 const roomDlgOpen = () => !!$('roomDlg') && $('roomDlg').classList.contains('on');
-function openRoom(){
+function openRoom(opts){
   const dlg = $('roomDlg');
   if (!dlg) return;
+  setRoomMode(opts && opts.mode);   // 一开门就把 RD/RDAYS/存档指针拨到对应的房
   dlg.classList.add('on');
   if (RD){
     const S = roomState();
@@ -1599,7 +1794,9 @@ function openRoom(){
     }
   }
   renderRoom();
-  maybeStartRoomTut();     // 首次进房自动起分步引导（fledge.tut.room.v1），之后不再弹
+  /* 实战区域点进来的是已经熟悉规则的玩家，直接开局，别再弹一遍教程；
+     新手村入口（含走进去按 E）不传这个 flag，保留首次自动引导。 */
+  if (!(opts && opts.skipTut)) maybeStartRoomTut();
 }
 function closeRoom(){
   if (tutActive()) tutEnd();   // 关门视同跳过：写 key，别把遮罩留在广场上
@@ -1621,7 +1818,7 @@ function placeRoomLabel(){
   el.style.left = (ROOM_SPOT.stallX + 35) * SCALE + 'px';
   el.style.top = (16) * SCALE + 'px';
   el.style.fontSize = Math.max(10, Math.round(SCALE * 2.6)) + 'px';
-  el.textContent = RD ? T('villageLabel') : '';
+  el.textContent = RD_VILLAGE ? T('villageLabel') : '';
 }
 
 function roomDayOf(idx){ return RDAYS.find(d => d.day_idx === idx); }
@@ -1657,68 +1854,152 @@ function roomSettle(action, price, stake){
   return { sidePrice, payout: stake / sidePrice };
 }
 
-/* v2 真代币：下注那一刻就从 P.chips 扣走本金（敞口约束随之消失——可用额
-   就是当前余额）。动作一旦选定不可改（锁定语义保留）；锁定后、揭晓前
-   只能换注码档，按差额退补。跳过免费，chips < 1 时只剩跳过可点。 */
-function roomPlaceBet(S, idea, action){
-  if (S.bets[idea.id]) return;                 // 动作锁定不可改——已表态的题一律拒绝重选
-  if (action === 'skip'){ S.bets[idea.id] = { action: 'skip' }; saveP(); renderRoom(); return; }
-  const stake = action === '对赌' ? ROOM_DUEL_STAKE : ROOM_STAKE_TIERS[0];
-  if (P.chips < stake){ roomToast(RT('noChips')); return; }   // 按钮已置灰，这里是兜底
-  P.chips -= stake;                            // 下注即扣，saveP 顺带刷新角标
+/* —— 同日剧透锁 ——
+   arena 同日多题 + 逐题结算 = 确认一题就剧透了当日方向。所以「这一天里只要
+   有任何一注出了 result」，这一天全部题目的下注改动一律冻结（未下注的题在
+   首个确认时已被落成 skip——skip 视为最终决定）。新手村天然满足：result 只
+   会在「进入下一天」整天揭晓后出现，之后这天本来就翻页了，锁不改变任何行为。 */
+function roomDayLocked(S, ideaId){
+  const day = roomDayOfIdea(ideaId);
+  return !!day && (day.ideas || []).some(i => { const r = S.bets[i.id]; return r && r.result; });
+}
+
+/* v2 真代币 · 统一下注面板（新手村 / arena 共用）：动作和注码同时可选、
+   结算/锁定前随时可改。钱流铁律——每次状态转换 = 先把旧注全额退回 P.chips、
+   再按新注扣款（skip = 只退不扣）；注码只认白名单 ROOM_STAKE_TIERS（对赌
+   固定 roomDuelStake()），超余额拒绝。已结算注（b.result）一律拒改。 */
+function roomPlaceBet(S, idea, action, wantStake){
+  const b = S.bets[idea.id];
+  if (b && b.result) return;                     // 已结算注一律拒改
+  if (roomDayLocked(S, idea.id)) return;         // 同日已开始结算：选择锁定
+  const held = b && b.action !== 'skip' ? (b.stake || 0) : 0;   // 旧注（退回额）
+  if (action === 'skip'){                        // skip = 只退不扣
+    if (held){ P.chips += held; P.peak = Math.max(P.peak || 0, P.chips); }
+    S.bets[idea.id] = { action: 'skip' };
+    saveP(); renderRoom(); return;
+  }
+  const avail = P.chips + held;                  // 先退后扣 ⇒ 可用额 = 余额 + 旧注
+  let stake;
+  if (action === '对赌'){
+    stake = roomDuelStake();                     // 对赌固定注额
+    if (stake > avail){ roomToast(RT('noChips')); return; }
+  } else if (wantStake != null){
+    if (!ROOM_STAKE_TIERS.includes(wantStake)) return;          // 白名单外：拒
+    if (wantStake > avail){ roomToast(RT('noChips')); return; }
+    stake = wantStake;
+  } else {
+    /* 没点名注码：沿用这题上一次的注码（对赌切回来的 10 也在白名单里），
+       付不起就落到付得起的最大档；一档都付不起 = 只能跳过。 */
+    const carry = held && ROOM_STAKE_TIERS.includes(b.stake) ? b.stake : ROOM_STAKE_TIERS[0];
+    const fit = ROOM_STAKE_TIERS.filter(v => v <= Math.min(carry, avail));
+    if (!fit.length){ roomToast(RT('noChips')); return; }
+    stake = fit[fit.length - 1];
+  }
+  P.chips = P.chips + held - stake;              // ①全额退旧注 ②按新注扣，合并成一步等价算式
+  P.peak = Math.max(P.peak || 0, P.chips);
   S.bets[idea.id] = { action, price: idea.price, stake };
   saveP(); renderRoom();
 }
 function roomSetStake(S, idea, v){
   const b = S.bets[idea.id];
-  if (!b || b.action === 'skip' || b.result || b.action === '对赌') return;   // 对赌注额固定
-  if (!ROOM_STAKE_TIERS.includes(v)) return;
-  const diff = v - b.stake;                    // 改注按差额退补：加注再扣、减注退回
-  if (diff > P.chips) return;                  // 超出余额：按钮已置灰，这里是兜底
-  P.chips -= diff;
+  if (!b || b.action === 'skip' || b.result || b.action === '对赌') return;   // 对赌注额固定；已结算拒改
+  if (roomDayLocked(S, idea.id)) return;         // 同日已开始结算：选择锁定
+  if (!ROOM_STAKE_TIERS.includes(v)) return;     // 白名单外：拒
+  const avail = P.chips + b.stake;               // 先退旧注再扣新注
+  if (v > avail){ roomToast(RT('noChips')); return; }
+  P.chips = P.chips + b.stake - v;
+  P.peak = Math.max(P.peak || 0, P.chips);
   b.stake = v; saveP(); renderRoom();
 }
 
-function roomReveal(S, dayIdx){
-  const day = roomDayOf(dayIdx);
-  if (!day) return roomRecover();
+/* 单题结算——新手村和 arena 共用同一套算法，区别只是「谁来触发」：
+   新手村是 roomReveal 在「进入下一天」那一刻把当天所有题一起结了；
+   arena 是玩家点每题自己的「保存确定」，一题一题当场结、当场入账。 */
+function roomSettleOneBet(S, idea, dayIdx){
+  const b = S.bets[idea.id];
+  if (!b || b.action === 'skip' || b.result) return;
+  const { sidePrice } = roomSettle(b.action, idea.price, b.stake);
+  const won = b.action === '跟' ? idea.outcome === 'YES' : idea.outcome === 'NO';
+  const net = roomWinNet(b.stake, sidePrice);
+  const delta = won ? net : -b.stake;
+  if (won){                                  // 本金下注时已扣：赢了本金+净赚一起回账
+    P.chips += b.stake + net;
+    P.peak = Math.max(P.peak || 0, P.chips);
+  }
+  S.pnl = r1((S.pnl || 0) + delta);
+  b.result = { won, delta };
+
+  if (b.action === '对赌'){
+    const dealerDelta = won ? -net : b.stake;   // 1:1 打庄家口袋：你赢多少他亏多少（缩放后）
+    S.dealerDelta = r1(S.dealerDelta + dealerDelta);
+    if (!S.ended && roomDealerCash(S) < roomDealerBankruptLine())
+      S.ended = { reason: 'you_beat_dealer', day: dayIdx };
+  }
+}
+
+/* 收尾检查——不管是「进入下一天」批量结算完，还是 arena 那边题目早就一道道
+   确认结完、这里只是关掉这一天，破产线/翻页判定都得走一遍。
+   终检：当天全部注单入账、revealed 置位之后再查一次破产线。对赌瞬间那次
+   即时判定用的基数是昨天的 dealer_cash_after，不含今天 NPC 对赌的伤害，只能
+   提前触发、不能兜底；这里 roomDealerCash 已经读到今天的 dealer_cash_after +
+   你的累计 dealerDelta，NPC 和你的合力打穿也能收住。 */
+function roomEndDayChecks(S, dayIdx){
   const lastDay = RDAYS.length ? RDAYS[RDAYS.length - 1].day_idx : 0;
-  (day.ideas || []).forEach(idea => {
-    const b = S.bets[idea.id];
-    if (!b || b.action === 'skip' || b.result) return;
-    const { sidePrice } = roomSettle(b.action, idea.price, b.stake);
-    const won = b.action === '跟' ? idea.outcome === 'YES' : idea.outcome === 'NO';
-    const net = roomWinNet(b.stake, sidePrice);
-    const delta = won ? net : -b.stake;
-    if (won){                                  // 本金下注时已扣：赢了本金+净赚一起回账
-      P.chips += b.stake + net;
-      P.peak = Math.max(P.peak || 0, P.chips);
-    }
-    S.pnl = r1((S.pnl || 0) + delta);
-    b.result = { won, delta };
-
-    if (b.action === '对赌'){
-      const dealerDelta = won ? -net : b.stake;   // 1:1 打庄家口袋：你赢多少他亏多少
-      S.dealerDelta = r1(S.dealerDelta + dealerDelta);
-      if (!S.ended && roomDealerCash(S) < roomDealerBankruptLine())
-        S.ended = { reason: 'you_beat_dealer', day: dayIdx };
-    }
-  });
-
-  S.revealed[dayIdx] = true;
-  /* 终检：当天全部注单入账、revealed 置位之后再查一次破产线。上面对赌瞬间那次
-     即时判定用的基数是昨天的 dealer_cash_after，不含今天 NPC 对赌的伤害，只能
-     提前触发、不能兜底；这里 roomDealerCash 已经读到今天的 dealer_cash_after +
-     你的累计 dealerDelta，NPC 和你的合力打穿也能收住。 */
   if (!S.ended && roomDealerCash(S) < roomDealerBankruptLine())
     S.ended = { reason: S.dealerDelta < 0 ? 'you_beat_dealer' : 'dealer_bankrupt', day: dayIdx };
   if (!S.ended && dayIdx >= lastDay) S.ended = { reason: 'season_end', day: dayIdx };
   if (!S.ended) S.dayReached = Math.min(lastDay, dayIdx + 1);
   roomOpenIdeaId = null;    // 翻页了，右边展开的那条题目跟着昨天一起收起来
+}
+
+/* 新手村：「进入下一天」= 当天所有题一起结算 + 翻页，一次性揭晓入账。 */
+function roomReveal(S, dayIdx){
+  const day = roomDayOf(dayIdx);
+  if (!day) return roomRecover();
+  (day.ideas || []).forEach(idea => roomSettleOneBet(S, idea, dayIdx));
+  S.revealed[dayIdx] = true;
+  roomEndDayChecks(S, dayIdx);
+  if (S.ended) roomRefundOpenStakes(S);   // 提前倒庄：别的天不可能有挂注，纯兜底
+  saveP(); renderRoom();
+}
+
+/* arena：单题「保存确定」——当场结这一题；当天第一次确认的瞬间，把当日
+   还没表态的题落成 skip（= 最终决定），配合 roomDayLocked 冻结整天的改动。
+   确认后立即跑庄家破产判定（roomSettleOneBet 里对赌即时判定），日终
+   roomAdvanceDay 里再终检兜底。 */
+function roomConfirmBet(S, idea, dayIdx){
+  const b = S.bets[idea.id];
+  if (!b || b.action === 'skip' || b.result) return;
+  const first = !roomDayLocked(S, idea.id);
+  roomSettleOneBet(S, idea, dayIdx);
+  if (first){
+    const day = roomDayOf(dayIdx);
+    ((day && day.ideas) || []).forEach(i => { if (!S.bets[i.id]) S.bets[i.id] = { action: 'skip' }; });
+  }
+  /* 这一注就把庄家打穿了：对局当场结束，同日还挂着没确认的注全额退回。 */
+  if (S.ended) roomRefundOpenStakes(S);
+  saveP(); renderRoom();
+}
+
+/* arena：「进入下一天」——每题早就靠「保存确定」各自结完了，这里纯翻页 + 收尾检查。 */
+function roomAdvanceDay(S, dayIdx){
+  const day = roomDayOf(dayIdx);
+  if (!day) return roomRecover();
+  S.revealed[dayIdx] = true;
+  roomEndDayChecks(S, dayIdx);
+  if (S.ended) roomRefundOpenStakes(S);   // NPC 合力打穿的终检兜底：挂注照退
   saveP(); renderRoom();
 }
 
 function roomAllDecided(day, S){ return (day.ideas || []).every(i => S.bets[i.id]); }
+/* arena 翻页额外要求：选了跟/反/对赌的题必须点过「保存确定」（有 result 了）
+   才算数，光选边不点确定不能糊弄过去——skip 不用确定，本来就没什么可结的。 */
+function roomAllConfirmed(day, S){
+  return (day.ideas || []).every(i => {
+    const b = S.bets[i.id];
+    return b && (b.action === 'skip' || b.result);
+  });
+}
 
 /* 参与度进度条——红多蓝空，不再靠一行「多X空Y」的字。 */
 function roomCrowdBar(idea){
@@ -1888,45 +2169,66 @@ function goRoomDetail(id){
   renderRoom();
 }
 
+/* 统一下注面板：四个动作按钮永远露着（选中的那个描金边）+ 注码档同排可换，
+   结算（b.result）或同日锁（roomDayLocked）之前随时可改，改动的钱流全走
+   roomPlaceBet/roomSetStake 的「先退后扣」。arena 每题多一个「保存确定」。 */
 function roomIdeaCard(idea, S, opts){
   const readonly = !!(opts && opts.readonly);
   const b = S.bets[idea.id];
-  const noChipTip = `title="${esc(RT('noChips'))}"`;   // 可用额 = 当前真代币余额（下注即扣）
+  const duelStake = roomDuelStake();
+  const noChipTip = `title="${esc(RT('noChips'))}"`;
   let body;
-  if (!b){
-    body = readonly
-      ? `<div class="result">${RT('noBetPlaced')}${idea.outcome
-          ? ` · ${RT('answer')} <b class="${idea.outcome === 'YES' ? 'up' : 'down'}">${esc(idea.outcome)}</b>` : ''}</div>`
-      : `<div class="room-odds">
-          <button data-rpick="${esc(idea.id)}" data-raction="跟"
-            ${P.chips < ROOM_STAKE_TIERS[0] ? 'disabled ' + noChipTip : ''}><b>${RT('follow')}</b>${(idea.price * 100).toFixed(0)}¢</button>
-          <button data-rpick="${esc(idea.id)}" data-raction="反"
-            ${P.chips < ROOM_STAKE_TIERS[0] ? 'disabled ' + noChipTip : ''}><b>${RT('fade')}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
-          <button class="duel" data-rpick="${esc(idea.id)}" data-raction="对赌"
-            ${P.chips < ROOM_DUEL_STAKE ? 'disabled ' + noChipTip : ''}><b>${RT('duel')} ${ROOM_DUEL_STAKE}</b>${((1 - idea.price) * 100).toFixed(0)}¢</button>
-          <button data-rpick="${esc(idea.id)}" data-raction="skip"><b>${RT('skip')}</b></button>
-        </div>`;
-  } else if (b.action === 'skip'){
-    body = `<div class="result">${RT('lockedSkip')}</div>`;
-  } else if (!b.result){
-    const price = b.action === '跟' ? idea.price : Math.round((1 - idea.price) * 100) / 100;
-    const label = RT(b.action === '跟' ? 'follow' : b.action === '反' ? 'fade' : 'duel');
-    body = `
-      <div class="result">${RT('lockedPicked', label, Math.round(price * 100))}</div>
-      <div class="stakes" style="margin-top:8px">${RT('stakeLbl')}
-        ${b.action === '对赌'
-          ? `<button disabled aria-pressed="true">${ROOM_DUEL_STAKE}</button>
-             <span style="opacity:.7">${RT('duelFixed')}</span>`
-          : ROOM_STAKE_TIERS.map(v => `<button data-rstake="${esc(idea.id)}" data-v="${v}"
-              ${v - b.stake > P.chips ? 'disabled ' + noChipTip : ''} aria-pressed="${v === b.stake}">${v}</button>`).join('')}
-      </div>`;
-  } else {
+
+  if (b && b.result && b.result.refunded){
+    body = `<div class="result">${RT('refundedNote', b.stake)}</div>`;
+  } else if (b && b.result){
     const won = b.result.won;
     body = `<div class="result ${won ? 'win' : 'lose'}">
       ${esc(idea.ticker)} ${esc(idea.ref_date)} → ${esc(idea.exit_date || '')}
       · ${RT('answer')} <b>${esc(idea.outcome)}</b><br>
       ${esc(b.action)} ${b.stake} · <b>${RT('winLabel', won)}${Math.abs(b.result.delta)}</b>
     </div>`;
+  } else if (readonly){
+    body = b && b.action === 'skip'
+      ? `<div class="result">${RT('lockedSkip')}</div>`
+      : `<div class="result">${RT('noBetPlaced')}${idea.outcome
+          ? ` · ${RT('answer')} <b class="${idea.outcome === 'YES' ? 'up' : 'down'}">${esc(idea.outcome)}</b>` : ''}</div>`;
+  } else {
+    const frozen = roomDayLocked(S, idea.id);    // 同日剧透锁：动作/注码全部冻结
+    const cur = b ? b.action : null;
+    const held = b && b.action !== 'skip' ? (b.stake || 0) : 0;
+    const avail = P.chips + held;                // 先退旧注再扣新注 ⇒ 可用额含旧注
+    const actBtn = (action, cls2, label, need) => {
+      const broke = need > avail && cur !== action;
+      return `<button data-rpick="${esc(idea.id)}" data-raction="${action}"
+        class="${cls2}${cur === action ? ' sel' : ''}"
+        ${frozen || broke ? 'disabled' : ''} ${!frozen && broke ? noChipTip : ''}>${label}</button>`;
+    };
+    body = `<div class="room-odds">
+      ${actBtn('跟', '', `<b>${RT('follow')}</b>${(idea.price * 100).toFixed(0)}¢`, ROOM_STAKE_TIERS[0])}
+      ${actBtn('反', '', `<b>${RT('fade')}</b>${((1 - idea.price) * 100).toFixed(0)}¢`, ROOM_STAKE_TIERS[0])}
+      ${actBtn('对赌', 'duel', `<b>${RT('duel')} ${duelStake}</b>${((1 - idea.price) * 100).toFixed(0)}¢`, duelStake)}
+      ${actBtn('skip', '', `<b>${RT('skip')}</b>`, 0)}
+    </div>`;
+    if (cur === 'skip'){
+      body += `<div class="result">${RT('lockedSkip')}</div>`;
+    } else if (cur){
+      body += `<div class="stakes" style="margin-top:8px">${RT('stakeLbl')}
+        ${cur === '对赌'
+          ? `<button disabled aria-pressed="true">${duelStake}</button>
+             <span style="opacity:.7">${RT('duelFixed')}</span>`
+          : ROOM_STAKE_TIERS.map(v => `<button data-rstake="${esc(idea.id)}" data-v="${v}"
+              ${frozen || v > avail ? 'disabled' : ''} ${!frozen && v > avail ? noChipTip : ''}
+              aria-pressed="${v === b.stake}">${v}</button>`).join('')}
+      </div>`;
+      /* arena：确认结算按钮。同日锁只冻结「改动」，不拦「确认」——
+         锁定后剩下的题还是要一题一题按下确认入账。 */
+      if (roomMode === 'arena')
+        body += `<button class="room-confirm" data-rconfirm="${esc(idea.id)}"
+            title="${esc(RT('confirmHint'))}">${RT('confirmBet')}</button>
+          ${frozen ? '' : `<p class="note" style="margin:6px 0 0">${RT('confirmHintShort')}</p>`}`;
+    }
+    if (frozen) body += `<div class="result">${RT('dayLockedNote')}</div>`;
   }
 
   return `<div class="bet room-bet">
@@ -2068,9 +2370,13 @@ function renderDetail(S){
   /* 防剧透：这道题所在的天还没揭晓时，K 线只画到 ref_date（含）为止，
      「答案」那格整行不出现，exit 金框也不描。同一 ticker 会挂在好几天的
      题里，所以一律按这一题自己的 ref_date 截，而不是按今天揭晓到哪儿。
-     52 周高低/当日涨跌全都从截过的窗口现算，未来的价格一个字不漏。 */
+     52 周高低/当日涨跌全都从截过的窗口现算，未来的价格一个字不漏。
+     arena 里「已确认结算」（b.result 已出）视同这一题已揭晓；提前退款的注
+     没揭晓过答案，不算。 */
   const ideaDay = roomDayOfIdea(idea.id);
-  const revealed = !!(ideaDay && S.revealed[ideaDay.day_idx]);
+  const myBet = S.bets[idea.id];
+  const revealed = !!(ideaDay && S.revealed[ideaDay.day_idx])
+    || !!(myBet && myBet.result && !myBet.result.refunded);
   const chart = revealed ? (idea.chart || [])
     : (idea.chart || []).filter(c => c.date <= idea.ref_date);
   const refBar = chart.find(c => c.date === idea.ref_date);
@@ -2152,7 +2458,7 @@ function renderLobby(S){
       <div class="stat"><span>${RT('dealerCashLbl')}</span>
         <b>${rMoney(RS(RD.dealer.start_cash))} / ${rMoney(roomDealerBankruptLine())}</b></div>
       <div class="stat"><span>${RT('stakeTiersLbl')}</span>
-        <b>${ROOM_STAKE_TIERS.join('·')} / ${ROOM_DUEL_STAKE}</b></div>
+        <b>${ROOM_STAKE_TIERS.join('·')} / ${roomDuelStake()}</b></div>
     </div>
     <p class="lead" style="margin-top:0">${RT('rosterLbl')}（${RD.players.length + 1} / 8）</p>
     <div class="roster">${seats}</div>
@@ -2278,9 +2584,14 @@ function renderTable(S){
         <div class="seat-info" id="seatInfoBox">
           ${roomActiveSeat ? seatInfoHtml(roomActiveSeat, S, day) : `<p class="lead" style="margin:0">${RT('hoverHint')}</p>`}
         </div>
-        <button class="room-advance" ${roomAllDecided(day, S) ? '' : 'disabled'} data-rnext>
-          ${roomAllDecided(day, S) ? RT('nextDay') : RT('notDecided')}
-        </button>
+        ${(() => {
+          /* 新手村：全部表态即可（进入下一天时批量结算）；arena：非 skip 的题
+             必须都「保存确定」过（进入下一天纯翻页，不结算）。 */
+          const ready = roomMode === 'arena' ? roomAllConfirmed(day, S) : roomAllDecided(day, S);
+          const label = ready ? RT(roomMode === 'arena' ? 'nextDayArena' : 'nextDay')
+                              : RT(roomMode === 'arena' ? 'notConfirmed' : 'notDecided');
+          return `<button class="room-advance" ${ready ? '' : 'disabled'} data-rnext>${label}</button>`;
+        })()}
       </div>
       <div class="table-side">
         <h3>${RT('todayTitle')}</h3>
@@ -2294,7 +2605,8 @@ function renderTable(S){
     </div>`;
 
   el.querySelectorAll('[data-rback]').forEach(b => b.onclick = () => { roomView = b.dataset.rback; renderRoom(); });
-  el.querySelectorAll('[data-rnext]').forEach(b => b.onclick = () => roomReveal(S, day.day_idx));
+  el.querySelectorAll('[data-rnext]').forEach(b => b.onclick = () =>
+    roomMode === 'arena' ? roomAdvanceDay(S, day.day_idx) : roomReveal(S, day.day_idx));
   wireSeatInfoBox();
   /* 只认点击——鼠标划过不弹详情，省得随手一扫就把闲家的底牌看光了。 */
   el.querySelectorAll('.seat[data-rseat]').forEach(seatEl => {
@@ -2315,6 +2627,8 @@ function renderTable(S){
     btn.onclick = () => roomPlaceBet(S, findRoomIdea(btn.dataset.rpick), btn.dataset.raction));
   el.querySelectorAll('[data-rstake]').forEach(btn =>
     btn.onclick = () => roomSetStake(S, findRoomIdea(btn.dataset.rstake), +btn.dataset.v));
+  el.querySelectorAll('[data-rconfirm]').forEach(btn =>
+    btn.onclick = () => roomConfirmBet(S, findRoomIdea(btn.dataset.rconfirm), day.day_idx));
   el.querySelectorAll('[data-rdetail]').forEach(btn =>
     btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
 }
@@ -2337,15 +2651,20 @@ function renderQuestions(S){
     <p class="lead" style="margin-top:0">${esc(day.date)}${day.ideas.length ? '' : ' · ' + RT('noIdeasToday')}</p>
     ${day.ideas.length ? day.ideas.map(i => roomIdeaCard(i, S)).join('')
       : `<p class="lead">${RT('noNewNote')}</p>`}
-    ${day.ideas.length ? `<button class="room-advance" data-rsave>${RT('saveAnswers')}</button>` : ''}`;
+    ${day.ideas.length ? `<button class="room-advance" data-rsave>
+        ${RT(roomMode === 'arena' ? 'backToTable' : 'saveAnswers')}</button>` : ''}`;
 
-  /* 保存答案只是把你拉回牌桌——真正的结算/翻页挪到牌桌上的「进入下一天」，
-     两步拆开是故意的：这里可以随便进出改主意，那边点了才真的算数。 */
+  /* 新手村：这个按钮只是把你拉回牌桌，不结算——真正的结算/翻页挪到牌桌上的
+     「进入下一天」，两步拆开是故意的：这里可以随便进出改主意，那边点了才真的算数。
+     arena：每题自己的「保存确定」已经当场结了，这里纯粹是返回牌桌，
+     没有「保存答案」这层说法，按钮直接叫「返回牌桌」。 */
   el.querySelectorAll('[data-rback],[data-rsave]').forEach(b => b.onclick = () => { roomView = 'table'; renderRoom(); });
   el.querySelectorAll('[data-rpick]').forEach(btn =>
     btn.onclick = () => roomPlaceBet(S, findRoomIdea(btn.dataset.rpick), btn.dataset.raction));
   el.querySelectorAll('[data-rstake]').forEach(btn =>
     btn.onclick = () => roomSetStake(S, findRoomIdea(btn.dataset.rstake), +btn.dataset.v));
+  el.querySelectorAll('[data-rconfirm]').forEach(btn =>
+    btn.onclick = () => roomConfirmBet(S, findRoomIdea(btn.dataset.rconfirm), day.day_idx));
   el.querySelectorAll('[data-rdetail]').forEach(btn =>
     btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
 }
@@ -2374,6 +2693,8 @@ function renderHistoryView(S){
 }
 
 function renderRoom(){
+  const subEl = $('roomDealerSub');
+  if (subEl) subEl.textContent = RT(roomMode === 'arena' ? 'roomSubArena' : 'roomSubVillage');
   if (!RD){
     $('roomDealerName').textContent = '—';
     $('roomRound').textContent = '—';
@@ -2399,9 +2720,9 @@ function renderRoomResults(S){
   $('roomDealerName').textContent = RD.dealer.name;
   $('roomRound').textContent = RT('round', RDAYS.length, RDAYS.length);
 
-  /* 3 天口径的战况榜：NPC 的局终值按已揭晓的天现算（room.js 里烘好的
-     p.cash / return_pct 是整局 5 天的，不能用）。收益率统一用 NPC 名义
-     带入（缩放后）当分母；你的净盈亏 = 本局已结算 P&L，真金白银在 chips 里。 */
+  /* 战况榜按 RDAYS 口径：NPC 的局终值按已揭晓的天现算（room 数据里烘好的
+     p.cash / return_pct 是整局原始口径的，不能直接用）。收益率统一用 NPC
+     名义带入（缩放后）当分母；你的净盈亏 = 本局已结算 P&L，真金白银在 chips 里。 */
   const base = RS(RD.config.player_initial_cash);
   const board = RD.players.map(p => {
     const cash = npcRunningCash(p.id, S);
@@ -2441,8 +2762,8 @@ function renderRoomResults(S){
 
   $('roomBody').querySelectorAll('[data-rreset]').forEach(btn =>
     btn.onclick = () => {
-      roomRefundOpenStakes(P.room);   // 局已结束理应没有未结注，纯兜底
-      P.room = freshRoomState(); roomView = 'lobby'; roomActiveSeat = null; saveP(); renderRoom();
+      roomRefundOpenStakes(curSave());   // 局已结束理应没有未结注（提前倒庄时已清扫），纯兜底
+      setCurSave(freshRoomState()); roomView = 'lobby'; roomActiveSeat = null; saveP(); renderRoom();
     });
 }
 
@@ -2909,9 +3230,105 @@ function refundBet(id){
 }
 
 /* ================================================================
+   实战区域——cs 服务器列表/三国杀房间列表那个思路：一行一张桌子，
+   写清楚规则，能进的直接进，还没做的房间明确标"开发中"，不装样子。
+   ================================================================ */
+const openArena = () => { closeDlg(); closeBag(); closeRoom(); $('arenaDlg').classList.add('on'); renderArena(); };
+const closeArena = () => { const el = document.getElementById('arenaDlg'); if (el) el.classList.remove('on'); };
+const arenaDlgOpen = () => { const el = document.getElementById('arenaDlg'); return !!el && el.classList.contains('on'); };
+{
+  const arenaDlgEl = document.getElementById('arenaDlg');
+  if (arenaDlgEl) arenaDlgEl.addEventListener('click', e => { if (e.target.id === 'arenaDlg') closeArena(); });
+}
+
+/* 「Agent庄家房」两间直接复用现有的两个庄家摊位——同一份 book 数据，
+   同一个 #dlg，只是入口从「走过去按 E」换成「列表里点一下」。
+   锦标赛那间 = room_arena.js 的 5 天房（真代币、每题保存确定当场结算），
+   从这里点进去跳过教程（skipTut）；走新手村入口的还是走一遍首次引导。 */
+
+/* 房间区分度：每桌一行 ticker/规格速览，管道分隔，CS 服务器列表 map|mode|players
+   那种一眼扫过去就知道桌上在打什么的味道，不用点进去才知道。 */
+function arenaTagLine(items, max){
+  const uniq = [...new Set((items || []).filter(Boolean))];
+  const head = uniq.slice(0, max || 4);
+  const extra = uniq.length - head.length;
+  return head.join(' | ') + (extra > 0 ? ` | +${extra}` : '');
+}
+function arenaBookTickers(book){
+  const live = liveIdeasOf(book).map(i => i.ticker);
+  if (live.length) return live;
+  return [...new Set((book.ideas || []).map(i => i.ticker))].slice(-4);
+}
+function arenaRoomTickers(){
+  const seen = [];
+  DAYS_ARENA.forEach(d => (d.ideas || []).forEach(i => {
+    if (i.ticker && !seen.includes(i.ticker)) seen.push(i.ticker);
+  }));
+  return seen;
+}
+
+function arenaRooms(){
+  const rows = [];
+  (CAST || []).forEach(n => {
+    rows.push({
+      cat: 'free',
+      icon: (n.book.agent && n.book.agent.emoji) || '🧑‍💼',
+      name: aName(n.book.agent),
+      badge: T('arenaAgentTag'),
+      meta: T('arenaAgentMeta'),
+      tags: arenaTagLine(arenaBookTickers(n.book), 4),
+      action: () => { talkTo(n); closeArena(); },
+    });
+  });
+  rows.push({ cat: 'free', icon: '🧑‍🤝‍🧑', name: T('arenaHumanName'), badge: T('comingSoon'),
+             meta: T('arenaHumanMeta'), tags: T('arenaHumanTags'), soon: true });
+  if (RD_ARENA){          // room_arena.js 缺失时整行不出现，锦标赛组自然隐藏
+    rows.push({
+      cat: 'tournament',
+      icon: RD_ARENA.dealer.emoji || '🎩',
+      name: T('arenaRoomName'),
+      badge: T('arenaTournamentTag'),
+      meta: T('arenaRoomMeta', DAYS_ARENA.length, RD_ARENA.players.length + 1),
+      tags: arenaTagLine(arenaRoomTickers(), 5),
+      action: () => { openRoom({ mode: 'arena', skipTut: true }); closeArena(); },
+    });
+  }
+  rows.push({ cat: 'fixed', icon: '📊', name: T('arenaQqqName'), badge: T('comingSoon'),
+             meta: T('arenaQqqMeta'), tags: T('arenaQqqTags'), soon: true });
+  return rows;
+}
+
+const ARENA_CATS = ['free', 'tournament', 'fixed'];
+function renderArena(){
+  const body = document.getElementById('arenaBody');
+  if (!body) return;
+  const rows = arenaRooms();
+  const idxOf = new Map(rows.map((r, i) => [r, i]));
+  const catLabel = { free: T('arenaCatFree'), tournament: T('arenaCatTournament'), fixed: T('arenaCatFixed') };
+  body.innerHTML = ARENA_CATS.map(cat => {
+    const catRows = rows.filter(r => r.cat === cat);
+    if (!catRows.length) return '';
+    return `<div class="arena-cat-head">${esc(catLabel[cat])}</div>` + catRows.map(r => `
+      <div class="arena-row ${r.soon ? 'soon' : ''}">
+        <div class="ar-icon">${esc(r.icon)}</div>
+        <div class="ar-info">
+          <div class="ar-name">${esc(r.name)}</div>
+          <div class="ar-meta">${esc(r.meta)}</div>
+          <div class="ar-tags">${esc(r.tags)}</div>
+        </div>
+        <div class="ar-tag">${esc(r.badge)}</div>
+        ${r.soon ? `<button disabled>${T('arenaJoinBtn')}</button>`
+                 : `<button data-arow="${idxOf.get(r)}">${T('arenaJoinBtn')}</button>`}
+      </div>`).join('');
+  }).join('');
+  body.querySelectorAll('[data-arow]').forEach(b =>
+    b.onclick = () => arenaRooms()[+b.dataset.arow].action());
+}
+
+/* ================================================================
    背包
    ================================================================ */
-const openBag = () => { closeDlg(); closeRoom(); $('bag').classList.add('on'); renderBag(); };
+const openBag = () => { closeDlg(); closeRoom(); closeArena(); $('bag').classList.add('on'); renderBag(); };
 const closeBag = () => $('bag').classList.remove('on');
 const bagOpen = () => $('bag').classList.contains('on');
 
@@ -3150,7 +3567,7 @@ function roomTutNums(){
   const fadeP = Math.round((1 - p) * 10000) / 10000;   // 跟 roomSettle 同一套取整
   const pC = Math.round(p * 100);
   const exS = ROOM_STAKE_TIERS[ROOM_STAKE_TIERS.length - 1];   // 例子注码 = 最大档
-  const dS = ROOM_DUEL_STAKE;
+  const dS = roomDuelStake();
   return {
     pC, fadeC: 100 - pC, exS, dS,
     tiers: ROOM_STAKE_TIERS.join(' / '),
@@ -3300,6 +3717,11 @@ function helpPlazaHtml(){
 }
 function helpRoomHtml(){
   const N = roomTutNums();
+  const arena = roomMode === 'arena';
+  /* 揭晓口径分房间：新手村 =「进入下一天」批量揭晓；arena = 每题「保存确定」
+     当场结算 + 首个确认锁定当日全部选择。「随时可改」那条两边共用。
+     arena 里不放「重新播放引导」——教程步骤是新手村叙事（进入下一天/批量
+     揭晓），照搬会说错话；实战玩家本来就该先从新手村毕业。 */
   return `
     <div class="head">
       <div class="face">❓</div>
@@ -3315,9 +3737,12 @@ function helpRoomHtml(){
       <p class="lead">${RT('rulesMoney')}</p>
       <div class="rule-row">${RT('ruleMoney', N.tiers, N.dS, rMoney(N.dIn),
         N.linePct, rMoney(N.dealerLine))}</div>
+      <div class="rule-row">${RT('ruleChange')}</div>
       <p class="lead">${RT('rulesReveal')}</p>
-      <div class="rule-row">${RT('ruleReveal', esc(RT('nextDay')), N.days)}</div>
-      <button class="room-advance" id="tutReplayBtn" style="margin-top:14px">${RT('replayTut')}</button>
+      <div class="rule-row">${arena
+        ? RT('ruleRevealArena', esc(RT('confirmBet')), N.days)
+        : RT('ruleReveal', esc(RT('nextDay')), N.days)}</div>
+      ${arena ? '' : `<button class="room-advance" id="tutReplayBtn" style="margin-top:14px">${RT('replayTut')}</button>`}
     </div>`;
 }
 function renderHelp(){
