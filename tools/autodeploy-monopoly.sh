@@ -25,7 +25,9 @@ echo "$(ts) new commits: ${LOCAL:0:7} -> ${REMOTE:0:7}, deploying" >> "$LOG"
 git merge -q --ff-only origin/main
 
 cp index.html plaza.html book.js "$SITE/dist-site/monopoly/"
-[[ -f room.js ]] && cp room.js "$SITE/dist-site/monopoly/"
+for f in room.js room_arena.js; do
+  [[ -f "$f" ]] && cp "$f" "$SITE/dist-site/monopoly/"
+done
 
 cd "$SITE"
 npx wrangler deploy >> "$LOG" 2>&1
