@@ -614,7 +614,7 @@ async function handleGoogleCallback(request, env) {
       uid = await createUser(env, { email, name, googleSub: sub });
     }
   }
-  return setSessionAnd(uid, env, null, 302, env.SITE_ORIGIN.replace(/\/$/, '') + '/monopoly/plaza.html');
+  return setSessionAnd(uid, env, null, 302, env.SITE_ORIGIN.replace(/\/$/, '') + '/play/');
 }
 
 /* ---------------- me / wallet / feed / leaderboard ---------------- */
@@ -784,6 +784,13 @@ export default {
     /* 非 /api/*：asset 未命中落回 worker（run_worker_first 只圈 /api/* 和 /mcp），
        原样转给静态资产——包括它自己的 404 行为，静态站语义不变。 */
     if (!path.startsWith('/api/')) {
+      /* 老路径退役（2026-08-20 全量切到 /play/）：/monopoly/** 一律 301。
+         dist-site/monopoly/ 已经清空，所以这里必须在 asset 查找之前拦下来。
+         服务端自己的取数（daily_digest 的 book.js、PlayRoom DO 的 room_arena.js）
+         早已改读 /play/data/，不会撞上这条规则。 */
+      if (path === '/monopoly' || path.startsWith('/monopoly/')) {
+        return Response.redirect(new URL('/play/', url).toString(), 301);
+      }
       if (!env.ASSETS) return new Response('not found', { status: 404 });
       const res = await env.ASSETS.fetch(request);
       /* /play/ 是 SPA（EventStreet）：深链接如 /play/m/abc 在磁盘上没有对应文件，
@@ -1160,7 +1167,7 @@ async function callMcpTool(env, user, name, args) {
 async function buildDailyDigest(env, user) {
   let book = null;
   try {
-    const url = env.SITE_ORIGIN.replace(/\/$/, '') + '/monopoly/book.js';
+    const url = env.SITE_ORIGIN.replace(/\/$/, '') + '/play/data/book.js';
     const res = env.ASSETS ? await env.ASSETS.fetch(url) : await fetch(url);
     if (res.ok) {
       const text = await res.text();
@@ -1234,7 +1241,7 @@ async function handleMcp(request, env) {
   if (!user) {
     return mcpJson({
       error: 'unauthorized',
-      message: 'Fledge Play MCP needs a personal token: log in at https://fledgetradelab.com/monopoly/plaza.html, create one via POST /api/token/rotate, then send Authorization: Bearer fp_…',
+      message: 'Fledge Play MCP needs a personal token: log in at https://fledgetradelab.com/play/me, create one there (or via POST /api/token/rotate), then send Authorization: Bearer fp_…',
     }, 401);
   }
 
@@ -1308,7 +1315,7 @@ async function handleMcp(request, env) {
    PlayRoom —— 真人房 MVP（Durable Object，SQLite storage + WS hibernation）
 
    经济口径与前端单机房完全一致（ROOM_SCALE=100 后的代币尺度，全程整数）：
-   - 题目源：首次初始化 fetch SITE_ORIGIN/monopoly/room_arena.js，剥
+   - 题目源：首次初始化 fetch SITE_ORIGIN/play/data/room_arena.js，剥
      `window.ROOM_ARENA=` 前缀 JSON.parse，逐天取题（去掉 chart 大数组）。
    - dealer_cash 初始 = config.dealer_initial_cash/100 = 100；只有真人 duel
      1:1 打它（won → −net，lost → +stake），NPC 轨迹不掺和。
@@ -1386,7 +1393,7 @@ export class PlayRoom {
   }
 
   async fetchArena() {
-    const url = this.env.SITE_ORIGIN.replace(/\/$/, '') + '/monopoly/room_arena.js';
+    const url = this.env.SITE_ORIGIN.replace(/\/$/, '') + '/play/data/room_arena.js';
     const res = this.env.ASSETS ? await this.env.ASSETS.fetch(url) : await fetch(url);
     if (!res.ok) throw new Error(`fetch room_arena.js: ${res.status}`);
     const text = await res.text();
