@@ -3,9 +3,41 @@
   "name": "fledge-site",
   "account_id": "a113a1d209051e05e8af6ccd11b1d412",
   "compatibility_date": "2026-08-01",
-  "assets": { "directory": "dist-site" },
+  "workers_dev": false,
+  "preview_urls": false,
+  "main": "src/worker.js",
+  "assets": {
+    "directory": "dist-site",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/mcp"]
+  },
   "routes": [
     { "pattern": "fledgetradelab.com", "custom_domain": true, "zone_name": "fledgetradelab.com" },
     { "pattern": "www.fledgetradelab.com", "custom_domain": true, "zone_name": "fledgetradelab.com" }
-  ]
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fledge-play",
+      "database_id": "53c281a3-017e-460a-b8b4-afa9963825c1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "PLAY_ROOM", "class_name": "PlayRoom" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PlayRoom"] }
+  ],
+  "vars": {
+    "DEV_LOGIN_CODE": "fledge2026",
+    "SITE_ORIGIN": "https://fledgetradelab.com"
+  }
+  // Secrets (wrangler secret put …, never in this file):
+  //   SESSION_SECRET      — HMAC key for fp_sess cookies (auth endpoints 503 until set)
+  //   RESEND_API_KEY      — Resend API key (reuse the Grounds key); absent => DEV code only
+  //   EMAIL_FROM          — sender address, same value as the fledge-grounds secret
+  //   GOOGLE_CLIENT_ID    — Google OAuth client (same client as Grounds); absent => /api/auth/google 501
+  //   GOOGLE_CLIENT_SECRET
 }
