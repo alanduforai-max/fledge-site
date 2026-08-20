@@ -28,7 +28,13 @@ code,pre{font-family:var(--font-mono);font-size:var(--size-mono);letter-spacing:
 .site-nav a{font-size:var(--size-body-sm);padding-bottom:2px;border-bottom:1px solid transparent;color:var(--text-muted)}
 .site-nav a:hover{color:var(--text-display)}
 .site-nav a.active{color:var(--text-display);border-bottom-color:var(--line-strong)}
-@media (max-width:720px){.site-nav{gap:var(--space-5)}}
+/* EventStreet 是站外应用（/play/），挂个 Beta 小角标。
+   用站内 muted 灰阶，不碰红绿 —— 主站那条铁律只在 /play 内部解禁。 */
+.nav-badge{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-faint);border:1px solid var(--line-hairline);border-radius:3px;
+  padding:1px 3px;margin-left:4px;top:-.4em;position:relative}
+.site-nav a:hover .nav-badge{color:var(--text-secondary)}
+@media (max-width:720px){.site-nav{gap:var(--space-5)}.nav-badge{display:none}}
 .nav-group{display:flex;align-items:center;gap:var(--space-6)}
 .nav-sep{width:1px;height:14px;background:var(--line-hairline)}
 .theme-toggle{display:inline-flex;align-items:center;gap:var(--space-2)}
