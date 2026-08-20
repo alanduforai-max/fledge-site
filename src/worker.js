@@ -784,7 +784,22 @@ export default {
     /* 非 /api/*：asset 未命中落回 worker（run_worker_first 只圈 /api/* 和 /mcp），
        原样转给静态资产——包括它自己的 404 行为，静态站语义不变。 */
     if (!path.startsWith('/api/')) {
-      return env.ASSETS ? env.ASSETS.fetch(request) : new Response('not found', { status: 404 });
+      if (!env.ASSETS) return new Response('not found', { status: 404 });
+      const res = await env.ASSETS.fetch(request);
+      /* /play/ 是 SPA（EventStreet）：深链接如 /play/m/abc 在磁盘上没有对应文件，
+         asset 会 404 —— 把无扩展名的 /play/* 落回 /play/index.html 交给 react-router。
+         只在真 404 时兜底，命中的静态资源（含 /play/assets/*、/play/fonts/*）照常直出。
+         作用域严格限 /play/，静态站其余路径的 404 语义完全不变。 */
+      if (res.status === 404 && path.startsWith('/play/') && !/\.[a-z0-9]+$/i.test(path)) {
+        const shell = await env.ASSETS.fetch(new Request(new URL('/play/index.html', url).toString()));
+        if (shell.status === 200) {
+          return new Response(shell.body, {
+            status: 200,
+            headers: { ...Object.fromEntries(shell.headers), 'content-type': 'text/html; charset=utf-8' },
+          });
+        }
+      }
+      return res;
     }
 
     const method = request.method;
