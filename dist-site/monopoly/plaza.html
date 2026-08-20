@@ -638,6 +638,56 @@
   .live-dealer{display:flex; align-items:center; gap:10px; margin-bottom:6px}
   .live-dealer .bar{flex:1; height:10px; background:#fff; box-shadow:inset 0 0 0 2px var(--line); overflow:hidden}
   .live-dealer .bar i{display:block; height:100%; background:var(--gold)}
+
+  /* ---------- Agent 设计器 ---------- */
+  .agent-field{margin-bottom:14px}
+  .agent-field > label{display:block; font-size:12px; color:var(--ink2); letter-spacing:1px; margin-bottom:6px}
+  .agent-field input[type="text"], .agent-field textarea{
+    width:100%; padding:10px 12px; font-family:var(--ui); font-size:14px; color:var(--ink);
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .agent-field textarea{min-height:96px; resize:vertical; line-height:1.65}
+  .preset-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:8px}
+  .preset-card{
+    padding:10px 12px; background:#fff; border:0; text-align:left; cursor:pointer;
+    font-family:var(--ui); box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .preset-card:hover{background:#fff6dd}
+  .preset-card.sel{background:#fff6dd; box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 6px var(--gold)}
+  .preset-card b{display:block; font-size:14px; margin-bottom:4px}
+  .preset-card span{display:block; font-size:11.5px; color:var(--ink2); line-height:1.5}
+  .slider-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px 18px}
+  .slider-item > label{display:flex; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--ink2); margin-bottom:4px}
+  .slider-item .val{font-family:var(--num); font-weight:700; color:var(--ink)}
+  .slider-item input[type="range"]{width:100%; accent-color:var(--blue)}
+  .agent-save{
+    width:100%; padding:12px; margin-top:4px; font-family:var(--ui); font-size:15px; font-weight:700;
+    cursor:pointer; background:var(--gold); border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .agent-save:hover{background:#eec46a}
+
+  /* ---------- 三档参与模式：切档条 / 托管横幅 / 题卡建议条 ---------- */
+  .mode-switch{margin-bottom:12px}
+  .ai-banner{
+    display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px;
+    background:#17301f; color:#f7eeda; font-weight:700; font-size:14px;
+    box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 5px var(--gold);
+  }
+  .ai-banner button{
+    margin-left:auto; padding:6px 14px; font-family:var(--ui); font-size:12.5px; cursor:pointer;
+    background:var(--gold); border:0; box-shadow:inset 0 0 0 2px var(--line); color:var(--ink);
+  }
+  .ai-banner button:hover{background:#eec46a}
+  .ai-advice{
+    display:flex; gap:10px; align-items:center; padding:8px 11px; margin:0 0 10px;
+    background:#e7efdf; box-shadow:inset 0 0 0 2px var(--line); font-size:12.5px; line-height:1.6;
+  }
+  .ai-advice .adv-txt{flex:1; min-width:0}
+  .ai-advice button{
+    flex:none; padding:7px 14px; font-family:var(--ui); font-size:12.5px; font-weight:700;
+    cursor:pointer; background:var(--gold); border:0; box-shadow:inset 0 0 0 2px var(--line);
+  }
+  .ai-advice button:hover{background:#eec46a}
 </style>
 </head>
 <body>
@@ -818,6 +868,11 @@
     </div>
     <div class="live-status" id="liveStatus"><span class="dot"></span><span>—</span></div>
     <div class="body" id="liveBody"></div>
+  </div>
+</div>
+<!-- ↑ liveDlg 此前漏了这两个闭合标签，shopDlg/agentDlg 被解析成它（display:none）的子节点，
+     导致占位弹窗 .on 了也看不见——补上闭合，商城/Agent 弹窗才真的浮得出来。 -->
+
 <div id="shopDlg" role="dialog" aria-modal="true">
   <div class="panel">
     <div class="head">
@@ -842,7 +897,7 @@
       </div>
       <button class="close" onclick="closeAgent()">✕</button>
     </div>
-    <div class="body"><p class="lead" id="agentComingSoon" style="margin:0">开发中，先把入口开在这——很快能在这给自己配一个 agent。</p></div>
+    <div class="body" id="agentBody"></div>
   </div>
 </div>
 
@@ -993,8 +1048,21 @@ const I18N = {
     menuAgentTitle: 'Agent 设计', menuAgentSub: '配一个替你下场的 agent',
     shopTitle: '商城', shopSub: '买点交易技能，装备到你的 agent 上',
     shopComingSoon: '开发中，先把入口开在这——很快会有技能可以逛了。',
-    agentTitle: 'Agent 设计', agentSub: '配一个替你下场的 agent，可以装备商城里买的技能',
-    agentComingSoon: '开发中，先把入口开在这——很快能在这给自己配一个 agent。',
+    agentTitle: 'Agent 设计', agentSub: '捏一个替你下场的 agent——房间里的 AI 建议 / AI 托管读的就是这份画像',
+    agNameLbl: 'Agent 名字', agNamePh: '给它起个名（最多 20 字）',
+    agPresetLbl: '快速人格模板（点一下填充策略和滑杆）',
+    agPresetSteadyT: '稳健价值派', agPresetSteadyD: 'edge ≥ 8pt 才出手 · 1/8 Kelly · 绝不对赌',
+    agPresetHunterT: '事件猎手', agPresetHunterD: 'edge ≥ 5pt · 1/4 Kelly · 选择性对赌',
+    agPresetDegenT: 'YOLO 赌狗', agPresetDegenD: '逢盘必赌 · 0.9 Kelly · 逢盘对赌 · 逆向',
+    agStrategyLbl: '自由策略 prompt（≤2000 字）',
+    agStrategyPh: '用自己的话写策略。写明「不对赌」，AI 档就真的不会碰对赌。',
+    agKellyLbl: '下注激进度（Kelly）', agEdgeLbl: '入场 edge 门槛',
+    agDuelLbl: '对赌倾向', agContraLbl: '逆向指数',
+    agSaveBtn: '保存画像',
+    agSaved: '画像已保存到服务器', agSavedLocal: '画像已存到本机',
+    agSaveFail: '没存上，再试一次。',
+    agSrvNote: 'MCP 里的 /tune_agent 和这里读写同一份画像。',
+    agGuestNote: '游客画像只存这台机器。登录后画像存服务器、可被你的 MCP agent 使用。',
     arenaTitle: '实战区域', arenaSub: '选一张桌子，规则各不相同',
     arenaJoinBtn: '进入', comingSoon: '开发中',
     arenaCatFree: '自由市场类', arenaCatTournament: '锦标赛限时类', arenaCatFixed: '固定股票房',
@@ -1199,8 +1267,21 @@ const I18N = {
     menuAgentTitle: 'Agent Designer', menuAgentSub: 'Build an agent to play for you',
     shopTitle: 'Shop', shopSub: 'Buy trading skills, equip them on your agent',
     shopComingSoon: "In progress — the entry point is here first, skills are coming soon.",
-    agentTitle: 'Agent Designer', agentSub: 'Build an agent to play for you, equip skills bought in the shop',
-    agentComingSoon: "In progress — the entry point is here first, agent building is coming soon.",
+    agentTitle: 'Agent Designer', agentSub: 'Build the agent that plays for you — AI Advice / AI Autopilot in the rooms read this very profile',
+    agNameLbl: 'Agent name', agNamePh: 'Name it (20 chars max)',
+    agPresetLbl: 'Quick persona presets (click to fill strategy & sliders)',
+    agPresetSteadyT: 'Steady Value', agPresetSteadyD: 'Acts only at edge ≥ 8pt · 1/8 Kelly · never duels',
+    agPresetHunterT: 'Event Hunter', agPresetHunterD: 'edge ≥ 5pt · 1/4 Kelly · selective duels',
+    agPresetDegenT: 'YOLO Degen', agPresetDegenD: 'Bets every board · 0.9 Kelly · duels on sight · contrarian',
+    agStrategyLbl: 'Free-form strategy prompt (≤2000 chars)',
+    agStrategyPh: 'Write the strategy in your own words. Say "no duel" and the AI modes really will never duel.',
+    agKellyLbl: 'Bet aggression (Kelly)', agEdgeLbl: 'Entry edge bar',
+    agDuelLbl: 'Duel appetite', agContraLbl: 'Contrarian index',
+    agSaveBtn: 'Save profile',
+    agSaved: 'Profile saved to the server', agSavedLocal: 'Profile saved on this device',
+    agSaveFail: 'Save failed — try again.',
+    agSrvNote: '/tune_agent over MCP reads and writes this very profile.',
+    agGuestNote: 'Guest profiles live on this device only. Sign in and the profile lives on the server, usable by your MCP agent.',
     arenaTitle: 'Live Arena', arenaSub: 'Every table runs different rules',
     arenaJoinBtn: 'Join', comingSoon: 'Coming soon',
     arenaCatFree: 'Free Market', arenaCatTournament: 'Tournament (Time-limited)', arenaCatFixed: 'Fixed-Stock Room',
@@ -1357,7 +1438,6 @@ function applyLang(){
   put('shopComingSoon', T('shopComingSoon'));
   put('agentTitle', T('agentTitle'));
   put('agentSub', T('agentSub'));
-  put('agentComingSoon', T('agentComingSoon'));
 }
 function setLang(next){
   lang = next === 'en' ? 'en' : 'zh';
@@ -1374,6 +1454,7 @@ function setLang(next){
   if (arenaDlgOpen()) renderArena();
   if (helpDlgOn()) renderHelp();
   if (liveDlgOpen()) renderLive();
+  if (agentDlgOpen()) renderAgent();   // 设计器重渲染读 agentDraft，未保存的编辑不丢
   renderLobbyWall();
   if (tutActive()) tutShow(tutIdx);   // 语言切了，当前步的卡片和高亮目标都要重挂
 }
@@ -1486,6 +1567,7 @@ const DEFAULT_P = {
   room: null,                     // 8人局教学局存档（v2 真代币口径：注金直接进出 P.chips）
   roomArena: null,                // 实战区域锦标赛房的存档，独立一份，别跟新手村混
   roomGift1: false,               // 新手礼包只发一次，跟 P.room 的重置无关
+  agentProfile: null,             // 游客态的 agent 画像；登录态以服务器 /api/agent_profile 为真源
 };
 function loadP(){
   try { return { ...DEFAULT_P, ...(JSON.parse(localStorage.getItem(SAVE)) || {}) }; }
@@ -2021,6 +2103,20 @@ const ROOM_I18N = {
     ruleChange: '动作和注码在结算/锁定前随时可改：每次改动都先把旧注全额退回代币余额，再按新选择重新扣款；跳过 = 只退不扣。',
     ruleReveal: (btn, days) => `每道题都拿真实行情判定：基准是庄家挂盘时的收盘价，对比「期限」个交易日后的收盘价，收高即涨（YES）。你点「${btn}」时，当天的注一次性揭晓入账——赢的钱当场进你的代币余额。整局共 ${days} 天、每天至多 1 题。`,
     ruleRevealArena: (btn, days) => `每道题都拿真实行情判定：基准是庄家挂盘时的收盘价，对比「期限」个交易日后的收盘价，收高即涨（YES）。每题点「${btn}」当场结算入账，赢的钱立刻进代币余额；<b>当天第一次确认的瞬间，当日全部题目的选择一并锁定</b>（没下注的题视同跳过）——先把当天所有题摆好，再按第一个「${btn}」。「进入下一天」只翻页，不再结算。整局共 ${days} 天。`,
+    /* —— 三档参与模式 + 内置建议引擎 —— */
+    modeManual: '👤 纯人工', modeAssist: '🤝 AI 建议', modeAuto: '🤖 AI 托管',
+    aiBanner: '🤖 AI 托管中', aiPause: '暂停',
+    aiSuggest: '建议', adoptBtn: '采纳',
+    aiNeedProfile: '还没设计过你的 agent。先去「Agent 设计」给它起名、定策略？',
+    aiWhyFollow: (pC, eC, edgePt, stake) => `报价 ${pC}¢，我估 ${eC}%，edge ${edgePt}pt 过门槛，按激进度押 ${stake}`,
+    aiWhyFade: (pC, eC, edgePt, stake) => `报价 ${pC}¢，我估只有 ${eC}%，edge ${edgePt}pt 过门槛，反着押 ${stake}`,
+    aiWhyDuel: (pC, eC, edgePt, dS) => `报价 ${pC}¢，我估只有 ${eC}%，edge ${edgePt}pt，对赌胃口高——直接跟庄家单挑 ${dS}`,
+    aiWhySkip: (pC, eC, edgePt, barPt) => `报价 ${pC}¢，我估 ${eC}%，edge ${edgePt}pt 不到门槛 ${barPt}pt，这题不动`,
+    aiWhyBroke: '代币不够下最小档，先跳过攒一攒',
+    rulesModes: '三档参与模式',
+    ruleModes: '<b>👤 纯人工 / 🤝 AI 建议 / 🤖 AI 托管</b> —— 候机室和牌桌头部随时切换，选择存进本房存档。AI 两档读你在「Agent 设计」里保存的画像（四个滑杆 + 策略 prompt）：建议档在每道题上给出动作、注码和理由，采纳与否随你；托管档替你逐题下注、自动翻天，顶部横幅随时可暂停（降为建议档）。本期引擎是内置启发式——只看报价、画像和确定性噪声，绝不偷看答案；想接真 LLM 决策，走 MCP 的 /play 路线。真人房的三档托管在 roadmap 上，本期未接。',
+    tutModesT: '三档参与模式',
+    tutModesB: '这里可以随时换档：👤 全部自己点；🤝 你的 agent 在每道题上给出「动作+注码+理由」，采纳与否在你；🤖 agent 替你逐题下注、自动翻天，随时可暂停。先去主菜单「Agent 设计」给它定好性格。',
     replayTut: '重新播放新手引导',
   },
   en: {
@@ -2113,6 +2209,20 @@ const ROOM_I18N = {
     ruleChange: 'Actions and stakes can be changed freely before settlement/lock: every change first refunds the old stake to your chip balance in full, then deducts the new one; skip = refund only.',
     ruleReveal: (btn, days) => `Every question is judged on real closes: the benchmark is the close when the dealer posted it, versus the close after the stated horizon in trading days — higher means YES. Clicking "${btn}" reveals and books all of that day's bets at once — winnings land in your chip balance on the spot. The round runs ${days} days, at most one question a day.`,
     ruleRevealArena: (btn, days) => `Every question is judged on real closes: the benchmark is the close when the dealer posted it, versus the close after the stated horizon in trading days — higher means YES. Each question settles the moment you press "${btn}" and winnings land in your chip balance on the spot; <b>the first confirm of a day locks ALL of that day's choices</b> (unbet questions count as skipped) — set every question first, then press your first "${btn}". "Enter next day" only turns the page, nothing settles there. The round runs ${days} days.`,
+    /* —— Three participation modes + built-in advice engine —— */
+    modeManual: '👤 Manual', modeAssist: '🤝 AI Advice', modeAuto: '🤖 AI Autopilot',
+    aiBanner: '🤖 AI Autopilot running', aiPause: 'Pause',
+    aiSuggest: 'suggests', adoptBtn: 'Adopt',
+    aiNeedProfile: 'No agent designed yet. Open the Agent Designer to name it and set a strategy?',
+    aiWhyFollow: (pC, eC, edgePt, stake) => `Quote ${pC}¢, I estimate ${eC}% — edge ${edgePt}pt clears the bar, staking ${stake} per aggression`,
+    aiWhyFade: (pC, eC, edgePt, stake) => `Quote ${pC}¢ but I estimate only ${eC}% — edge ${edgePt}pt clears the bar, fading with ${stake}`,
+    aiWhyDuel: (pC, eC, edgePt, dS) => `Quote ${pC}¢ but I estimate only ${eC}% — edge ${edgePt}pt, and the duel appetite is high: challenging the dealer for ${dS}`,
+    aiWhySkip: (pC, eC, edgePt, barPt) => `Quote ${pC}¢, I estimate ${eC}% — edge ${edgePt}pt is under the ${barPt}pt bar, sitting this one out`,
+    aiWhyBroke: 'Not enough chips for the smallest tier — skipping for now',
+    rulesModes: 'Three participation modes',
+    ruleModes: '<b>👤 Manual / 🤝 AI Advice / 🤖 AI Autopilot</b> — switch any time from the lobby or table header; the choice is stored in this room\'s save. Both AI modes read the profile saved in the Agent Designer (four sliders + strategy prompt): Advice puts an action, stake and reason on every question card — adopting is up to you; Autopilot bets question by question and turns the days for you, pausable from the top banner (drops back to Advice). This build ships a built-in heuristic engine — it reads only the quote, your profile and deterministic noise, never the answers; for real-LLM decisions take the MCP /play route. Autopilot for the live human table is on the roadmap, not wired this build.',
+    tutModesT: 'Three participation modes',
+    tutModesB: 'Switch gears here any time: 👤 click everything yourself; 🤝 your agent puts an action + stake + reason on every question, adopting is your call; 🤖 the agent bets and turns the days for you, pausable any time. Design its personality first via "Agent Designer" on the main menu.',
     replayTut: 'Replay the tutorial',
   },
 };
@@ -2161,6 +2271,7 @@ function freshRoomState(){
     generatedFor: RD.generated_for,
     fp: roomFingerprint(),
     ready: false,     // 候机室 → 准备好了才正式开局
+    mode: 'manual',   // 参与模式：manual 纯人工 | assist AI 建议 | auto AI 托管（每间房各记各的）
     chat: [],
     pnl: 0,           // 本局已结算净盈亏（代币口径），结算页用
     dayReached: (RDAYS[0] && RDAYS[0].day_idx) || 1,
@@ -2242,12 +2353,15 @@ function openRoom(opts){
     }
   }
   renderRoom();
+  /* 存档里记着 AI 托管：一进门就续上（tick 自己会做 roomDlgOpen/S.ended 的闸口检查）。 */
+  if (RD && roomAiMode(curSave()) === 'auto') aiAutoSchedule();
   /* 实战区域点进来的是已经熟悉规则的玩家，直接开局，别再弹一遍教程；
      新手村入口（含走进去按 E）不传这个 flag，保留首次自动引导。 */
   if (!(opts && opts.skipTut)) maybeStartRoomTut();
 }
 function closeRoom(){
   if (tutActive()) tutEnd();   // 关门视同跳过：写 key，别把遮罩留在广场上
+  aiAutoStop();                // 托管循环跟着门一起停，重进再续
   const dlg = $('roomDlg');
   if (dlg) dlg.classList.remove('on');
 }
@@ -2360,6 +2474,148 @@ function roomSetStake(S, idea, v){
   if (b.stake > v) gainChips(b.stake - v, 'room_bet');   // 先退旧注再扣新注，净额过账
   else if (v > b.stake) spendChips(v - b.stake, 'room_bet');
   b.stake = v; saveP(); renderRoom();
+}
+
+/* ================================================================
+   三档参与模式（👤 纯人工 / 🤝 AI 建议 / 🤖 AI 托管）+ 内置建议引擎。
+   模式存进当前房间存档（S.mode）——村和锦标赛各记各的档，随时可切。
+   真人房本期不接（规则卡里注明 roadmap）。
+   ================================================================ */
+const roomAiMode = S => (S && (S.mode === 'assist' || S.mode === 'auto')) ? S.mode : 'manual';
+
+/* 无画像切 AI 档：先弹引导，确认即打开设计器（模式保持不变）。 */
+function setRoomAiMode(S, mode){
+  mode = mode === 'assist' || mode === 'auto' ? mode : 'manual';
+  if (mode !== 'manual' && !currentAgentProfile()){
+    if (confirm(RT('aiNeedProfile'))) openAgent();
+    return;
+  }
+  S.mode = mode;
+  saveP();
+  if (mode === 'auto') aiAutoSchedule(); else aiAutoStop();
+  if (roomDlgOpen()) renderRoom();
+}
+
+function modeSwitchHtml(S){
+  const m = roomAiMode(S);
+  const btn = (k, key) => `<button type="button" data-rmode="${k}" aria-pressed="${m === k}">${RT(key)}</button>`;
+  return `<div class="modes mode-switch">${btn('manual', 'modeManual')}${btn('assist', 'modeAssist')}${btn('auto', 'modeAuto')}</div>`;
+}
+function aiBannerHtml(S){
+  return roomAiMode(S) === 'auto'
+    ? `<div class="ai-banner">${RT('aiBanner')}<button type="button" data-aipause>${RT('aiPause')}</button></div>` : '';
+}
+/* 切档条/暂停/「采纳」的统一接线——各视图 innerHTML 重建后调一次。 */
+function wireModeSwitch(S){
+  const el = $('roomBody');
+  if (!el) return;
+  el.querySelectorAll('[data-rmode]').forEach(b => b.onclick = () => setRoomAiMode(S, b.dataset.rmode));
+  el.querySelectorAll('[data-aipause]').forEach(b => b.onclick = () => setRoomAiMode(S, 'assist'));
+  el.querySelectorAll('[data-radopt]').forEach(b => b.onclick = () => {
+    const idea = findRoomIdea(b.dataset.radopt);
+    if (idea) aiApplyAdvice(S, idea);
+  });
+}
+
+/* ---- ADVICE-ENGINE-START ----
+   PIT 铁律：这个区间是建议引擎的全部决策面——函数体绝不读 idea 的任何
+   结果字段（答案、到期收盘、到期日、区间涨跌），只准用：报价 price、
+   题面 id/ticker、画像 traits + strategy、当前可用代币。自检脚本会 grep 这个区间。 */
+const AI_NO_DUEL_WORDS = ['不对赌', '不碰对赌', '不要对赌', '别对赌', '拒绝对赌', '禁止对赌',
+  'no duel', 'never duel', 'avoid duel', "don't duel", 'do not duel'];
+function aiStrategyForbidsDuel(strategy){
+  const t = String(strategy || '').toLowerCase();
+  return AI_NO_DUEL_WORDS.some(w => t.includes(w));
+}
+/* 确定性噪声：seed = uid|date|qid 的 FNV-1a hash → [0,1)。同人同日同题永远同一个建议。 */
+function aiHash01(str){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0) / 4294967296;
+}
+/* p_est = clamp(price + contrarian×(0.5−price)×0.35 + 噪声)，噪声幅度 ±0.10×(1−|contrarian|)；
+   edge = |p_est − price|，不过 edge_bar 就建议跳过；方向 p_est>price 跟、反之反；
+   反方向 + 对赌胃口高（>0.6 或 YOLO 预设）+ 付得起对赌额 → 建议对赌（strategy 写明不对赌则禁）；
+   注码 = kelly×edge 映射 [1,2,5,10]，付不起就降档，一档都付不起 = 跳过。 */
+function adviceFor(idea, dayDate, prof, avail){
+  const clampN = (v, lo, hi, dflt) => { v = +v; return isNaN(v) ? dflt : Math.min(hi, Math.max(lo, v)); };
+  const t = (prof && prof.traits) || {};
+  const kelly = clampN(t.kelly, 0, 1, 0.25);
+  const edgeBar = clampN(t.edge_bar, 0, 0.15, 0.05);
+  const duelApp = clampN(t.duel_appetite, 0, 1, 0.5);
+  const contra = clampN(t.contrarian, -1, 1, 0);
+  const price = clampN(idea.price, 0.01, 0.99, 0.5);
+  const uid = ME && ME.id != null ? String(ME.id) : 'guest';
+  const r = aiHash01(uid + '|' + (dayDate || '') + '|' + idea.id);
+  const noise = (r * 2 - 1) * 0.10 * (1 - Math.abs(contra));
+  let pEst = price + contra * (0.5 - price) * 0.35 + noise;
+  pEst = Math.min(0.98, Math.max(0.02, pEst));
+  const edge = Math.abs(pEst - price);
+  const pC = Math.round(price * 100), eC = Math.round(pEst * 100);
+  const edgePt = Math.round(edge * 1000) / 10;
+  const barPt = Math.round(edgeBar * 1000) / 10;
+  if (edge <= 0 || edge < edgeBar)
+    return { action: 'skip', stake: 0, pEst, edge, reason: RT('aiWhySkip', pC, eC, edgePt, barPt) };
+  const dir = pEst > price ? '跟' : '反';
+  const dS = roomDuelStake();
+  if (dir === '反' && (duelApp > 0.6 || (prof && prof.preset === 'degen'))
+      && !aiStrategyForbidsDuel(prof && prof.strategy) && dS <= avail)
+    return { action: '对赌', stake: dS, pEst, edge, reason: RT('aiWhyDuel', pC, eC, edgePt, dS) };
+  const score = kelly * edge;
+  const want = score >= 0.06 ? 10 : score >= 0.02 ? 5 : score >= 0.008 ? 2 : 1;
+  const fit = ROOM_STAKE_TIERS.filter(v => v <= Math.min(want, avail));
+  if (!fit.length)
+    return { action: 'skip', stake: 0, pEst, edge, reason: RT('aiWhyBroke') };
+  const stake = fit[fit.length - 1];
+  return { action: dir, stake, pEst, edge,
+    reason: RT(dir === '跟' ? 'aiWhyFollow' : 'aiWhyFade', pC, eC, edgePt, stake) };
+}
+/* ---- ADVICE-ENGINE-END ---- */
+
+/* 建议 → 现有下注流程。「采纳」和托管共用：钱流/白名单/同日锁全走 roomPlaceBet 的校验。 */
+function aiApplyAdvice(S, idea){
+  const prof = currentAgentProfile();
+  if (!prof) return;
+  const day = roomDayOfIdea(idea.id);
+  const b = S.bets[idea.id];
+  const held = b && b.action !== 'skip' ? (b.stake || 0) : 0;   // 先退后扣：可用额含旧注
+  const adv = adviceFor(idea, (day && day.date) || '', prof, P.chips + held);
+  if (adv.action === 'skip') roomPlaceBet(S, idea, 'skip');
+  else if (adv.action === '对赌') roomPlaceBet(S, idea, '对赌');
+  else roomPlaceBet(S, idea, adv.action, adv.stake);
+}
+
+/* —— 🤖 AI 托管：600ms 一步的小步进循环，有动画感。每步只做一件事——
+   候机室先坐下 → 逐题决策下注（跳过也计入）→ 村「进入下一天」批量结算 /
+   arena 先全下再逐题「保存确定」再翻页——全部走现有入口，S.ended /
+   关门 / 降档随时刹车。托管下注同样通过 roomPlaceBet 发 feed（登录态）。 —— */
+let aiAutoTimer = null;
+function aiAutoStop(){ if (aiAutoTimer){ clearTimeout(aiAutoTimer); aiAutoTimer = null; } }
+function aiAutoSchedule(){ aiAutoStop(); aiAutoTimer = setTimeout(aiAutoTick, 600); }
+function aiAutoTick(){
+  aiAutoTimer = null;
+  if (!RD || !roomDlgOpen()) return;
+  const S = curSave();
+  if (!S || roomAiMode(S) !== 'auto' || S.ended) return;
+  if (!currentAgentProfile()){ S.mode = 'manual'; saveP(); renderRoom(); return; }
+  if (!S.ready){ S.ready = true; roomView = 'table'; saveP(); renderRoom(); return aiAutoSchedule(); }
+  if (roomView === 'lobby'){ roomView = 'table'; renderRoom(); }
+  const day = roomDayOf(S.dayReached);
+  if (!day) return;
+  const undecided = (day.ideas || []).find(i => !S.bets[i.id]);
+  if (undecided){ aiApplyAdvice(S, undecided); return aiAutoSchedule(); }
+  if (roomMode === 'arena'){
+    /* 先把当天全部题摆好才走到这——首个确认才锁日，锁不掉还没下的注 */
+    const unconfirmed = (day.ideas || []).find(i => {
+      const b = S.bets[i.id];
+      return b && b.action !== 'skip' && !b.result;
+    });
+    if (unconfirmed){ roomConfirmBet(S, unconfirmed, day.day_idx); return aiAutoSchedule(); }
+    roomAdvanceDay(S, day.day_idx);
+  } else {
+    roomReveal(S, day.day_idx);
+  }
+  return aiAutoSchedule();   // 翻天继续；S.ended 由下一步的闸口拦住
 }
 
 /* 单题结算——新手村和 arena 共用同一套算法，区别只是「谁来触发」：
@@ -2627,6 +2883,7 @@ function roomIdeaCard(idea, S, opts){
   const duelStake = roomDuelStake();
   const noChipTip = `title="${esc(RT('noChips'))}"`;
   let body;
+  let adviceHtml = '';   // 🤝 AI 建议档：题卡顶部的建议条（只在可下注状态出现）
 
   if (b && b.result && b.result.refunded){
     body = `<div class="result">${RT('refundedNote', b.stake)}</div>`;
@@ -2647,6 +2904,18 @@ function roomIdeaCard(idea, S, opts){
     const cur = b ? b.action : null;
     const held = b && b.action !== 'skip' ? (b.stake || 0) : 0;
     const avail = P.chips + held;                // 先退旧注再扣新注 ⇒ 可用额含旧注
+    if (!frozen && roomAiMode(S) === 'assist'){
+      const prof = currentAgentProfile();
+      if (prof){
+        const ideaDay = roomDayOfIdea(idea.id);
+        const adv = adviceFor(idea, (ideaDay && ideaDay.date) || '', prof, avail);
+        const actLbl = adv.action === 'skip' ? RT('skip')
+          : adv.action === '跟' ? RT('follow') : adv.action === '反' ? RT('fade') : RT('duel');
+        adviceHtml = `<div class="ai-advice">
+          <span class="adv-txt">🤖 ${esc(String(prof.agent_name || 'Agent').slice(0, 20))} ${RT('aiSuggest')}：<b>${actLbl}${adv.action === 'skip' ? '' : ' ' + adv.stake}</b> · ${esc(adv.reason)}</span>
+          <button type="button" data-radopt="${esc(idea.id)}">${RT('adoptBtn')}</button></div>`;
+      }
+    }
     const actBtn = (action, cls2, label, need) => {
       const broke = need > avail && cur !== action;
       return `<button data-rpick="${esc(idea.id)}" data-raction="${action}"
@@ -2681,6 +2950,7 @@ function roomIdeaCard(idea, S, opts){
   }
 
   return `<div class="bet room-bet">
+    ${adviceHtml}
     <div class="q">${esc(idea.question)}</div>
     <div class="say">${esc(idea.reason || '')} <span style="opacity:.7">（${esc(idea.mood || '')}）</span></div>
     ${roomCrowdBar(idea)}
@@ -2899,6 +3169,7 @@ function renderLobby(S){
         <div class="theme">${RT('themeLbl')}：${esc(theme || '—')}</div>
       </div>
     </div>
+    ${modeSwitchHtml(S)}
     <div class="stats">
       <div class="stat"><span>${RT('lifetimeHit')}</span>
         <b>${stats && stats.idea_hit_rate != null ? Math.round(stats.idea_hit_rate * 100) + '%' : '—'}</b></div>
@@ -2937,6 +3208,7 @@ function renderLobby(S){
   $('roomBody').querySelectorAll('[data-rsend]').forEach(b => b.onclick = send);
   const inputEl = $('roomChatInput');
   if (inputEl) inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  wireModeSwitch(S);
 }
 
 /* 圆桌——庄家坐正中心，闲家沿边摆开。信息不再写成一排排字，
@@ -3015,6 +3287,8 @@ function renderTable(S){
 
   const el = $('roomBody');
   el.innerHTML = `
+    ${aiBannerHtml(S)}
+    ${modeSwitchHtml(S)}
     <div class="table-toolbar">
       <p class="lead">${esc(day.date)} · ${day.ideas.length ? RT('tapDealer') : RT('noIdeasToday')}</p>
       <button class="room-back" data-rback="history" style="margin:0">${RT('navHistory')}</button>
@@ -3080,6 +3354,7 @@ function renderTable(S){
     btn.onclick = () => roomConfirmBet(S, findRoomIdea(btn.dataset.rconfirm), day.day_idx));
   el.querySelectorAll('[data-rdetail]').forEach(btn =>
     btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
+  wireModeSwitch(S);
 }
 
 /* 「查看题目」翻开的那一页——庄家专属入口，翻完自动合回牌桌。 */
@@ -3096,6 +3371,7 @@ function renderQuestions(S){
 
   const el = $('roomBody');
   el.innerHTML = `
+    ${aiBannerHtml(S)}
     <button class="room-back" data-rback>← ${RT('backToTable')}</button>
     <p class="lead" style="margin-top:0">${esc(day.date)}${day.ideas.length ? '' : ' · ' + RT('noIdeasToday')}</p>
     ${day.ideas.length ? day.ideas.map(i => roomIdeaCard(i, S)).join('')
@@ -3116,6 +3392,7 @@ function renderQuestions(S){
     btn.onclick = () => roomConfirmBet(S, findRoomIdea(btn.dataset.rconfirm), day.day_idx));
   el.querySelectorAll('[data-rdetail]').forEach(btn =>
     btn.onclick = () => goRoomDetail(btn.dataset.rdetail));
+  wireModeSwitch(S);
 }
 
 function renderHistoryView(S){
@@ -3695,7 +3972,13 @@ const openShop = () => { closeDlg(); closeBag(); closeRoom(); closeArena(); clos
 const closeShop = () => { const el = document.getElementById('shopDlg'); if (el) el.classList.remove('on'); };
 const shopDlgOpen = () => { const el = document.getElementById('shopDlg'); return !!el && el.classList.contains('on'); };
 
-const openAgent = () => { closeDlg(); closeBag(); closeRoom(); closeArena(); closeShop(); $('agentDlg').classList.add('on'); };
+const openAgent = () => {
+  closeDlg(); closeBag(); closeRoom(); closeArena(); closeShop();
+  $('agentDlg').classList.add('on');
+  agentDraft = null;             // 每次打开都从当前画像重新起草
+  renderAgent();
+  if (ME) fetchAgentProfile();   // 登录态：服务器为真源，回来重灌一次
+};
 const closeAgent = () => { const el = document.getElementById('agentDlg'); if (el) el.classList.remove('on'); };
 const agentDlgOpen = () => { const el = document.getElementById('agentDlg'); return !!el && el.classList.contains('on'); };
 {
@@ -3705,6 +3988,150 @@ const agentDlgOpen = () => { const el = document.getElementById('agentDlg'); ret
   if (shopDlgEl) shopDlgEl.addEventListener('click', e => { if (e.target.id === 'shopDlg') closeShop(); });
   const agentDlgEl = document.getElementById('agentDlg');
   if (agentDlgEl) agentDlgEl.addEventListener('click', e => { if (e.target.id === 'agentDlg') closeAgent(); });
+}
+
+/* ================================================================
+   Agent 设计器 —— 名字 + 三个预设卡 + 自由策略 prompt + 四个滑杆。
+   结构对齐 index.html 大富翁的捏 Agent 模板，像素风走广场这套皮。
+   登录态：打开时 GET /api/agent_profile 载入、「保存」POST 回服务器
+   ——MCP 的 /tune_agent 和这里读写同一份画像；游客态存本地 P.agentProfile。
+   房间里的 AI 建议 / AI 托管两档读的就是这份画像。
+   ================================================================ */
+const AGENT_PRESETS = {
+  steady: { tKey: 'agPresetSteadyT', dKey: 'agPresetSteadyD',
+    traits: { kelly: 0.125, edge_bar: 0.08, duel_appetite: 0, contrarian: 0 },
+    prompt: { zh: '你是稳健价值派：估计和报价差距超过 8 个点才出手，八分之一 Kelly 控制注码，绝不对赌，宁可跳过。不亏钱是第一原则。',
+              en: 'You are a steady value trader: act only when your estimate differs from the quote by more than 8 points, size with one-eighth Kelly, never duel, happily sit out. Not losing money is rule number one.' } },
+  hunter: { tKey: 'agPresetHunterT', dKey: 'agPresetHunterD',
+    traits: { kelly: 0.25, edge_bar: 0.05, duel_appetite: 0.5, contrarian: 0 },
+    prompt: { zh: '你是纪律严明的事件猎手：估计与报价差 5 个点以上才下注，四分之一 Kelly，把握大时才选择性对赌。看不懂就跳过，跳过不丢人。',
+              en: 'You are a disciplined event hunter: bet only past a 5-point edge, size with quarter-Kelly, duel selectively when conviction is high. Skip anything unreadable — skipping is free.' } },
+  degen: { tKey: 'agPresetDegenT', dKey: 'agPresetDegenD',
+    traits: { kelly: 0.9, edge_bar: 0, duel_appetite: 1, contrarian: 0.8 },
+    prompt: { zh: '你是 YOLO 赌狗：逢盘必赌、从不跳过，天然不信市场报价、喜欢反着来，逢盘就想跟庄家对赌，注码越大越兴奋。',
+              en: 'You are a YOLO degen: bet every board, never skip, distrust every quote and love fading it, itch to duel the dealer on sight — bigger stakes, bigger thrill.' } },
+};
+let AGENT_PROFILE = null;   // 登录态的服务器画像镜像（/api/agent_profile），null = 没画像/没拉到
+let agentDraft = null;      // 设计器打开期间的编辑态；语言切换/重渲染不丢未保存的改动
+function agentDefaults(){
+  return { agent_name: '', preset: null, strategy: '',
+           traits: { kelly: 0.25, edge_bar: 0.05, duel_appetite: 0.5, contrarian: 0 } };
+}
+/* 画像归一化：字段裁长度、traits 全部夹回合法区间——服务器/本地/草稿一律过这里。 */
+function normalizeProfile(p){
+  const d = agentDefaults();
+  if (!p || typeof p !== 'object') return d;
+  const t = p.traits || {};
+  const num = (v, lo, hi, dflt) => { v = +v; return isNaN(v) ? dflt : Math.min(hi, Math.max(lo, v)); };
+  return {
+    agent_name: String(p.agent_name || '').slice(0, 20),
+    preset: p.preset || null,
+    strategy: String(p.strategy || '').slice(0, 2000),
+    traits: {
+      kelly: num(t.kelly, 0, 1, d.traits.kelly),
+      edge_bar: num(t.edge_bar, 0, 0.15, d.traits.edge_bar),
+      duel_appetite: num(t.duel_appetite, 0, 1, d.traits.duel_appetite),
+      contrarian: num(t.contrarian, -1, 1, d.traits.contrarian),
+    },
+  };
+}
+/* 建议引擎/切档开关读画像的唯一入口：登录态认服务器镜像，游客态认本地存档。 */
+function currentAgentProfile(){
+  if (ME) return AGENT_PROFILE;
+  return P.agentProfile ? normalizeProfile(P.agentProfile) : null;
+}
+function fetchAgentProfile(){
+  if (!ME) return Promise.resolve(null);
+  return apiGet('/api/agent_profile').then(j => {
+    AGENT_PROFILE = j && j.profile ? normalizeProfile(j.profile) : null;
+    if (agentDlgOpen()){ agentDraft = null; renderAgent(); }
+    return AGENT_PROFILE;
+  }).catch(() => null);
+}
+const fmtTrait = v => String(Math.round(v * 1000) / 1000);
+const fmtPt = v => (Math.round(v * 1000) / 10) + 'pt';
+function renderAgent(){
+  const body = $('agentBody');
+  if (!body) return;
+  if (!agentDraft) agentDraft = normalizeProfile(currentAgentProfile());
+  const d = agentDraft;
+  const preset = k => `<button type="button" class="preset-card ${d.preset === k ? 'sel' : ''}" data-apreset="${k}">
+      <b>${T(AGENT_PRESETS[k].tKey)}</b><span>${T(AGENT_PRESETS[k].dKey)}</span></button>`;
+  body.innerHTML = `
+    <div class="agent-field">
+      <label>${T('agNameLbl')}</label>
+      <input type="text" id="agName" maxlength="20" placeholder="${esc(T('agNamePh'))}" value="${esc(d.agent_name)}">
+    </div>
+    <div class="agent-field">
+      <label>${T('agPresetLbl')}</label>
+      <div class="preset-row">${preset('steady')}${preset('hunter')}${preset('degen')}</div>
+    </div>
+    <div class="agent-field">
+      <label>${T('agStrategyLbl')}</label>
+      <textarea id="agStrategy" maxlength="2000" placeholder="${esc(T('agStrategyPh'))}">${esc(d.strategy)}</textarea>
+    </div>
+    <div class="agent-field">
+      <div class="slider-grid">
+        <div class="slider-item">
+          <label><span>${T('agKellyLbl')}</span><span class="val" id="agKellyV">${fmtTrait(d.traits.kelly)}</span></label>
+          <input type="range" id="agKelly" min="0" max="100" step="0.5" value="${d.traits.kelly * 100}">
+        </div>
+        <div class="slider-item">
+          <label><span>${T('agEdgeLbl')}</span><span class="val" id="agEdgeV">${fmtPt(d.traits.edge_bar)}</span></label>
+          <input type="range" id="agEdge" min="0" max="15" step="0.5" value="${d.traits.edge_bar * 100}">
+        </div>
+        <div class="slider-item">
+          <label><span>${T('agDuelLbl')}</span><span class="val" id="agDuelV">${fmtTrait(d.traits.duel_appetite)}</span></label>
+          <input type="range" id="agDuel" min="0" max="100" step="5" value="${d.traits.duel_appetite * 100}">
+        </div>
+        <div class="slider-item">
+          <label><span>${T('agContraLbl')}</span><span class="val" id="agContraV">${fmtTrait(d.traits.contrarian)}</span></label>
+          <input type="range" id="agContra" min="-100" max="100" step="5" value="${d.traits.contrarian * 100}">
+        </div>
+      </div>
+    </div>
+    <button type="button" class="agent-save" id="agSaveBtn">${T('agSaveBtn')}</button>
+    <p class="note">${ME ? T('agSrvNote') : T('agGuestNote')}</p>`;
+
+  const markPreset = () => body.querySelectorAll('.preset-card').forEach(c =>
+    c.classList.toggle('sel', c.dataset.apreset === d.preset));
+  const nameEl = $('agName'), stratEl = $('agStrategy');
+  nameEl.oninput = () => { d.agent_name = nameEl.value.slice(0, 20); };
+  stratEl.oninput = () => { d.strategy = stratEl.value.slice(0, 2000); d.preset = null; markPreset(); };
+  const bindSlider = (id, vId, key, fmt) => {
+    const s = $(id);
+    s.oninput = () => {
+      d.traits[key] = +s.value / 100;
+      $(vId).textContent = fmt(d.traits[key]);   // 实时数值显示
+      d.preset = null; markPreset();             // 手动动过滑杆就不再算预设
+    };
+  };
+  bindSlider('agKelly', 'agKellyV', 'kelly', fmtTrait);
+  bindSlider('agEdge', 'agEdgeV', 'edge_bar', fmtPt);
+  bindSlider('agDuel', 'agDuelV', 'duel_appetite', fmtTrait);
+  bindSlider('agContra', 'agContraV', 'contrarian', fmtTrait);
+  body.querySelectorAll('[data-apreset]').forEach(b => b.onclick = () => {
+    const pr = AGENT_PRESETS[b.dataset.apreset];
+    d.preset = b.dataset.apreset;
+    d.strategy = pr.prompt[lang === 'en' ? 'en' : 'zh'];
+    d.traits = { ...pr.traits };
+    renderAgent();   // 重渲染：策略/滑杆/数值一次到位
+  });
+  $('agSaveBtn').onclick = saveAgentProfile;
+}
+function saveAgentProfile(){
+  if (!agentDraft) return;
+  const prof = normalizeProfile(agentDraft);
+  if (ME){
+    apiPost('/api/agent_profile', prof).then(j => {
+      AGENT_PROFILE = normalizeProfile((j && j.profile) || prof);
+      roomToast(T('agSaved'));
+    }).catch(() => roomToast(T('agSaveFail')));
+  } else {
+    P.agentProfile = prof;
+    saveP();
+    roomToast(T('agSavedLocal'));
+  }
 }
 
 /* 「Agent庄家房」两间直接复用现有的两个庄家摊位——同一份 book 数据，
@@ -4089,6 +4516,8 @@ function buildTutSteps(){
       t: () => RT('tut7t'), b: () => RT('tut7b', N.gift, N.tiers, N.dS) },
     { view: 'table', sel: '#roomBody .seat.dealer',
       t: () => RT('tut8t'), b: () => RT('tut8b', rMoney(N.dIn), rMoney(N.dealerLine), N.days) },
+    { view: 'table', sel: '#roomBody .mode-switch',
+      t: () => RT('tutModesT'), b: () => RT('tutModesB') },
     { view: null, sel: '#roomHelpBtn',
       t: () => RT('tut9t'), b: () => RT('tut9b') },
   ];
@@ -4225,6 +4654,8 @@ function helpRoomHtml(){
       <div class="rule-row">${arena
         ? RT('ruleRevealArena', esc(RT('confirmBet')), N.days)
         : RT('ruleReveal', esc(RT('nextDay')), N.days)}</div>
+      <p class="lead">${RT('rulesModes')}</p>
+      <div class="rule-row">${RT('ruleModes')}</div>
       ${arena ? '' : `<button class="room-advance" id="tutReplayBtn" style="margin-top:14px">${RT('replayTut')}</button>`}
     </div>`;
 }
@@ -4337,6 +4768,7 @@ async function applyLogin(user){
   localStorage.setItem(LINK_KEY, '1');
   saveP();
   hideLogin();
+  fetchAgentProfile();   // AI 建议/托管要用的画像：登录即预拉，fire-and-forget
   if (bagOpen()) renderBag();
   renderLobbyWall();
 }
