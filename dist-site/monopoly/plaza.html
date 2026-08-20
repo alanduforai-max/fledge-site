@@ -136,11 +136,11 @@
   .arena-row button:disabled{opacity:.5; cursor:default; background:var(--cream2)}
 
   /* ---------- 对话框 ---------- */
-  #dlg,#bag,#roomDlg,#arenaDlg{
+  #dlg,#bag,#roomDlg,#arenaDlg,#shopDlg,#agentDlg{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(12,10,8,.6); z-index:20; padding:20px;
   }
-  #dlg.on,#bag.on,#roomDlg.on,#arenaDlg.on{display:flex}
+  #dlg.on,#bag.on,#roomDlg.on,#arenaDlg.on,#shopDlg.on,#agentDlg.on{display:flex}
   canvas.face{image-rendering:pixelated; padding:5px}
 
   /* 背包：称号 / 道具 / 皮肤 */
@@ -665,6 +665,16 @@
         <div class="mc-title" id="menuArenaTitle">实战区域</div>
         <div class="mc-sub" id="menuArenaSub">挑一张桌子上场</div>
       </div>
+      <div class="menu-card" id="menuShop">
+        <div class="mc-icon">🏪</div>
+        <div class="mc-title" id="menuShopTitle">商城</div>
+        <div class="mc-sub" id="menuShopSub">买点交易技能</div>
+      </div>
+      <div class="menu-card" id="menuAgent">
+        <div class="mc-icon">🤖</div>
+        <div class="mc-title" id="menuAgentTitle">Agent 设计</div>
+        <div class="mc-sub" id="menuAgentSub">配一个替你下场的 agent</div>
+      </div>
     </div>
     <div id="lobbyWall">
       <div class="lw-tabs">
@@ -808,6 +818,31 @@
     </div>
     <div class="live-status" id="liveStatus"><span class="dot"></span><span>—</span></div>
     <div class="body" id="liveBody"></div>
+<div id="shopDlg" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <div class="face">🏪</div>
+      <div class="who">
+        <h1 id="shopTitle">商城</h1>
+        <div class="sub" id="shopSub">买点交易技能，装备到你的 agent 上</div>
+      </div>
+      <button class="close" onclick="closeShop()">✕</button>
+    </div>
+    <div class="body"><p class="lead" id="shopComingSoon" style="margin:0">开发中，先把入口开在这——很快会有技能可以逛了。</p></div>
+  </div>
+</div>
+
+<div id="agentDlg" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <div class="face">🤖</div>
+      <div class="who">
+        <h1 id="agentTitle">Agent 设计</h1>
+        <div class="sub" id="agentSub">配一个替你下场的 agent，可以装备商城里买的技能</div>
+      </div>
+      <button class="close" onclick="closeAgent()">✕</button>
+    </div>
+    <div class="body"><p class="lead" id="agentComingSoon" style="margin:0">开发中，先把入口开在这——很快能在这给自己配一个 agent。</p></div>
   </div>
 </div>
 
@@ -954,6 +989,12 @@ const I18N = {
     devConfirm: '确定重置存档？代币/注单/称号/皮肤全部清零，回到初始状态。',
     plazaMenuTitle: '事件街', menuVillageTitle: '新手村', menuVillageSub: '先熟悉规则',
     menuArenaTitle: '实战区域', menuArenaSub: '挑一张桌子上场',
+    menuShopTitle: '商城', menuShopSub: '买点交易技能',
+    menuAgentTitle: 'Agent 设计', menuAgentSub: '配一个替你下场的 agent',
+    shopTitle: '商城', shopSub: '买点交易技能，装备到你的 agent 上',
+    shopComingSoon: '开发中，先把入口开在这——很快会有技能可以逛了。',
+    agentTitle: 'Agent 设计', agentSub: '配一个替你下场的 agent，可以装备商城里买的技能',
+    agentComingSoon: '开发中，先把入口开在这——很快能在这给自己配一个 agent。',
     arenaTitle: '实战区域', arenaSub: '选一张桌子，规则各不相同',
     arenaJoinBtn: '进入', comingSoon: '开发中',
     arenaCatFree: '自由市场类', arenaCatTournament: '锦标赛限时类', arenaCatFixed: '固定股票房',
@@ -1154,6 +1195,12 @@ const I18N = {
     alertNoBets: 'No bets yet.',
     plazaMenuTitle: 'Event Street', menuVillageTitle: 'Tutorial Village', menuVillageSub: 'Learn the ropes',
     menuArenaTitle: 'Live Arena', menuArenaSub: 'Pick a table and play',
+    menuShopTitle: 'Shop', menuShopSub: 'Buy trading skills',
+    menuAgentTitle: 'Agent Designer', menuAgentSub: 'Build an agent to play for you',
+    shopTitle: 'Shop', shopSub: 'Buy trading skills, equip them on your agent',
+    shopComingSoon: "In progress — the entry point is here first, skills are coming soon.",
+    agentTitle: 'Agent Designer', agentSub: 'Build an agent to play for you, equip skills bought in the shop',
+    agentComingSoon: "In progress — the entry point is here first, agent building is coming soon.",
     arenaTitle: 'Live Arena', arenaSub: 'Every table runs different rules',
     arenaJoinBtn: 'Join', comingSoon: 'Coming soon',
     arenaCatFree: 'Free Market', arenaCatTournament: 'Tournament (Time-limited)', arenaCatFixed: 'Fixed-Stock Room',
@@ -1281,6 +1328,10 @@ function applyLang(){
   put('menuVillageSub', T('menuVillageSub'));
   put('menuArenaTitle', T('menuArenaTitle'));
   put('menuArenaSub', T('menuArenaSub'));
+  put('menuShopTitle', T('menuShopTitle'));
+  put('menuShopSub', T('menuShopSub'));
+  put('menuAgentTitle', T('menuAgentTitle'));
+  put('menuAgentSub', T('menuAgentSub'));
   put('arenaTitle', T('arenaTitle'));
   put('arenaSub', T('arenaSub'));
   /* 服务器层的静态文案：动态墙 tab / 登录层 / 真人房表头 */
@@ -1301,6 +1352,12 @@ function applyLang(){
   ph('loginEmail', T('loginEmailPh'));
   ph('loginCode', T('loginCodePh'));
   ph('loginName', T('loginNamePh'));
+  put('shopTitle', T('shopTitle'));
+  put('shopSub', T('shopSub'));
+  put('shopComingSoon', T('shopComingSoon'));
+  put('agentTitle', T('agentTitle'));
+  put('agentSub', T('agentSub'));
+  put('agentComingSoon', T('agentComingSoon'));
 }
 function setLang(next){
   lang = next === 'en' ? 'en' : 'zh';
@@ -1604,7 +1661,7 @@ addEventListener('keydown', e => {
   if (k === 'b') bagOpen() ? closeBag() : openBag();
   if (e.key === 'Escape'){
     if (helpDlgOn()) closeHelp();                    // 分层关：先帮助卡，再其余面板
-    else { closeDlg(); closeBag(); closeRoom(); closeArena(); closeLive(); }
+    else { closeDlg(); closeBag(); closeRoom(); closeArena(); closeLive(); closeShop(); closeAgent(); }
   }
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -1738,7 +1795,7 @@ let hintOnLast = null;     // hint 上次的显隐
 let bubbleOpLast = null;   // 气泡上次的透明度
 function loop(t){
   const dt = Math.min(40, t - last); last = t;
-  const busy = dlgOpen() || bagOpen() || roomDlgOpen() || arenaDlgOpen() || liveDlgOpen();
+  const busy = dlgOpen() || bagOpen() || roomDlgOpen() || arenaDlgOpen() || liveDlgOpen() || shopDlgOpen() || agentDlgOpen();
   let dx = 0, dy = 0;
   if (!busy){                       // 面板打开时忽略移动键，人别在背后乱走
     if (keys.a || keys.arrowleft) dx -= 1;
@@ -1795,6 +1852,10 @@ const menuVillageEl = document.getElementById('menuVillage');
 if (menuVillageEl) menuVillageEl.onclick = () => openRoom();
 const menuArenaEl = document.getElementById('menuArena');
 if (menuArenaEl) menuArenaEl.onclick = () => openArena();
+const menuShopEl = document.getElementById('menuShop');
+if (menuShopEl) menuShopEl.onclick = () => openShop();
+const menuAgentEl = document.getElementById('menuAgent');
+if (menuAgentEl) menuAgentEl.onclick = () => openAgent();
 function refreshCorner(){
   /* 登录态：头像 + 昵称 + 已登录标；chips 显示的是服务器余额的本地镜像。游客态原样。 */
   const acc = ME ? `${esc(ME.avatar_emoji || '🧑')} ` : '';
@@ -2167,6 +2228,7 @@ const roomDlgOpen = () => !!$('roomDlg') && $('roomDlg').classList.contains('on'
 function openRoom(opts){
   const dlg = $('roomDlg');
   if (!dlg) return;
+  closeShop(); closeAgent();
   setRoomMode(opts && opts.mode);   // 一开门就把 RD/RDAYS/存档指针拨到对应的房
   dlg.classList.add('on');
   if (RD){
@@ -3623,12 +3685,26 @@ function refundBet(id){
    实战区域——cs 服务器列表/三国杀房间列表那个思路：一行一张桌子，
    写清楚规则，能进的直接进，还没做的房间明确标"开发中"，不装样子。
    ================================================================ */
-const openArena = () => { closeDlg(); closeBag(); closeRoom(); $('arenaDlg').classList.add('on'); renderArena(); };
+const openArena = () => { closeDlg(); closeBag(); closeRoom(); closeShop(); closeAgent(); $('arenaDlg').classList.add('on'); renderArena(); };
 const closeArena = () => { const el = document.getElementById('arenaDlg'); if (el) el.classList.remove('on'); };
 const arenaDlgOpen = () => { const el = document.getElementById('arenaDlg'); return !!el && el.classList.contains('on'); };
+
+/* 商城 / Agent 设计——这一轮只开入口，内容都是「开发中」占位，
+   不接购买、不接 agent 参数，等后面单独一版再填。 */
+const openShop = () => { closeDlg(); closeBag(); closeRoom(); closeArena(); closeAgent(); $('shopDlg').classList.add('on'); };
+const closeShop = () => { const el = document.getElementById('shopDlg'); if (el) el.classList.remove('on'); };
+const shopDlgOpen = () => { const el = document.getElementById('shopDlg'); return !!el && el.classList.contains('on'); };
+
+const openAgent = () => { closeDlg(); closeBag(); closeRoom(); closeArena(); closeShop(); $('agentDlg').classList.add('on'); };
+const closeAgent = () => { const el = document.getElementById('agentDlg'); if (el) el.classList.remove('on'); };
+const agentDlgOpen = () => { const el = document.getElementById('agentDlg'); return !!el && el.classList.contains('on'); };
 {
   const arenaDlgEl = document.getElementById('arenaDlg');
   if (arenaDlgEl) arenaDlgEl.addEventListener('click', e => { if (e.target.id === 'arenaDlg') closeArena(); });
+  const shopDlgEl = document.getElementById('shopDlg');
+  if (shopDlgEl) shopDlgEl.addEventListener('click', e => { if (e.target.id === 'shopDlg') closeShop(); });
+  const agentDlgEl = document.getElementById('agentDlg');
+  if (agentDlgEl) agentDlgEl.addEventListener('click', e => { if (e.target.id === 'agentDlg') closeAgent(); });
 }
 
 /* 「Agent庄家房」两间直接复用现有的两个庄家摊位——同一份 book 数据，
@@ -3725,7 +3801,7 @@ function renderArena(){
 /* ================================================================
    背包
    ================================================================ */
-const openBag = () => { closeDlg(); closeRoom(); closeArena(); $('bag').classList.add('on'); renderBag(); };
+const openBag = () => { closeDlg(); closeRoom(); closeArena(); closeShop(); closeAgent(); $('bag').classList.add('on'); renderBag(); };
 const closeBag = () => $('bag').classList.remove('on');
 const bagOpen = () => $('bag').classList.contains('on');
 
