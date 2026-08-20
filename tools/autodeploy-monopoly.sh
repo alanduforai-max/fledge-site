@@ -38,8 +38,13 @@ done
 if [[ -f "$MONO/web/package.json" ]]; then
   if (cd "$MONO/web" && npm ci --no-audit --no-fund && npm run build) >> "$LOG" 2>&1; then
     rm -rf "$SITE/dist-site/play"
-    mkdir -p "$SITE/dist-site/play"
+    mkdir -p "$SITE/dist-site/play/data"
     cp -R "$MONO/web/dist/". "$SITE/dist-site/play/"
+    # 三个数据文件也发一份到 /play/data/ —— 前端从这儿 fetch，
+    # 这样 Phase 4 把 /monopoly/* 301 掉之后新 app 不受影响。
+    for f in book.js room.js room_arena.js; do
+      [[ -f "$MONO/$f" ]] && cp "$MONO/$f" "$SITE/dist-site/play/data/"
+    done
     echo "$(ts) play build ok" >> "$LOG"
   else
     echo "$(ts) ERROR: play build failed — 保留上一版 /play/，老线照常部署" >> "$LOG"
