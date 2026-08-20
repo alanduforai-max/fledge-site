@@ -35,8 +35,10 @@ if [[ -f "$MONO/web/package.json" ]]; then
     cp -R "$MONO/web/dist/". "$SITE/dist-site/play/"
     # 三个数据文件也发一份到 /play/data/ —— 前端从这儿 fetch，
     # 这样 Phase 4 把 /monopoly/* 301 掉之后新 app 不受影响。
-    for f in book.js room.js room_arena.js; do
-      [[ -f "$MONO/$f" ]] && cp "$MONO/$f" "$SITE/dist-site/play/data/"
+    # dungeon_*.js 用通配：加副本只要提交数据文件，不用回头改这个脚本。
+    # (N) 是 zsh 的 null_glob 修饰 —— 一个副本都没有时展开成空，而不是报错中止。
+    for f in "$MONO"/book.js "$MONO"/room.js "$MONO"/room_arena.js $MONO/dungeon_*.js(N); do
+      [[ -f "$f" ]] && cp "$f" "$SITE/dist-site/play/data/"
     done
     echo "$(ts) play build ok" >> "$LOG"
   else
