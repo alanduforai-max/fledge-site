@@ -530,6 +530,114 @@
     opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
   }
   #roomToast.on{opacity:1; transform:translate(-50%,0)}
+
+  /* ---------- 初始登录层——像素味跟主菜单一个模子 ---------- */
+  #loginDlg{
+    position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at 50% 20%, #24422F, #17301F 70%); padding:20px;
+  }
+  #loginDlg.on{display:flex}
+  .login-box{
+    width:min(390px, 94vw); background:var(--cream); padding:26px 24px; text-align:center;
+    box-shadow:0 0 0 3px var(--line), 0 0 0 6px var(--cream), 0 0 0 9px var(--line),
+               10px 10px 0 6px rgba(0,0,0,.3);
+  }
+  .login-box h1{font-size:22px; letter-spacing:8px; margin-bottom:8px}
+  .login-box .login-sub{font-size:12.5px; color:var(--ink2); margin-bottom:18px; line-height:1.7}
+  .login-box button{font-family:var(--ui); cursor:pointer; border:0}
+  .login-primary{
+    display:block; width:100%; padding:12px; margin-bottom:8px; font-size:14px; font-weight:700;
+    background:var(--gold); box-shadow:inset 0 0 0 3px var(--line); letter-spacing:1px;
+  }
+  .login-primary:hover{background:#eec46a}
+  .login-sep{font-size:11.5px; color:var(--ink2); margin:14px 0 10px; letter-spacing:1px}
+  .login-row{display:flex; gap:8px; margin-bottom:8px}
+  .login-row input{
+    flex:1; min-width:0; padding:10px 12px; font-family:var(--ui); font-size:14px; color:var(--ink);
+    background:#fff; border:0; box-shadow:inset 0 0 0 3px var(--line);
+  }
+  .login-row button{
+    padding:10px 14px; font-size:13px; background:var(--cream2);
+    box-shadow:inset 0 0 0 3px var(--line); white-space:nowrap;
+  }
+  .login-row button:hover{background:var(--gold)}
+  .login-msg{min-height:18px; font-size:12.5px; color:var(--ink2); margin:4px 0 10px; line-height:1.5}
+  .login-msg.err{color:var(--up)}
+  .login-guest{
+    background:none; font-size:13px; color:var(--ink2); text-decoration:underline; padding:6px;
+  }
+  .login-guest:hover{color:var(--ink)}
+
+  /* ---------- 背包 · Agent 接入（个人 API token） ---------- */
+  .token-box{display:flex; gap:8px; align-items:stretch}
+  .token-code{
+    flex:1; min-width:0; display:block; font-family:var(--num); font-size:12px; line-height:1.5;
+    background:#fff; padding:8px 10px; box-shadow:inset 0 0 0 2px var(--line);
+    overflow-wrap:anywhere; word-break:break-all; user-select:all;
+  }
+  .token-box button{
+    flex:none; padding:8px 14px; font-family:var(--ui); font-size:13px; cursor:pointer;
+    background:var(--gold); border:0; box-shadow:inset 0 0 0 2px var(--line);
+  }
+  .token-box button:hover{background:#eec46a}
+
+  /* ---------- 主菜单下方：大厅动态墙 + 排行榜 ---------- */
+  #lobbyWall{
+    width:min(600px, 92%); background:rgba(20,15,10,.86); color:#f7eeda;
+    box-shadow:0 0 0 3px rgba(20,15,10,.86); font-size:12.5px; text-align:left;
+  }
+  .lw-tabs{display:flex; align-items:center; gap:2px; padding:6px 10px 0}
+  .lw-tabs button{
+    padding:6px 14px; font-family:var(--ui); font-size:12px; cursor:pointer; letter-spacing:1px;
+    background:none; border:0; color:#cbbfa4;
+  }
+  .lw-tabs button[aria-pressed="true"]{color:var(--gold); font-weight:700; box-shadow:inset 0 -2px 0 0 var(--gold)}
+  .lw-tabs .lw-tag{margin-left:auto; font-size:10.5px; color:#8a7355; letter-spacing:1px}
+  #lwBody{max-height:150px; overflow-y:auto; padding:6px 12px 8px}
+  .lw-row{
+    display:flex; gap:8px; align-items:baseline; padding:4px 2px; line-height:1.5;
+    border-bottom:1px solid rgba(247,238,218,.08);
+  }
+  .lw-row:last-child{border-bottom:0}
+  .lw-av{flex:none}
+  .lw-rank{flex:none; font-family:var(--num); color:#8a7355; width:18px}
+  .lw-txt{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .lw-txt b{color:var(--gold)}
+  .lw-time{flex:none; font-size:10.5px; color:#8a7355; font-family:var(--num)}
+  .lw-empty{padding:10px 4px; color:#8a7355; margin:0}
+
+  /* ---------- 真人房（主桌 WS） ---------- */
+  #liveDlg{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(12,10,8,.6); z-index:20; padding:20px;
+  }
+  #liveDlg.on{display:flex}
+  .live-status{
+    padding:7px 20px; font-size:12px; letter-spacing:.5px; border-bottom:3px solid var(--line);
+    background:var(--cream2); color:var(--ink2); display:flex; align-items:center; gap:10px;
+  }
+  .live-status .dot{width:8px; height:8px; flex:none; background:#8a7355}
+  .live-status.ok .dot{background:var(--down)}
+  .live-status.bad .dot{background:var(--up)}
+  .live-status button{
+    margin-left:auto; padding:4px 10px; font-family:var(--ui); font-size:12px; cursor:pointer;
+    background:#fff; border:0; box-shadow:inset 0 0 0 2px var(--line);
+  }
+  .live-status button:hover{background:var(--gold)}
+  .live-players{display:flex; flex-direction:column; gap:6px; margin:8px 0 14px}
+  .live-player{
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:#fff; padding:8px 11px;
+    box-shadow:inset 0 0 0 3px var(--line); font-size:13px;
+  }
+  .live-player.you{background:#fff6dd; box-shadow:inset 0 0 0 3px var(--line), inset 0 0 0 6px var(--gold)}
+  .live-player .lp-you{font-size:11px; color:var(--ink2)}
+  .live-player .lp-ready{font-size:11px; color:var(--ink2)}
+  .live-player .lp-ready.on{color:var(--down); font-weight:700}
+  .live-player .lp-picks{display:flex; gap:4px; flex-wrap:wrap; margin-left:auto}
+  .live-player .pick{display:inline-block; padding:2px 8px; background:var(--cream2); font-size:11px}
+  .live-dealer{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+  .live-dealer .bar{flex:1; height:10px; background:#fff; box-shadow:inset 0 0 0 2px var(--line); overflow:hidden}
+  .live-dealer .bar i{display:block; height:100%; background:var(--gold)}
 </style>
 </head>
 <body>
@@ -557,6 +665,14 @@
         <div class="mc-title" id="menuArenaTitle">实战区域</div>
         <div class="mc-sub" id="menuArenaSub">挑一张桌子上场</div>
       </div>
+    </div>
+    <div id="lobbyWall">
+      <div class="lw-tabs">
+        <button id="lwTabFeed" type="button" aria-pressed="true">大厅动态</button>
+        <button id="lwTabBoard" type="button" aria-pressed="false">排行榜</button>
+        <span class="lw-tag" id="lwSrvTag">服务器榜</span>
+      </div>
+      <div id="lwBody"></div>
     </div>
   </div>
 </div>
@@ -654,6 +770,44 @@
       <button class="close" onclick="closeArena()">✕</button>
     </div>
     <div class="body" id="arenaBody"></div>
+  </div>
+</div>
+
+<!-- 初始登录层：无会话且没点过「游客先逛逛」时压在最上面 -->
+<div id="loginDlg" role="dialog" aria-modal="true">
+  <div class="login-box">
+    <h1 id="loginTitle">事件街</h1>
+    <p class="login-sub" id="loginSub">登录后代币存在服务器，换设备也带得走；先逛逛也行。</p>
+    <button class="login-primary" id="loginGoogle" type="button">用 Google 登录</button>
+    <div class="login-sep" id="loginSep">— 或用邮箱登录 —</div>
+    <div class="login-row" id="loginStep1">
+      <input id="loginEmail" type="email" maxlength="80" placeholder="邮箱地址">
+      <button id="loginSendBtn" type="button">发验证码</button>
+    </div>
+    <div class="login-row" id="loginStep2" style="display:none">
+      <input id="loginCode" maxlength="16" placeholder="验证码" style="max-width:37%">
+      <input id="loginName" maxlength="12" placeholder="昵称（可选）">
+      <button id="loginVerifyBtn" type="button">登录</button>
+    </div>
+    <p class="login-msg" id="loginMsg"></p>
+    <button class="login-guest" id="loginGuest" type="button">游客先逛逛 →</button>
+  </div>
+</div>
+
+<!-- 真人房：主桌，WS 直连服务器，钱只动服务器余额 -->
+<div id="liveDlg" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="head">
+      <div class="face">🧑‍🤝‍🧑</div>
+      <div class="who">
+        <h1 id="liveTitle">主桌 · 真人对战</h1>
+        <div class="sub" id="liveSub">和真人一起倒庄 · 服务器结算</div>
+      </div>
+      <div class="mood"><span id="liveChipsLbl">服务器代币</span><b id="liveChips">—</b></div>
+      <button class="close" onclick="closeLive()">✕</button>
+    </div>
+    <div class="live-status" id="liveStatus"><span class="dot"></span><span>—</span></div>
+    <div class="body" id="liveBody"></div>
   </div>
 </div>
 
@@ -813,6 +967,80 @@ const I18N = {
     arenaHumanName: '真人庄家房',
     arenaHumanMeta: '真人当庄，真人下注，需要联机对战，正在做',
     arenaHumanTags: '真人庄家 | 自由市场 | 联机对战',
+    arenaCatLive: '真人对战',
+    liveRoomName: '主桌 · 和真人一起倒庄',
+    liveRoomMeta: '真人同桌下注 · 钱直接动服务器余额，全员准备后结算',
+    liveRoomTags: 'LIVE | 主桌 | 服务器结算',
+    liveBadge: 'LIVE',
+    liveNeedLogin: '先登录才能上真人桌',
+    liveTitle: '主桌 · 真人对战',
+    liveSubTitle: '和真人一起倒庄 · 服务器结算',
+    liveMyChips: '服务器代币',
+    liveConnecting: '连接中…',
+    liveConnected: '已连接',
+    liveReconnecting: n => `连接断了，正在重连（第 ${n}/3 次）…`,
+    liveDead: '已断开',
+    liveRetryBtn: '重连',
+    liveWaiting: '已连上，等服务器发当天的题…',
+    livePhaseBetting: '下注中',
+    livePhaseRevealed: '已揭晓',
+    livePhaseEnded: '本局结束',
+    liveDay: n => `第 ${n} 天`,
+    liveDealerCash: '庄家资金',
+    livePlayers: '在座玩家',
+    liveYou: '你',
+    liveReadyTag: '已准备',
+    liveNotReadyTag: '未准备',
+    liveReady: '准备 · 全员齐了服务器结算',
+    liveUnready: '取消准备',
+    liveNext: '下一天',
+    liveResults: '本轮结算',
+    liveNoQuestions: '服务器还没发题',
+    liveErr: c => `服务器拒绝了：${c}`,
+    actFollow: '跟', actFade: '反', actDuel: '对赌', actSkip: '跳过',
+    liveStakeLbl: '注码',
+    feedTitle: '大厅动态', boardTitle: '排行榜', boardSrvTag: '服务器榜',
+    feedEmpty: '还没有动态，去下一注就有了。',
+    boardEmpty: '榜上还没有人。',
+    feedOffline: '连不上服务器，动态墙暂时看不了。',
+    timeNow: '刚刚', timeMin: n => `${n} 分钟前`, timeHr: n => `${n} 小时前`, timeDay: n => `${n} 天前`,
+    loginTitle: '事件街',
+    loginSub: '登录后代币存在服务器，换设备也带得走；先逛逛也行。',
+    loginGoogle: '用 Google 登录',
+    loginSep: '— 或用邮箱登录 —',
+    loginEmailPh: '邮箱地址',
+    loginSendCode: '发验证码',
+    loginCodePh: '验证码',
+    loginNamePh: '昵称（可选）',
+    loginVerify: '登录',
+    loginGuest: '游客先逛逛 →',
+    loginSending: '发送中…',
+    loginSent: '验证码已发到邮箱。',
+    loginDevCode: '开发模式：验证码用 fledge2026。',
+    loginBadEmail: '邮箱格式不对。',
+    loginNeedCode: '先填验证码。',
+    loginVerifying: '验证中…',
+    loginFail: '没成功，再试一次。',
+    accLead: '服务器账号',
+    accTag: '已登录',
+    accChipsLbl: '服务器代币',
+    accLogout: '登出',
+    importAsk: n => `检测到本地存档里有 ${n} 代币。一次性导入服务器账号？（导入后以服务器余额为准）`,
+    importDone: n => `已把 ${n} 本地代币导入服务器账号`,
+    importFail: '导入没成功，服务器没收到',
+    agentLead: '🤖 Agent 接入',
+    tokenGenBtn: '生成 API Token',
+    tokenRegenBtn: '重新生成',
+    tokenRotateConfirm: '重新生成会立刻作废旧 token，已接入的 agent 得换新的才能继续用。继续？',
+    tokenCreated: '创建于',
+    tokenLastUsed: '最近使用',
+    tokenNever: '从未使用',
+    tokenOnceNote: '明文只显示这一次，关掉就再也看不到——现在就复制。',
+    tokenCopy: '复制',
+    tokenCopied: '已复制',
+    tokenHint: '把 token 填进 Claude Code / 任何 MCP 客户端（服务器地址 https://fledgetradelab.com/mcp，Bearer 鉴权），客户端里会自动出现 /play、/tune_agent、/daily_review 三个指令：创造你的 agent 人格、让它替你进真人房对局、每天拉战报。',
+    tokenFail: 'Token 没生成成功，再试一次。',
+    tokenLoading: '查询中…',
     helpTitle: '广场怎么玩',
     helpSub: '三件事就够上手',
     help1: '走到摊位前按 <kbd>E</kbd>（或直接点摊主）。摊主挂的都是真实行情题：未来 1 / 3 / 5 天的收盘比现在高还是低，答案等美股收盘揭晓。',
@@ -939,6 +1167,80 @@ const I18N = {
     arenaHumanName: 'Human dealer room',
     arenaHumanMeta: 'A real player deals, real players bet — needs live multiplayer, in progress',
     arenaHumanTags: 'Human dealer | Open market | Multiplayer',
+    arenaCatLive: 'Live PvP',
+    liveRoomName: 'Main table · dethrone the dealer with real people',
+    liveRoomMeta: 'Real players, one table · bets move your server balance, settles when all are ready',
+    liveRoomTags: 'LIVE | Main table | Server-settled',
+    liveBadge: 'LIVE',
+    liveNeedLogin: 'Log in first to join the live table',
+    liveTitle: 'Main table · Live PvP',
+    liveSubTitle: 'Dethrone the dealer together · server-settled',
+    liveMyChips: 'Server chips',
+    liveConnecting: 'Connecting…',
+    liveConnected: 'Connected',
+    liveReconnecting: n => `Connection lost — reconnecting (${n}/3)…`,
+    liveDead: 'Disconnected',
+    liveRetryBtn: 'Reconnect',
+    liveWaiting: 'Connected — waiting for the server to deal…',
+    livePhaseBetting: 'Betting',
+    livePhaseRevealed: 'Revealed',
+    livePhaseEnded: 'Round over',
+    liveDay: n => `Day ${n}`,
+    liveDealerCash: 'Dealer cash',
+    livePlayers: 'At the table',
+    liveYou: 'you',
+    liveReadyTag: 'Ready',
+    liveNotReadyTag: 'Not ready',
+    liveReady: 'Ready · server settles when everyone is',
+    liveUnready: 'Unready',
+    liveNext: 'Next day',
+    liveResults: 'Settlement',
+    liveNoQuestions: 'No questions from the server yet',
+    liveErr: c => `Server said no: ${c}`,
+    actFollow: 'Follow', actFade: 'Fade', actDuel: 'Duel', actSkip: 'Skip',
+    liveStakeLbl: 'Stake',
+    feedTitle: 'Lobby feed', boardTitle: 'Leaderboard', boardSrvTag: 'Server board',
+    feedEmpty: 'Nothing yet — place a bet and it shows up here.',
+    boardEmpty: 'Nobody on the board yet.',
+    feedOffline: 'Server unreachable — the feed is napping.',
+    timeNow: 'just now', timeMin: n => `${n}m ago`, timeHr: n => `${n}h ago`, timeDay: n => `${n}d ago`,
+    loginTitle: 'Event Street',
+    loginSub: 'Sign in and your chips live on the server, across devices. Or just look around first.',
+    loginGoogle: 'Sign in with Google',
+    loginSep: '— or sign in by email —',
+    loginEmailPh: 'Email address',
+    loginSendCode: 'Send code',
+    loginCodePh: 'Code',
+    loginNamePh: 'Nickname (optional)',
+    loginVerify: 'Sign in',
+    loginGuest: 'Just looking · guest mode →',
+    loginSending: 'Sending…',
+    loginSent: 'Code sent — check your inbox.',
+    loginDevCode: 'Dev mode: the code is fledge2026.',
+    loginBadEmail: 'That email looks off.',
+    loginNeedCode: 'Enter the code first.',
+    loginVerifying: 'Verifying…',
+    loginFail: 'Did not work — try again.',
+    accLead: 'Server account',
+    accTag: 'signed in',
+    accChipsLbl: 'Server chips',
+    accLogout: 'Log out',
+    importAsk: n => `Your local save holds ${n} chips. Import them into your server account? (one-time — the server balance becomes the truth)`,
+    importDone: n => `Imported ${n} local chips into your server account`,
+    importFail: 'Import failed — the server never got it',
+    agentLead: '🤖 Agent access',
+    tokenGenBtn: 'Generate API token',
+    tokenRegenBtn: 'Regenerate',
+    tokenRotateConfirm: 'Regenerating immediately invalidates the old token — any connected agent must switch to the new one. Continue?',
+    tokenCreated: 'Created',
+    tokenLastUsed: 'Last used',
+    tokenNever: 'never used',
+    tokenOnceNote: 'Shown in plaintext exactly once — copy it now.',
+    tokenCopy: 'Copy',
+    tokenCopied: 'Copied',
+    tokenHint: 'Drop the token into Claude Code or any MCP client (server https://fledgetradelab.com/mcp, Bearer auth) — three commands show up automatically: /play, /tune_agent, /daily_review. Craft your agent\'s persona, send it to the live table as you, pull a daily battle report.',
+    tokenFail: 'Token generation failed — try again.',
+    tokenLoading: 'Checking…',
     helpTitle: 'How the plaza works',
     helpSub: 'Three things and you are set',
     help1: 'Walk up to a stall and press <kbd>E</kbd> (or click the vendor). Vendors post real market questions: will the close in 1 / 3 / 5 days end above the current mark — answers arrive after the US close.',
@@ -981,6 +1283,24 @@ function applyLang(){
   put('menuArenaSub', T('menuArenaSub'));
   put('arenaTitle', T('arenaTitle'));
   put('arenaSub', T('arenaSub'));
+  /* 服务器层的静态文案：动态墙 tab / 登录层 / 真人房表头 */
+  put('lwTabFeed', T('feedTitle'));
+  put('lwTabBoard', T('boardTitle'));
+  put('lwSrvTag', T('boardSrvTag'));
+  put('loginTitle', T('loginTitle'));
+  put('loginSub', T('loginSub'));
+  put('loginGoogle', T('loginGoogle'));
+  put('loginSep', T('loginSep'));
+  put('loginSendBtn', T('loginSendCode'));
+  put('loginVerifyBtn', T('loginVerify'));
+  put('loginGuest', T('loginGuest'));
+  put('liveTitle', T('liveTitle'));
+  put('liveSub', T('liveSubTitle'));
+  put('liveChipsLbl', T('liveMyChips'));
+  const ph = (id, v) => { const el = document.getElementById(id); if (el) el.placeholder = v; };
+  ph('loginEmail', T('loginEmailPh'));
+  ph('loginCode', T('loginCodePh'));
+  ph('loginName', T('loginNamePh'));
 }
 function setLang(next){
   lang = next === 'en' ? 'en' : 'zh';
@@ -996,6 +1316,8 @@ function setLang(next){
   if (roomDlgOpen()) renderRoom();
   if (arenaDlgOpen()) renderArena();
   if (helpDlgOn()) renderHelp();
+  if (liveDlgOpen()) renderLive();
+  renderLobbyWall();
   if (tutActive()) tutShow(tutIdx);   // 语言切了，当前步的卡片和高亮目标都要重挂
 }
 const langBtnEl = document.getElementById('langBtn');
@@ -1116,6 +1438,66 @@ const saveP = () => { localStorage.setItem(SAVE, JSON.stringify(P)); refreshCorn
 let P = loadP();
 let stake = 100;
 
+/* ================================================================
+   服务器账号层 —— 同源 API + 登录态。
+   真源口径：登录态下代币以服务器为准（页面加载用 /api/me 的 chips
+   覆盖本地镜像），P.chips 只是缓存镜像；游客态一切照旧、纯本地。
+   ================================================================ */
+const GUEST_KEY = 'fp_guest';        // 点过「游客先逛逛」
+const LINK_KEY = 'fp_srv_linked';    // 这台机器成功登录过（首登导入判定用）
+let ME = null;                       // /api/me 的 user；null = 未登录
+let srvState = 'unknown';            // 'unknown' | 'guest' | 'user'（/api/me 回来前是 unknown）
+let srvQueue = [];                   // 登录态未知期间发生的钱流，等 /api/me 回来再定去向
+
+function apiGet(path){
+  return fetch(path, { credentials: 'same-origin' })
+    .then(r => r && r.ok ? r.json() : Promise.reject(r && r.status));
+}
+function apiPost(path, body){
+  return fetch(path, {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  }).then(r => r && r.ok ? r.json() : Promise.reject(r && r.status));
+}
+
+/* 登录态同步服务器钱包：fire-and-forget，失败重试一次。 */
+function postWalletDelta(amount, reason){
+  const send = () => apiPost('/api/wallet/delta', { amount, reason: reason || '' })
+    .then(j => { if (ME && j && typeof j.chips === 'number') ME.chips = j.chips; });
+  send().catch(() => send().catch(() => {}));
+}
+function walletDelta(amount, reason){
+  if (!amount) return;
+  if (srvState === 'unknown'){ srvQueue.push({ amount, reason }); return; }
+  if (ME) postWalletDelta(amount, reason);
+}
+
+/* —— 代币唯一进出口 ——
+   P.chips 的所有增减一律走这两个 helper：游客态 = 现状纯本地；
+   登录态额外把差额镜像到服务器钱包（服务器是真源，本地只是缓存）。 */
+function gainChips(n, reason){
+  n = +n || 0;
+  if (n <= 0) return;
+  P.chips += n;
+  P.peak = Math.max(P.peak || 0, P.chips);
+  walletDelta(n, reason);
+}
+function spendChips(n, reason){
+  n = +n || 0;
+  if (n <= 0) return;
+  P.chips -= n;
+  walletDelta(-n, reason);
+}
+
+/* 动态墙投稿：登录用户的每次下注/结算，fire-and-forget。 */
+function postFeed(kind, data){
+  if (!ME) return;
+  apiPost('/api/feed', { kind, data: data || {} }).catch(() => {});
+}
+/* feed/真人房用的动作 token：房间里的中文动作 → 线上口径 */
+const ACTION_TOKEN = { '跟': 'follow', '反': 'fade', '对赌': 'duel', skip: 'skip', '跳过': 'skip' };
+
 /* 道具。效果都真的接在下注流程里，不是摆设。 */
 const ITEMS = {
   rumor: { emoji: '🍸', name: '小道消息', name_en: 'Hot Tip', cost: 150,
@@ -1205,6 +1587,7 @@ const hero = { x: 96, y: 126, f: false, step: 0 };
 const keys = {};
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;      // 改名时别把字吃掉
+  if (loginDlgOn()) return;                      // 登录层压着时不吃任何游戏快捷键
   const k = e.key.toLowerCase();
   keys[k] = true;
   if (k === 'e'){
@@ -1212,6 +1595,7 @@ addEventListener('keydown', e => {
     else if (dlgOpen()) closeDlg();                  // 对话中 E = 关闭，别原地重开
     else if (roomDlgOpen()) closeRoom();
     else if (arenaDlgOpen()) closeArena();
+    else if (liveDlgOpen()) closeLive();
     else if (!bagOpen()){
       const n = nearNpc();
       if (n) talkTo(n);
@@ -1220,7 +1604,7 @@ addEventListener('keydown', e => {
   if (k === 'b') bagOpen() ? closeBag() : openBag();
   if (e.key === 'Escape'){
     if (helpDlgOn()) closeHelp();                    // 分层关：先帮助卡，再其余面板
-    else { closeDlg(); closeBag(); closeRoom(); closeArena(); }
+    else { closeDlg(); closeBag(); closeRoom(); closeArena(); closeLive(); }
   }
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -1354,7 +1738,7 @@ let hintOnLast = null;     // hint 上次的显隐
 let bubbleOpLast = null;   // 气泡上次的透明度
 function loop(t){
   const dt = Math.min(40, t - last); last = t;
-  const busy = dlgOpen() || bagOpen() || roomDlgOpen() || arenaDlgOpen();
+  const busy = dlgOpen() || bagOpen() || roomDlgOpen() || arenaDlgOpen() || liveDlgOpen();
   let dx = 0, dy = 0;
   if (!busy){                       // 面板打开时忽略移动键，人别在背后乱走
     if (keys.a || keys.arrowleft) dx -= 1;
@@ -1412,7 +1796,10 @@ if (menuVillageEl) menuVillageEl.onclick = () => openRoom();
 const menuArenaEl = document.getElementById('menuArena');
 if (menuArenaEl) menuArenaEl.onclick = () => openArena();
 function refreshCorner(){
-  cornerEl.innerHTML = `${esc(P.nick)} · ${esc(titleName())}<br>`
+  /* 登录态：头像 + 昵称 + 已登录标；chips 显示的是服务器余额的本地镜像。游客态原样。 */
+  const acc = ME ? `${esc(ME.avatar_emoji || '🧑')} ` : '';
+  const tag = ME ? ` <span>· ${T('accTag')}</span>` : '';
+  cornerEl.innerHTML = `${acc}${esc(P.nick)} · ${esc(titleName())}${tag}<br>`
     + `<b>${P.chips}</b> ${T('cornerChips')} <span>${T('cornerBag')}</span>`;
 }
 
@@ -1734,7 +2121,7 @@ function roomRefundOpenStakes(old){
       back += b.stake;
       b.result = { refunded: true, won: null, delta: 0 };
     }
-  if (back){ P.chips += back; P.peak = Math.max(P.peak || 0, P.chips); }
+  if (back) gainChips(back, 'room_refund');
 }
 /* 轻提示。textContent 赋值，文案永远不走 innerHTML；节点惰性创建，
    缺 book.js 整页被替换的情形下也不会因为找不到容器而炸。 */
@@ -1787,8 +2174,7 @@ function openRoom(opts){
     roomView = S.ended ? 'table' : (S.ready ? 'table' : 'lobby');
     if (!P.roomGift1){       // 新手礼包：一次性入账，先出 toast（z-index 压过教程遮罩）再起教程
       P.roomGift1 = true;
-      P.chips += ROOM_GIFT;
-      P.peak = Math.max(P.peak || 0, P.chips);
+      gainChips(ROOM_GIFT, 'room_gift');
       saveP();
       roomToast(RT('gift', ROOM_GIFT));
     }
@@ -1874,7 +2260,7 @@ function roomPlaceBet(S, idea, action, wantStake){
   if (roomDayLocked(S, idea.id)) return;         // 同日已开始结算：选择锁定
   const held = b && b.action !== 'skip' ? (b.stake || 0) : 0;   // 旧注（退回额）
   if (action === 'skip'){                        // skip = 只退不扣
-    if (held){ P.chips += held; P.peak = Math.max(P.peak || 0, P.chips); }
+    if (held) gainChips(held, 'room_unbet');
     S.bets[idea.id] = { action: 'skip' };
     saveP(); renderRoom(); return;
   }
@@ -1895,9 +2281,11 @@ function roomPlaceBet(S, idea, action, wantStake){
     if (!fit.length){ roomToast(RT('noChips')); return; }
     stake = fit[fit.length - 1];
   }
-  P.chips = P.chips + held - stake;              // ①全额退旧注 ②按新注扣，合并成一步等价算式
-  P.peak = Math.max(P.peak || 0, P.chips);
+  /* ①全额退旧注 ②按新注扣——净额走唯一进出口，登录态自动镜像到服务器钱包 */
+  if (held > stake) gainChips(held - stake, 'room_bet');
+  else if (stake > held) spendChips(stake - held, 'room_bet');
   S.bets[idea.id] = { action, price: idea.price, stake };
+  postFeed('bet', { game: roomMode, ticker: idea.ticker, action: ACTION_TOKEN[action] || action, stake });
   saveP(); renderRoom();
 }
 function roomSetStake(S, idea, v){
@@ -1907,8 +2295,8 @@ function roomSetStake(S, idea, v){
   if (!ROOM_STAKE_TIERS.includes(v)) return;     // 白名单外：拒
   const avail = P.chips + b.stake;               // 先退旧注再扣新注
   if (v > avail){ roomToast(RT('noChips')); return; }
-  P.chips = P.chips + b.stake - v;
-  P.peak = Math.max(P.peak || 0, P.chips);
+  if (b.stake > v) gainChips(b.stake - v, 'room_bet');   // 先退旧注再扣新注，净额过账
+  else if (v > b.stake) spendChips(v - b.stake, 'room_bet');
   b.stake = v; saveP(); renderRoom();
 }
 
@@ -1922,12 +2310,11 @@ function roomSettleOneBet(S, idea, dayIdx){
   const won = b.action === '跟' ? idea.outcome === 'YES' : idea.outcome === 'NO';
   const net = roomWinNet(b.stake, sidePrice);
   const delta = won ? net : -b.stake;
-  if (won){                                  // 本金下注时已扣：赢了本金+净赚一起回账
-    P.chips += b.stake + net;
-    P.peak = Math.max(P.peak || 0, P.chips);
-  }
+  if (won) gainChips(b.stake + net, 'room_win');   // 本金下注时已扣：赢了本金+净赚一起回账
   S.pnl = r1((S.pnl || 0) + delta);
   b.result = { won, delta };
+  postFeed('settle', { game: roomMode, ticker: idea.ticker,
+    action: ACTION_TOKEN[b.action] || b.action, stake: b.stake, pl: delta });
 
   if (b.action === '对赌'){
     const dealerDelta = won ? -net : b.stake;   // 1:1 打庄家口袋：你赢多少他亏多少（缩放后）
@@ -3164,9 +3551,11 @@ function placeLive(id, side){
                 practice: false, pending: true, ok: null };
   /* live 盘恒为 open（管线只把当天未揭晓的题放进 live.ideas），下注一律挂起扣本金。
      结算只走 settleLiveBets 这一个入口 —— 万一答案其实已经在 ledger 里，它也会当场入账。 */
-  P.chips -= stake;
+  spendChips(stake, 'vendor_bet');
   if (buff) P.buff = null;
   P.bets[id] = rec;
+  postFeed('bet', { game: 'vendor', ticker: rec.ticker,
+    action: side === 'YES' ? 'follow' : 'fade', stake });
   settleLiveBets();
   saveP();
   renderBets();
@@ -3209,8 +3598,10 @@ function settleLiveBets(){
     let win = rec.win;
     if (rec.buff === 'rumor' && rec.ok) win = Math.round(win * 1.25);
     rec.win = win;
-    if (rec.ok) P.chips += win;       // 本金已扣，赢了把派彩加回来
-    P.peak = Math.max(P.peak, P.chips);
+    if (rec.ok) gainChips(win, 'vendor_win');   // 本金已扣，赢了把派彩加回来
+    postFeed('settle', { game: 'vendor', ticker: rec.ticker,
+      action: rec.side === 'YES' ? 'follow' : 'fade', stake: rec.stake,
+      pl: rec.ok ? rec.win - rec.stake : -rec.stake });
     changed = true;
   }
   if (changed) saveP();
@@ -3223,8 +3614,7 @@ function refundBet(id){
   b.pending = false;
   b.ok = null;
   b.refunded = true;
-  P.chips += b.stake;
-  P.peak = Math.max(P.peak, P.chips);
+  gainChips(b.stake, 'bet_refund');
   saveP();
   renderBag();
 }
@@ -3282,6 +3672,12 @@ function arenaRooms(){
   });
   rows.push({ cat: 'free', icon: '🧑‍🤝‍🧑', name: T('arenaHumanName'), badge: T('comingSoon'),
              meta: T('arenaHumanMeta'), tags: T('arenaHumanTags'), soon: true });
+  /* 真人对战：主桌。未登录点进去会先弹「先登录」提示 + 登录层。 */
+  rows.push({
+    cat: 'live', icon: '🧑‍🤝‍🧑', name: T('liveRoomName'), badge: T('liveBadge'),
+    meta: T('liveRoomMeta'), tags: T('liveRoomTags'),
+    action: () => { if (ME) closeArena(); openLive(); },
+  });
   if (RD_ARENA){          // room_arena.js 缺失时整行不出现，锦标赛组自然隐藏
     rows.push({
       cat: 'tournament',
@@ -3298,13 +3694,14 @@ function arenaRooms(){
   return rows;
 }
 
-const ARENA_CATS = ['free', 'tournament', 'fixed'];
+const ARENA_CATS = ['live', 'free', 'tournament', 'fixed'];
 function renderArena(){
   const body = document.getElementById('arenaBody');
   if (!body) return;
   const rows = arenaRooms();
   const idxOf = new Map(rows.map((r, i) => [r, i]));
-  const catLabel = { free: T('arenaCatFree'), tournament: T('arenaCatTournament'), fixed: T('arenaCatFixed') };
+  const catLabel = { live: T('arenaCatLive'), free: T('arenaCatFree'),
+                    tournament: T('arenaCatTournament'), fixed: T('arenaCatFixed') };
   body.innerHTML = ARENA_CATS.map(cat => {
     const catRows = rows.filter(r => r.cat === cat);
     if (!catRows.length) return '';
@@ -3346,6 +3743,7 @@ function renderBag(){
 
   /* ---- 身份 ---- */
   $('btab-me').innerHTML = `
+    ${accountBlockHtml()}
     <p class="lead" style="margin-top:0">${T('nickLbl')}</p>
     <div class="nickrow">
       <input id="nickInput" maxlength="12" value="${esc(P.nick)}">
@@ -3372,6 +3770,10 @@ function renderBag(){
       <button class="close" onclick="devReset()">${T('devReset')}</button>
     </div>
     <p class="note">${T('devNote')}</p>`;
+  /* token 明文只走 textContent，不进 innerHTML；信息没拉过就顺手拉一次 */
+  const tokenEl = $('agentTokenPlain');
+  if (tokenEl && AGENT_TOKEN_PLAIN) tokenEl.textContent = AGENT_TOKEN_PLAIN;
+  if (ME && AGENT_TOKEN_INFO == null) fetchTokenInfo();
 
   /* ---- 战绩 ---- */
   const cmp = B.stats.idea_hit_rate;
@@ -3508,10 +3910,14 @@ function drawFace(){
 
 function saveNick(){
   const v = $('nickInput').value.trim();
-  if (v){ P.nick = v.slice(0, 12); saveP(); renderBag(); }
+  if (!v) return;
+  P.nick = v.slice(0, 12);
+  if (ME){ ME.name = P.nick; apiPost('/api/me/name', { name: P.nick }).catch(() => {}); }
+  saveP(); renderBag();
 }
-/* 🧪 测试金手指：只动本机 localStorage 存档，正式版删掉这两个函数和 btab-me 里的按钮区即可 */
-function devAddChips(n){ P.chips += n; if (P.chips > (P.peak || 0)) P.peak = P.chips; saveP(); renderBag(); }
+/* 🧪 测试金手指：走 helper——登录态下等于给服务器账号加钱（测试期允许，docs 已注明过渡期口径）。
+   正式版删掉这两个函数和 btab-me 里的按钮区即可 */
+function devAddChips(n){ gainChips(n, 'dev_cheat'); saveP(); renderBag(); }
 function devReset(){
   if (!confirm(T('devConfirm'))) return;
   localStorage.removeItem(SAVE);
@@ -3522,12 +3928,12 @@ function equipSkin(id){ P.skin = id; saveP(); renderBag(); }
 function buySkin(id){
   const sk = SKINS[id];
   if (P.chips < sk.cost) return;
-  P.chips -= sk.cost; P.skins.push(id); P.skin = id; saveP(); renderBag();
+  spendChips(sk.cost, 'buy_skin'); P.skins.push(id); P.skin = id; saveP(); renderBag();
 }
 function buyItem(k){
   const it = ITEMS[k];
   if (P.chips < it.cost) return;
-  P.chips -= it.cost; P.items[k] = (P.items[k] || 0) + 1; saveP(); renderBag();
+  spendChips(it.cost, 'buy_item'); P.items[k] = (P.items[k] || 0) + 1; saveP(); renderBag();
 }
 function useItem(k){
   if ((P.items[k] || 0) <= 0) return;
@@ -3541,7 +3947,8 @@ function undoLastBet(){
     .sort((a, b) => (b[1].seq || 0) - (a[1].seq || 0));
   if (!log.length){ alert(T('alertNoBets')); return; }
   const [id, b] = log[0];
-  P.chips -= b.ok ? b.win - b.stake : -b.stake;   // 反向冲销
+  if (b.ok) spendChips(b.win - b.stake, 'undo_bet');   // 反向冲销：赢过的把净赚吐回去
+  else gainChips(b.stake, 'undo_bet');                 // 挂起/输掉的退回本金
   delete P.bets[id];
   P.items.calm = (P.items.calm || 0) - 1;
   saveP(); renderBag(); renderBets();
@@ -3756,6 +4163,527 @@ function renderHelp(){
     if (roomDlgOpen()) startRoomTut(); else openRoom();   // openRoom 自己会看 key 决定起引导
   };
 }
+/* ================================================================
+   服务器层 UI —— 初始登录层 / 登录态落地 / 大厅动态墙+排行榜 / 真人房。
+   全部对游客零侵入：游客的钱流、面板、快捷键跟没有这一节时一模一样。
+   ================================================================ */
+
+/* ---------- 初始登录层 ---------- */
+function loginDlgOn(){ const el = document.getElementById('loginDlg'); return !!el && el.classList.contains('on'); }
+function showLogin(){
+  const el = document.getElementById('loginDlg');
+  if (!el) return;
+  el.classList.add('on');
+  probeGoogle();
+}
+function hideLogin(){ const el = document.getElementById('loginDlg'); if (el) el.classList.remove('on'); }
+let googleProbed = false;
+function probeGoogle(){
+  if (googleProbed) return;
+  googleProbed = true;
+  /* 501 = 后端没配 Google OAuth → 整个按钮藏起来。redirect:'manual' 防止 fetch 真跟着跳 OAuth。 */
+  fetch('/api/auth/google', { redirect: 'manual', credentials: 'same-origin' })
+    .then(r => {
+      if (r && r.status === 501){
+        const g = document.getElementById('loginGoogle');
+        if (g) g.style.display = 'none';
+        const s = document.getElementById('loginSep');
+        if (s) s.style.display = 'none';
+      }
+    })
+    .catch(() => {});
+}
+function setLoginMsg(txt, isErr){
+  const el = document.getElementById('loginMsg');
+  if (el){ el.textContent = txt || ''; el.classList.toggle('err', !!isErr); }
+}
+let loginEmailVal = '';
+function loginSendCode(){
+  const inp = document.getElementById('loginEmail');
+  const email = inp ? inp.value.trim() : '';
+  if (!email || email.indexOf('@') < 1){ setLoginMsg(T('loginBadEmail'), true); return; }
+  loginEmailVal = email;
+  setLoginMsg(T('loginSending'));
+  apiPost('/api/auth/email/start', { email }).then(j => {
+    const s2 = document.getElementById('loginStep2');
+    if (s2) s2.style.display = '';
+    setLoginMsg(j && j.dev ? T('loginDevCode') : T('loginSent'));
+    const c = document.getElementById('loginCode');
+    if (c) c.focus();
+  }).catch(() => setLoginMsg(T('loginFail'), true));
+}
+function loginVerify(){
+  const code = ((document.getElementById('loginCode') || {}).value || '').trim();
+  const name = ((document.getElementById('loginName') || {}).value || '').trim();
+  if (!code){ setLoginMsg(T('loginNeedCode'), true); return; }
+  setLoginMsg(T('loginVerifying'));
+  const body = { email: loginEmailVal, code };
+  if (name) body.name = name.slice(0, 12);
+  apiPost('/api/auth/email/verify', body).then(j => {
+    if (j && j.user){ setLoginMsg(''); return applyLogin(j.user); }
+    setLoginMsg(T('loginFail'), true);
+  }).catch(() => setLoginMsg(T('loginFail'), true));
+}
+function loginGuestGo(){
+  localStorage.setItem(GUEST_KEY, '1');   // 游客标记：下次加载不再压登录层
+  hideLogin();
+}
+
+/* ---------- 登录态落地：镜像覆盖 + 首登导入 ---------- */
+async function applyLogin(user){
+  if (!user){ srvState = 'guest'; srvQueue = []; return; }
+  ME = user;
+  const firstLink = !localStorage.getItem(LINK_KEY);
+  const localChips = P.chips;              // 覆盖前的本地余额（游客攒的）
+  const queued = srvQueue; srvQueue = [];
+  srvState = 'user';
+  if (typeof ME.chips === 'number') P.chips = ME.chips;   // 服务器为真源，覆盖镜像
+  if (ME.name) P.nick = String(ME.name).slice(0, 12);
+  if (firstLink && !ME.imported && localChips > 0){
+    /* 首次登录 + 服务器没导入过 + 本地有货 → 一次性导入。
+       登录前这一小会儿的本地钱流已含在 localChips 里，随导入决定一起处置。 */
+    if (confirm(T('importAsk', Math.round(localChips)))){
+      try {
+        const j = await apiPost('/api/me/import', { chips: Math.round(localChips) });
+        const c = j && (typeof j.chips === 'number' ? j.chips
+          : (j.user && typeof j.user.chips === 'number' ? j.user.chips : null));
+        P.chips = c != null ? c : P.chips + Math.round(localChips);
+        ME.chips = P.chips;
+        ME.imported = 1;
+        roomToast(T('importDone', Math.round(localChips)));
+      } catch (err) { roomToast(T('importFail')); }
+    }
+  } else {
+    /* 已链接过的账号：登录态未知期间发生的本地钱流补记到服务器 */
+    for (const d of queued){ P.chips += d.amount; postWalletDelta(d.amount, d.reason); }
+  }
+  P.peak = Math.max(P.peak || 0, P.chips);
+  localStorage.setItem(LINK_KEY, '1');
+  saveP();
+  hideLogin();
+  if (bagOpen()) renderBag();
+  renderLobbyWall();
+}
+function initAccount(){
+  return apiGet('/api/me').then(j => {
+    if (j && j.user) return applyLogin(j.user);
+    srvState = 'guest'; srvQueue = [];
+    if (!localStorage.getItem(GUEST_KEY)) showLogin(); else hideLogin();
+  }).catch(() => {
+    /* 后端不可达 = 没有会话：没打过游客标记的照样出登录层（可以从「先逛逛」进） */
+    srvState = 'guest'; srvQueue = [];
+    if (!localStorage.getItem(GUEST_KEY)) showLogin();
+  });
+}
+function doLogout(){
+  apiPost('/api/auth/logout').catch(() => {}).then(() => {
+    localStorage.removeItem(LINK_KEY);
+    localStorage.removeItem(GUEST_KEY);   // 登出 = 回到登录层重新选身份
+    location.reload();
+  });
+}
+function accountBlockHtml(){
+  if (!ME) return '';
+  return `<p class="lead" style="margin-top:0">${T('accLead')}</p>
+    <div class="card" style="margin-bottom:14px">
+      <div class="t">${esc(ME.avatar_emoji || '🧑')} ${esc(ME.name || P.nick)}</div>
+      <div class="d">${esc(ME.email || '')}<br>${T('accChipsLbl')}：<b>${esc(String(ME.chips != null ? ME.chips : P.chips))}</b></div>
+      <button onclick="doLogout()">${T('accLogout')}</button>
+    </div>
+    ${agentTokenHtml()}`;
+}
+
+/* ---------- 🤖 Agent 接入：个人 API token（MCP/agent 以你的身份进真人房） ---------- */
+let AGENT_TOKEN_INFO = null;    // null = 还没拉过；{exists, created_at, last_used_at}
+let AGENT_TOKEN_PLAIN = null;   // rotate 返回的明文——只在内存里活到刷新/登出，服务器不再吐第二次
+let agentTokenLoading = false;
+function fetchTokenInfo(){
+  if (!ME || agentTokenLoading || AGENT_TOKEN_INFO != null) return;
+  agentTokenLoading = true;
+  apiGet('/api/token/info').then(j => {
+    agentTokenLoading = false;
+    AGENT_TOKEN_INFO = j && typeof j === 'object' ? j : { exists: false };
+    if (bagOpen()) renderBag();
+  }).catch(() => { agentTokenLoading = false; });
+}
+function tokenTs(v){
+  if (v == null || v === '') return '—';
+  let t = v;
+  if (typeof t === 'string') t = Date.parse(t);
+  if (typeof t !== 'number' || isNaN(t)) return String(v);
+  if (t < 2e10) t *= 1000;      // 秒级时间戳兜底
+  return new Date(t).toLocaleString();
+}
+function agentTokenHtml(){
+  if (!ME) return '';
+  let body;
+  if (AGENT_TOKEN_PLAIN){
+    /* token 是服务端生成的明文，不走 esc/innerHTML——渲染完用 textContent 塞进去 */
+    body = `<div class="token-box"><code id="agentTokenPlain" class="token-code"></code>
+        <button type="button" onclick="copyAgentToken()">${T('tokenCopy')}</button></div>
+      <p class="note" style="margin-top:6px">${T('tokenOnceNote')}</p>`;
+  } else if (agentTokenLoading || AGENT_TOKEN_INFO == null){
+    body = `<p class="note" style="margin-top:4px">${T('tokenLoading')}</p>`;
+  } else if (AGENT_TOKEN_INFO.exists){
+    body = `<p class="note" style="margin-top:4px">${T('tokenCreated')} ${esc(tokenTs(AGENT_TOKEN_INFO.created_at))}
+        · ${T('tokenLastUsed')} ${AGENT_TOKEN_INFO.last_used_at ? esc(tokenTs(AGENT_TOKEN_INFO.last_used_at)) : T('tokenNever')}</p>
+      <div class="nickrow" style="margin:6px 0 0">
+        <button class="close" onclick="rotateAgentToken()">${T('tokenRegenBtn')}</button>
+      </div>`;
+  } else {
+    body = `<div class="nickrow" style="margin:6px 0 0">
+        <button class="close" onclick="rotateAgentToken()">${T('tokenGenBtn')}</button>
+      </div>`;
+  }
+  return `<p class="lead">${T('agentLead')}</p>
+    ${body}
+    <p class="note">${T('tokenHint')}</p>`;
+}
+function rotateAgentToken(){
+  if (!ME) return;
+  if (AGENT_TOKEN_INFO && AGENT_TOKEN_INFO.exists && !confirm(T('tokenRotateConfirm'))) return;
+  apiPost('/api/token/rotate').then(j => {
+    if (j && j.token){
+      AGENT_TOKEN_PLAIN = String(j.token);
+      AGENT_TOKEN_INFO = { exists: true, created_at: Date.now(), last_used_at: null };
+      if (bagOpen()) renderBag();
+    } else roomToast(T('tokenFail'));
+  }).catch(() => roomToast(T('tokenFail')));
+}
+function copyAgentToken(){
+  if (!AGENT_TOKEN_PLAIN) return;
+  const done = () => roomToast(T('tokenCopied'));
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(AGENT_TOKEN_PLAIN).then(done).catch(() => fallbackCopyToken(done));
+  else fallbackCopyToken(done);
+}
+function fallbackCopyToken(done){
+  const ta = document.createElement('textarea');
+  ta.value = AGENT_TOKEN_PLAIN;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (err) {}
+  document.body.removeChild(ta);
+}
+
+/* ---------- 大厅动态墙 + 排行榜（15s 轮询，游客只读可见） ---------- */
+let lobbyTab = 'feed';
+let FEED_ROWS = null, BOARD_ROWS = null;   // null = 还没拉到过（跟空数组区分）
+function relTime(ts){
+  let t = ts;
+  if (typeof t === 'string') t = Date.parse(t);
+  if (typeof t !== 'number' || isNaN(t)) return '';
+  if (t < 2e10) t *= 1000;                 // 秒级时间戳兜底
+  const s = Math.max(0, (Date.now() - t) / 1000);
+  if (s < 60) return T('timeNow');
+  if (s < 3600) return T('timeMin', Math.floor(s / 60));
+  if (s < 86400) return T('timeHr', Math.floor(s / 3600));
+  return T('timeDay', Math.floor(s / 86400));
+}
+function fetchLobby(){
+  apiGet('/api/feed?limit=50')
+    .then(j => { FEED_ROWS = (j && j.events) || []; renderLobbyWall(); })
+    .catch(() => renderLobbyWall());
+  apiGet('/api/leaderboard')
+    .then(j => { BOARD_ROWS = (j && j.rows) || []; renderLobbyWall(); })
+    .catch(() => {});
+}
+function startLobbyPoll(){
+  fetchLobby();
+  setInterval(fetchLobby, 15000);
+}
+function renderLobbyWall(){
+  const body = document.getElementById('lwBody');
+  if (!body) return;
+  const tf = document.getElementById('lwTabFeed'), tb = document.getElementById('lwTabBoard');
+  if (tf) tf.setAttribute('aria-pressed', String(lobbyTab === 'feed'));
+  if (tb) tb.setAttribute('aria-pressed', String(lobbyTab === 'board'));
+  if (lobbyTab === 'board'){
+    const rows = BOARD_ROWS || [];
+    body.innerHTML = rows.length ? rows.slice(0, 20).map((r, i) => `
+      <div class="lw-row"><span class="lw-rank">${i + 1}</span><span class="lw-av">${esc(r.avatar || '🧑')}</span>
+        <span class="lw-txt">${esc(r.name || '—')}</span>
+        <span class="lw-time">${esc(String(r.chips != null ? r.chips : '—'))}</span></div>`).join('')
+      : `<p class="lw-empty">${BOARD_ROWS ? T('boardEmpty') : T('feedOffline')}</p>`;
+    return;
+  }
+  const rows = FEED_ROWS || [];
+  body.innerHTML = rows.length ? rows.slice(0, 50).map(ev => {
+    const txt = (lang === 'en' && ev.text_en) ? ev.text_en : (ev.text_zh || ev.text_en || '');
+    return `<div class="lw-row"><span class="lw-av">${esc(ev.avatar || '🧑')}</span>
+      <span class="lw-txt"><b>${esc(ev.name || '')}</b> ${esc(txt)}</span>
+      <span class="lw-time">${esc(relTime(ev.ts))}</span></div>`;
+  }).join('') : `<p class="lw-empty">${FEED_ROWS ? T('feedEmpty') : T('feedOffline')}</p>`;
+}
+
+/* ---------- 真人房：主桌 WS ----------
+   钱只动服务器余额（DO 端扣退），客户端不本地扣一分：下注只发指令，
+   等 state 回来刷新余额显示。断线指数退避重连 3 次（1s/2s/4s）。 */
+let liveWS = null, liveState = null, liveConn = 'off';   // off|connecting|open|reconnecting|dead
+let liveRetry = 0, liveRetryTimer = null, liveWanted = false;
+let liveStakeSel = {}, liveLocalBets = {}, liveDealerBase = null, liveMeAt = 0;
+function liveDlgOpen(){ const el = document.getElementById('liveDlg'); return !!el && el.classList.contains('on'); }
+function openLive(){
+  if (!ME){ roomToast(T('liveNeedLogin')); showLogin(); return; }
+  closeDlg(); closeBag(); closeRoom(); closeArena();
+  const dlg = document.getElementById('liveDlg');
+  if (!dlg) return;
+  dlg.classList.add('on');
+  liveWanted = true;
+  if (!liveWS){ liveRetry = 0; liveConnect(); }
+  renderLive();
+}
+function closeLive(){
+  const el = document.getElementById('liveDlg');
+  if (el) el.classList.remove('on');
+  liveWanted = false;
+  if (liveRetryTimer){ clearTimeout(liveRetryTimer); liveRetryTimer = null; }
+  if (liveWS){ const w = liveWS; liveWS = null; try { w.close(); } catch (err) {} }
+  liveConn = 'off'; liveState = null; liveRetry = 0;
+  liveStakeSel = {}; liveLocalBets = {}; liveDealerBase = null;
+}
+function liveConnect(){
+  if (!liveWanted) return;
+  liveConn = liveRetry ? 'reconnecting' : 'connecting';
+  renderLiveStatus();
+  let ws;
+  try {
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://')
+      + location.host + '/api/room/main/ws');
+  } catch (err) { liveConnFail(); return; }
+  liveWS = ws;
+  ws.onopen = () => { if (ws !== liveWS) return; liveConn = 'open'; liveRetry = 0; renderLiveStatus(); };
+  ws.onmessage = ev => {
+    if (ws !== liveWS) return;
+    let m = null;
+    try { m = JSON.parse(ev.data); } catch (err) { return; }
+    if (m && m.t === 'state'){
+      liveState = m;
+      liveLocalBets = {};          // 服务器 state 是真理，乐观标记全清
+      renderLive();
+      liveRefreshChips();          // 下注动的是服务器余额 → state 回来刷新余额显示
+    } else if (m && m.t === 'err'){
+      roomToast(T('liveErr', String(m.code == null ? '' : m.code)));
+    }
+  };
+  ws.onclose = () => { if (ws !== liveWS) return; liveWS = null; if (liveWanted) liveConnFail(); };
+  ws.onerror = () => {};           // 后面必然跟 close，重连逻辑在那边
+}
+function liveConnFail(){
+  if (!liveWanted) return;
+  if (liveRetry >= 3){ liveConn = 'dead'; renderLiveStatus(); return; }
+  liveRetry += 1;
+  liveConn = 'reconnecting';
+  renderLiveStatus();
+  liveRetryTimer = setTimeout(liveConnect, 1000 * Math.pow(2, liveRetry - 1));  // 1s → 2s → 4s
+}
+function liveSend(obj){
+  if (liveWS && liveWS.readyState === 1){
+    try { liveWS.send(JSON.stringify(obj)); } catch (err) { /* 正在断，重连逻辑接手 */ }
+  }
+}
+/* state 回来后刷新服务器余额显示（节流 1.5s，防 state 风暴打爆 /api/me） */
+function liveRefreshChips(){
+  if (!ME) return;
+  const now = Date.now();
+  if (now - liveMeAt < 1500) return;
+  liveMeAt = now;
+  apiGet('/api/me').then(j => {
+    if (j && j.user && typeof j.user.chips === 'number'){
+      ME = Object.assign(ME || {}, j.user);
+      P.chips = j.user.chips;                       // 服务器真源覆盖镜像
+      P.peak = Math.max(P.peak || 0, P.chips);
+      saveP();
+      if (liveDlgOpen()) renderLive();
+    }
+  }).catch(() => {});
+}
+function renderLiveStatus(){
+  const el = document.getElementById('liveStatus');
+  if (!el) return;
+  let cls = '', txt = '', btn = '';
+  if (liveConn === 'open'){ cls = 'ok'; txt = T('liveConnected'); }
+  else if (liveConn === 'connecting'){ txt = T('liveConnecting'); }
+  else if (liveConn === 'reconnecting'){ cls = 'bad'; txt = T('liveReconnecting', liveRetry || 1); }
+  else if (liveConn === 'dead'){ cls = 'bad'; txt = T('liveDead'); btn = `<button type="button" id="liveRetryBtn">${T('liveRetryBtn')}</button>`; }
+  else txt = '—';
+  el.className = 'live-status' + (cls ? ' ' + cls : '');
+  el.innerHTML = `<span class="dot"></span><span>${txt}</span>${btn}`;
+  const rb = document.getElementById('liveRetryBtn');
+  if (rb) rb.onclick = () => { liveRetry = 0; liveConnect(); };
+}
+function liveQid(q){ return q.qid != null ? q.qid : q.id; }
+function liveBetNorm(b){
+  if (b == null) return null;
+  if (typeof b === 'string') return { action: b };
+  return { action: b.action != null ? b.action : b.act, stake: b.stake };
+}
+function liveBetOf(row, qid){
+  if (!row || !row.bets) return null;
+  if (Array.isArray(row.bets))
+    return row.bets.find(x => x && String(x.qid != null ? x.qid : x.id) === String(qid)) || null;
+  return row.bets[qid] != null ? row.bets[qid] : (row.bets[String(qid)] != null ? row.bets[String(qid)] : null);
+}
+function liveActLabel(a){
+  if (a == null) return '';
+  const key = { follow: 'actFollow', '跟': 'actFollow', fade: 'actFade', '反': 'actFade',
+                duel: 'actDuel', '对赌': 'actDuel', skip: 'actSkip', '跳过': 'actSkip' }[a];
+  return key ? T(key) : String(a);
+}
+function liveQuestionCard(q, meRow, phase, idx){
+  const qid = String(liveQid(q));
+  const price = typeof q.price === 'number' ? q.price : 0.5;
+  const pC = Math.round(price * 100), fC = 100 - pC;
+  const mine = liveLocalBets[qid] || liveBetNorm(liveBetOf(meRow, liveQid(q)));
+  const cur = (mine && mine.action) || null;
+  const open = phase === 'betting';
+  const stakeSel = liveStakeSel[qid] || (mine && mine.stake) || ROOM_STAKE_TIERS[0];
+  const actBtn = (tok, cls2, label) => `<button data-lact="${tok}" data-lqi="${idx}"
+      class="${cls2}${cur === tok ? ' sel' : ''}" ${open ? '' : 'disabled'}>${label}</button>`;
+  const outcome = q.outcome != null ? String(q.outcome) : '';
+  return `<div class="bet room-bet">
+    <div class="q">${esc(q.question || q.ticker || qid)}</div>
+    ${q.reason ? `<div class="say">${esc(q.reason)}</div>` : ''}
+    <div class="room-odds">
+      ${actBtn('follow', '', `<b>${T('actFollow')}</b>${pC}¢`)}
+      ${actBtn('fade', '', `<b>${T('actFade')}</b>${fC}¢`)}
+      ${actBtn('duel', 'duel', `<b>${T('actDuel')}</b>${fC}¢`)}
+      ${actBtn('skip', '', `<b>${T('actSkip')}</b>`)}
+    </div>
+    ${cur && cur !== 'skip' && cur !== '跳过' ? `<div class="stakes" style="margin-top:8px">${T('liveStakeLbl')}
+      ${ROOM_STAKE_TIERS.map(v => `<button data-lstake="${v}" data-lqi="${idx}"
+        ${open ? '' : 'disabled'} aria-pressed="${v === stakeSel}">${v}</button>`).join('')}
+    </div>` : ''}
+    ${outcome ? `<div class="result">${RT('answer')}
+      <b class="${outcome.toUpperCase() === 'YES' ? 'up' : 'down'}">${esc(outcome)}</b></div>` : ''}
+  </div>`;
+}
+function liveResultsHtml(results, players){
+  const rows = Array.isArray(results) ? results : null;
+  if (rows){
+    if (!rows.length) return '';
+    return `<p class="lead" style="margin:14px 0 6px">${T('liveResults')}</p>
+      <table class="room-table"><tbody>
+      ${rows.map(r => {
+        if (r == null) return '';
+        if (typeof r !== 'object') return `<tr><td class="txt">${esc(String(r))}</td></tr>`;
+        const who = r.name != null ? r.name
+          : ((players || []).find(p => String(p.uid) === String(r.uid)) || {}).name;
+        const delta = typeof r.delta === 'number' ? r.delta : (typeof r.pl === 'number' ? r.pl : null);
+        const won = r.won != null ? !!r.won : (delta != null ? delta >= 0 : null);
+        const txt = (lang === 'en' && r.text_en) ? r.text_en : (r.text_zh || r.text || '');
+        return `<tr>
+          <td class="txt">${esc(String(r.avatar || ''))} ${esc(String(who == null ? '' : who))}</td>
+          <td class="txt">${txt ? esc(String(txt))
+            : `${esc(String(r.ticker || r.qid || ''))} ${esc(liveActLabel(r.action))}`}</td>
+          <td class="${won == null ? '' : won ? 'up' : 'down'}">
+            ${delta != null ? (delta >= 0 ? '+' : '') + delta : (won == null ? '' : won ? T('wonTxt') : T('lostTxt'))}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+  if (results && typeof results === 'object')
+    return `<p class="lead" style="margin:14px 0 6px">${T('liveResults')}</p>
+      <div class="quote">${esc(JSON.stringify(results, null, 2))}</div>`;
+  return '';
+}
+function renderLive(){
+  if (!liveDlgOpen()) return;
+  renderLiveStatus();
+  const tt = document.getElementById('liveTitle'); if (tt) tt.textContent = T('liveTitle');
+  const sb = document.getElementById('liveSub'); if (sb) sb.textContent = T('liveSubTitle');
+  const cl = document.getElementById('liveChipsLbl'); if (cl) cl.textContent = T('liveMyChips');
+  const ce = document.getElementById('liveChips');
+  if (ce) ce.textContent = ME && ME.chips != null ? String(ME.chips) : '—';
+  const body = document.getElementById('liveBody');
+  if (!body) return;
+  const st = liveState;
+  if (!st){
+    body.innerHTML = liveConn === 'open'
+      ? `<p class="lead" style="margin-top:0">${T('liveWaiting')}</p>` : '';
+    return;
+  }
+  const phase = st.phase || 'betting';
+  const questions = st.questions || [];
+  const players = st.players || [];
+  const meRow = ME ? players.find(p => String(p.uid) === String(ME.id)) : null;
+  if (liveDealerBase == null && typeof st.dealer_cash === 'number' && st.dealer_cash > 0)
+    liveDealerBase = st.dealer_cash;
+  const dPct = typeof st.dealer_cash === 'number' && liveDealerBase
+    ? Math.max(0, Math.min(100, (st.dealer_cash / liveDealerBase) * 100)) : 0;
+  const phaseTxt = phase === 'betting' ? T('livePhaseBetting')
+    : phase === 'revealed' ? T('livePhaseRevealed') : T('livePhaseEnded');
+
+  const playersHtml = players.map(p => {
+    const you = ME && String(p.uid) === String(ME.id);
+    const picks = questions.map(q => {
+      const b = liveBetNorm(liveBetOf(p, liveQid(q)));
+      if (!b || !b.action) return '';
+      return `<span class="pick">${esc(q.ticker ? q.ticker + ' ' : '')}${esc(liveActLabel(b.action))}${b.stake ? '·' + esc(String(b.stake)) : ''}</span>`;
+    }).join('');
+    return `<div class="live-player ${you ? 'you' : ''}">
+      <span class="lp-av">${esc(p.avatar || '🧑')}</span>
+      <b>${esc(p.name || '—')}</b>${you ? `<span class="lp-you">(${T('liveYou')})</span>` : ''}
+      <span class="lp-ready ${p.ready ? 'on' : ''}">${p.ready ? '✓ ' + T('liveReadyTag') : T('liveNotReadyTag')}</span>
+      <span class="lp-picks">${picks}</span>
+    </div>`;
+  }).join('');
+
+  let advHtml;
+  if (phase === 'betting'){
+    const rd = !!(meRow && meRow.ready);
+    advHtml = `<button class="room-advance" data-lready="${rd ? '0' : '1'}">${rd ? T('liveUnready') : T('liveReady')}</button>`;
+  } else if (phase === 'revealed'){
+    advHtml = `<button class="room-advance" data-lnext>${T('liveNext')}</button>`;
+  } else {
+    advHtml = `<div class="room-banner lose" style="margin-top:10px">${T('livePhaseEnded')}</div>`;
+  }
+
+  body.innerHTML = `
+    <p class="lead" style="margin-top:0">${T('liveDay', st.day_idx != null ? st.day_idx : '—')} · ${phaseTxt}</p>
+    <div class="live-dealer">
+      <span class="lead" style="margin:0">${T('liveDealerCash')}</span>
+      <div class="bar"><i style="width:${dPct}%"></i></div>
+      <b style="font-family:var(--num)">${st.dealer_cash != null ? esc(String(st.dealer_cash)) : '—'}</b>
+    </div>
+    <p class="lead" style="margin:10px 0 0">${T('livePlayers')}（${players.length}）</p>
+    <div class="live-players">${playersHtml || `<p class="lead" style="margin:0">—</p>`}</div>
+    ${phase !== 'betting' && st.results != null ? liveResultsHtml(st.results, players) : ''}
+    ${questions.length ? questions.map((q, i) => liveQuestionCard(q, meRow, phase, i)).join('')
+      : `<p class="lead">${T('liveNoQuestions')}</p>`}
+    ${advHtml}`;
+
+  body.querySelectorAll('[data-lact]').forEach(b => b.onclick = () => {
+    const q = questions[+b.dataset.lqi];
+    if (!q) return;
+    const qid = liveQid(q), action = b.dataset.lact;
+    const stakeV = action === 'skip' ? 0 : (liveStakeSel[String(qid)] || ROOM_STAKE_TIERS[0]);
+    liveLocalBets[String(qid)] = { action, stake: stakeV };
+    liveSend({ t: 'bet', qid, action, stake: stakeV });   // 本地不扣钱，等 state 回来刷新
+    renderLive();
+  });
+  body.querySelectorAll('[data-lstake]').forEach(b => b.onclick = () => {
+    const q = questions[+b.dataset.lqi];
+    if (!q) return;
+    const qid = liveQid(q), v = +b.dataset.lstake;
+    if (!ROOM_STAKE_TIERS.includes(v)) return;
+    liveStakeSel[String(qid)] = v;
+    const cur = (liveLocalBets[String(qid)] || liveBetNorm(liveBetOf(meRow, qid)) || {}).action;
+    if (cur && cur !== 'skip' && cur !== '跳过'){
+      liveLocalBets[String(qid)] = { action: cur, stake: v };
+      liveSend({ t: 'bet', qid, action: cur, stake: v });
+    }
+    renderLive();
+  });
+  body.querySelectorAll('[data-lready]').forEach(b => b.onclick = () => {
+    const want = b.dataset.lready === '1';
+    liveSend({ t: want ? 'ready' : 'unready' });
+    if (meRow) meRow.ready = want;   // 乐观翻牌，下一个 state 以服务器为准
+    renderLive();
+  });
+  body.querySelectorAll('[data-lnext]').forEach(b => b.onclick = () => liveSend({ t: 'next' }));
+}
+
 { /* 顶层 wiring——此处 $ 已定义，但仍按缺 book.js 被整页替换的情形容错 */
   const hd = document.getElementById('helpDlg');
   if (hd) hd.addEventListener('click', e => { if (e.target.id === 'helpDlg') closeHelp(); });
@@ -3763,6 +4691,38 @@ function renderHelp(){
   if (pb) pb.onclick = () => openHelp('plaza');
   const rb = document.getElementById('roomHelpBtn');
   if (rb) rb.onclick = () => openHelp('room');
+}
+
+{ /* 服务器层 wiring + 启动：先问 /api/me——有会话直接进主菜单；
+     没会话且没打过「游客先逛逛」标记的，压上全屏登录层。
+     动态墙对游客只读可见，照常轮询。 */
+  const lwF = document.getElementById('lwTabFeed');
+  if (lwF) lwF.onclick = () => { lobbyTab = 'feed'; renderLobbyWall(); };
+  const lwB = document.getElementById('lwTabBoard');
+  if (lwB) lwB.onclick = () => { lobbyTab = 'board'; renderLobbyWall(); };
+  const lgG = document.getElementById('loginGoogle');
+  if (lgG) lgG.onclick = () => { location.href = '/api/auth/google'; };
+  const lgS = document.getElementById('loginSendBtn');
+  if (lgS) lgS.onclick = loginSendCode;
+  const lgV = document.getElementById('loginVerifyBtn');
+  if (lgV) lgV.onclick = loginVerify;
+  const lgGuest = document.getElementById('loginGuest');
+  if (lgGuest) lgGuest.onclick = loginGuestGo;
+  const lgE = document.getElementById('loginEmail');
+  if (lgE) lgE.addEventListener('keydown', e => { if (e.key === 'Enter') loginSendCode(); });
+  const lgC = document.getElementById('loginCode');
+  if (lgC) lgC.addEventListener('keydown', e => { if (e.key === 'Enter') loginVerify(); });
+  const lgN = document.getElementById('loginName');
+  if (lgN) lgN.addEventListener('keydown', e => { if (e.key === 'Enter') loginVerify(); });
+  const lv = document.getElementById('liveDlg');
+  if (lv) lv.addEventListener('click', e => { if (e.target.id === 'liveDlg') closeLive(); });
+
+  if (BOOKS){
+    /* 乐观首屏：这台机器既没游客标记也没登录过 → 先压登录层，/api/me 说了算 */
+    if (!localStorage.getItem(GUEST_KEY) && !localStorage.getItem(LINK_KEY)) showLogin();
+    initAccount();
+    startLobbyPoll();
+  }
 }
 </script>
 </body>
