@@ -770,15 +770,19 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    /* MCP 端点（Streamable HTTP，token 鉴权） */
+    /* 事件街 MCP 已退役（2026-08-21）→ AgentFloor。
+       不静默 404，也不继续端上一套坏掉的工具（它的真人房要读
+       /play/data/room_arena.js，那份数据随 legacy 一起下线了）：明确告诉
+       还指着这个地址的客户端搬去哪儿。下面的 handleMcp / MCP_TOOLS /
+       PlayRoom 暂时留着不删 —— D1 里有真实账号，怎么处置由 Alan 定。 */
     if (path === '/mcp' || path === '/mcp/') {
-      try {
-        return await handleMcp(request, env);
-      } catch (e) {
-        console.log(JSON.stringify({ t: 'mcp_fatal', err: String(e && e.stack || e) }));
-        return new Response(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'Internal error' } }),
-          { status: 500, headers: { 'content-type': 'application/json', ...MCP_CORS } });
-      }
+      return new Response(JSON.stringify({
+        error: 'moved',
+        message: 'Fledge Play (事件街) has been retired and replaced by AgentFloor. '
+          + 'Point your MCP client at https://floor.fledgetradelab.com/mcp and get a new token at '
+          + 'https://floor.fledgetradelab.com/me',
+        new_url: 'https://floor.fledgetradelab.com/mcp',
+      }), { status: 410, headers: { 'content-type': 'application/json', ...MCP_CORS } });
     }
 
     /* 非 /api/*：asset 未命中落回 worker（run_worker_first 只圈 /api/* 和 /mcp），
@@ -788,25 +792,19 @@ export default {
          dist-site/monopoly/ 已经清空，所以这里必须在 asset 查找之前拦下来。
          服务端自己的取数（daily_digest 的 book.js、PlayRoom DO 的 room_arena.js）
          早已改读 /play/data/，不会撞上这条规则。 */
-      if (path === '/monopoly' || path.startsWith('/monopoly/')) {
-        return Response.redirect(new URL('/play/', url).toString(), 301);
+      /* 两代老路径一律 301 到 AgentFloor（2026-08-21 全量切走）：
+           /monopoly/**  第一代大富翁          （2026-08-20 起先转 /play/）
+           /play/**      EventStreet 事件街    （本次退役，dist-site/play 已删）
+           /floor        照顾「/floor」这个说法，落到子域上
+         必须在 asset 查找之前拦下来。深链接（/play/m/abc 这种）也一并收进来，
+         直接送到新站首页而不是死在 404 上。 */
+      if (path === '/monopoly' || path.startsWith('/monopoly/')
+        || path === '/play' || path.startsWith('/play/')
+        || path === '/floor' || path.startsWith('/floor/')) {
+        return Response.redirect('https://floor.fledgetradelab.com/', 301);
       }
       if (!env.ASSETS) return new Response('not found', { status: 404 });
-      const res = await env.ASSETS.fetch(request);
-      /* /play/ 是 SPA（EventStreet）：深链接如 /play/m/abc 在磁盘上没有对应文件，
-         asset 会 404 —— 把无扩展名的 /play/* 落回 /play/index.html 交给 react-router。
-         只在真 404 时兜底，命中的静态资源（含 /play/assets/*、/play/fonts/*）照常直出。
-         作用域严格限 /play/，静态站其余路径的 404 语义完全不变。 */
-      if (res.status === 404 && path.startsWith('/play/') && !/\.[a-z0-9]+$/i.test(path)) {
-        const shell = await env.ASSETS.fetch(new Request(new URL('/play/index.html', url).toString()));
-        if (shell.status === 200) {
-          return new Response(shell.body, {
-            status: 200,
-            headers: { ...Object.fromEntries(shell.headers), 'content-type': 'text/html; charset=utf-8' },
-          });
-        }
-      }
-      return res;
+      return env.ASSETS.fetch(request);
     }
 
     const method = request.method;
