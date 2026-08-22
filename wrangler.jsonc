@@ -15,29 +15,19 @@
     { "pattern": "fledgetradelab.com", "custom_domain": true, "zone_name": "fledgetradelab.com" },
     { "pattern": "www.fledgetradelab.com", "custom_domain": true, "zone_name": "fledgetradelab.com" }
   ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "fledge-play",
-      "database_id": "53c281a3-017e-460a-b8b4-afa9963825c1"
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      { "name": "PLAY_ROOM", "class_name": "PlayRoom" }
-    ]
-  },
+  // 2026-08-22 事件街后端退役：D1 `fledge-play`（已导出备份后删库）和
+  // PlayRoom Durable Object 一起下线，玩法搬去 AgentFloor。DO 的类必须走
+  // deleted_classes 迁移才能干净移除，v2 就是干这个的 —— 别删这条记录。
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["PlayRoom"] }
+    { "tag": "v1", "new_sqlite_classes": ["PlayRoom"] },
+    { "tag": "v2", "deleted_classes": ["PlayRoom"] }
   ],
   "vars": {
-    "DEV_LOGIN_CODE": "fledge2026",
     "SITE_ORIGIN": "https://fledgetradelab.com"
   }
-  // Secrets (wrangler secret put …, never in this file):
-  //   SESSION_SECRET      — HMAC key for fp_sess cookies (auth endpoints 503 until set)
-  //   RESEND_API_KEY      — Resend API key (reuse the Grounds key); absent => DEV code only
-  //   EMAIL_FROM          — sender address, same value as the fledge-grounds secret
-  //   GOOGLE_CLIENT_ID    — Google OAuth client (same client as Grounds); absent => /api/auth/google 501
-  //   GOOGLE_CLIENT_SECRET
+  // 不再需要任何 secret：账号系统随事件街一起退役。
+  // 旧的 SESSION_SECRET / RESEND_API_KEY / EMAIL_FROM / GOOGLE_CLIENT_ID /
+  // GOOGLE_CLIENT_SECRET 还留在这个 worker 上，没有代码读它们了，可随时
+  // `wrangler secret delete` 清掉（同名的值在 fledge-grounds 和 agentfloor
+  // 上各有一份，删这里不影响那两个）。
 }
